@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Categorias</h2>
+<a href="{% url 'agregar_categoria' %}" class="btn btn-primary mb-3">+ Nueva Categoria</a>
+
+{% for categoria in categorias %}
+<div class="card mb-2">
+    <div class="card-body">
+        <strong>Categoria:</strong> {{ categoria.nombre }}<!--br>
+        <strong>Asociados:</strong> {{ categoria.componentes_relacionados }}<br-->
+        
+        
+
+        <a href="{% url 'modificar_categoria' categoria.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
+        <a href="{% url 'eliminar_categoria' categoria.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+    </div>
+</div>
+{% empty %}
+<p>No hay categorias registrados.</p>
+{% endfor %}
+
+<a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+{% endblock %}

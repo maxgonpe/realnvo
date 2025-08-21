@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Nuevo Servicioz</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ formset.management_form }}
+
+    {% for form in formset %}
+        <div class="card mt-3 p-3">
+            {{ form|crispy }}
+        </div>
+    {% endfor %}
+
+    <button class="btn btn-success mt-4" type="submit">Guardar</button>
+</form>
+{% endblock %}

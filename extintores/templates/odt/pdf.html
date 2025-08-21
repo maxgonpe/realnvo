@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+{% load humanize %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ODT PDF</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 11px;
+            margin: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: left;
+        }
+        .vencido {
+            background-color: #c8facc;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>Orden de Trabajo #{{ odt.pk }}</h2>
+    <p><strong>Fecha:</strong> {{ odt.fecha }}</p>
+    <p><strong>Cliente:</strong> {{ odt.intervencion.cliente }}</p>
+    <p><strong>Tipo:</strong> {{ odt.intervencion.get_tipo_display }}</p>
+
+    <h3>Extintores</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Agente</th>
+                <th>Ubicación</th>
+                <th>Presión</th>
+                <th>Peso</th>
+                <th>PH Última</th>
+                <th>PH Estado</th>
+                <th>PH Vencimiento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in odt.detalles.all %}
+            <tr class="{% if 'vencido' in d.ph_estado|default:'' %}vencido{% endif %}">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ d.agente }}</td>
+                <td>{{ d.ubicacion }}</td>
+                <td>{{ d.presion }}</td>
+                <td>{{ d.peso }}</td>
+                <td>{{ d.ph_ultima }}</td>
+                <td>{{ d.ph_estado }}</td>
+                <td>{{ d.ph_vencimiento }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Productos y Servicios</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in odt.items.all %}
+            <tr>
+                <td>{{ item.producto.nombre }}</td>
+                <td>{{ item.producto.categoria.nombre }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>${{ item.producto.precio_unitario|floatformat:0|intcomma }}</td>
+                <td>${{ item.subtotal|floatformat:0|intcomma }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="4" style="text-align: right;"><strong>Total</strong></td>
+                <td><strong>${{ total|floatformat:0|intcomma }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

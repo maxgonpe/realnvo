@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Eliminar Factor de Ajuste</h2>
+<p>¿Estás seguro de que deseas eliminar el factor para <strong>{{ factor.cliente }}</strong> y <strong>{{ factor.categoria }}</strong>?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'factorajustecliente_lista' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

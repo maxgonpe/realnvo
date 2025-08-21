@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Editar ODT #{{ odt.pk }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+
+    <!-- ---------- DETALLES DE EXTINTORES ----------- -->
+    <h4>Detalles del Servicio</h4>
+    {{ formset.management_form }}
+    <div id="formset-container">
+        {% for f in formset.forms %}
+            <div class="card mt-3 p-3" style="background-color: #E9F7EF;">
+                {{ f|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-formset">+ Agregar Detalle</button>
+
+    <!-- ---------- PRODUCTOS ASOCIADOS ----------- -->
+    <h4 class="mt-4">Productos / Servicios</h4>
+    {{ itemset.management_form }}
+    <div id="itemset-container">
+        {% for f in itemset %}
+            <div class="card mt-3 p-3" style="background-color: #FDF2E9;">
+                {{ f|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-secondary mt-3" id="add-itemset">+ Agregar Producto</button>
+
+    <!-- BOTONES DE ACCIÓN -->
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button class="btn btn-sm btn-success" type="submit">Guardar</button>
+        <a href="{% url 'odt_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+</form>
+
+<!-- Templates vacíos para clonar -->
+<div id="empty-formset" style="display: none;">
+    <div class="card mt-3 p-3" style="background-color: #E9F7EF;">
+        {{ formset.empty_form|crispy }}
+    </div>
+</div>
+
+<div id="empty-itemset" style="display: none;">
+    <div class="card mt-3 p-3" style="background-color: #FDF2E9;">
+        {{ itemset.empty_form|crispy }}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function setupAddButton(buttonId, containerId, emptyId, prefixBase) {
+        const totalInput = document.getElementById(`id_${prefixBase}-TOTAL_FORMS`);
+        const container = document.getElementById(containerId);
+        const emptyTemplate = document.getElementById(emptyId).innerHTML;
+        let count = parseInt(totalInput.value);
+
+        document.getElementById(buttonId).addEventListener('click', function() {
+            const newForm = emptyTemplate.replace(/__prefix__/g, count);
+            container.insertAdjacentHTML('beforeend', newForm);
+            count++;
+            totalInput.value = count;
+        });
+    }
+
+    setupAddButton('add-formset', 'formset-container', 'empty-formset', '{{ formset_prefix }}');
+    setupAddButton('add-itemset', 'itemset-container', 'empty-itemset', '{{ itemset_prefix }}');
+});
+</script>
+
+
+{% endblock %}

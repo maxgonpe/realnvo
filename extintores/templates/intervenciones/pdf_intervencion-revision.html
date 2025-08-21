@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Servicio</title>
+    <style>
+    @page {
+        size: landscape;
+        margin: 10px;
+    }
+    body { 
+        font-family: Arial, sans-serif; 
+        font-size: 8px; 
+        margin: 0;
+        -webkit-print-color-adjust: exact; 
+    }
+    h2 { 
+        text-align: center; 
+        font-size: 10px;
+        margin: 2px 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
+    }
+    tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    th, td {
+        border: 1px solid #aaa;
+        padding: 2px;
+        text-align: center;
+        word-wrap: break-word;
+        min-width: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .vencido {
+        color: #FF0000 !important;
+        background-color: #C8E6C9 !important;
+        font-weight: bold;
+    }
+    .icono-verde {
+        color: #28A745;
+        font-weight: bold;
+        font-size: 8px;
+    }
+    .icono-rojo {
+        color: #DC3545;
+        font-weight: bold;
+        font-size: 8px;
+    }
+    .info-header {
+        margin-bottom: 4px;
+    }
+    .info-header p {
+        margin: 1px 0;
+        font-size: 7px;
+    }
+    img {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+</style>
+</head>
+<body>
+
+<h2>Planilla de {{ intervencion.get_tipo_display|upper }}</h2>
+<div class="info-header">
+    <p><strong>Cliente:</strong> {{ intervencion.cliente }} |
+     
+     <strong>Direccion:</strong>
+     {{ intervencion.cliente.direccion }}
+      | 
+     <strong>Telefono:</strong> {{ intervencion.cliente.telefono }} |
+     <strong>Correo:</strong> {{ intervencion.cliente.correo }} |
+     <strong>Contacto:</strong> {{ intervencion.cliente.contacto }} |       
+    <strong>Fecha:</strong> {{ intervencion.fecha|date:"d/m/Y" }} | 
+    <strong>Técnico:</strong> {{ intervencion.tecnico }}</p>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 2%">#</th>
+            <th style="width: 3%">Agente</th>
+            <th style="width: 3%">Preci.</th>
+            <th style="width: 3%">Ubic.</th>
+            <th style="width: 3%">S/INCEN</th>
+            <th style="width: 3%">S/STE</th>
+            <th style="width: 3%">Cert.</th>
+            <th style="width: 3%">Estado</th>
+            <th style="width: 3%">Ext.</th>
+            <th style="width: 3%">PH Ult.</th>
+            <th style="width: 3%">PH Edo</th>
+            <th style="width: 3%">PH Venc.</th>
+            <th style="width: 3%">Válvula</th>
+            <th style="width: 3%">Mtro.</th>
+            <th style="width: 3%">Mang.</th>
+            <th style="width: 3%">Cint.</th>
+            <th style="width: 3%">Ag. Ext.</th>
+            <th style="width: 3%">T/Sifón</th>
+            <th style="width: 3%">Seguros</th>
+            <th style="width: 3%">Seguri.</th>
+            <th style="width: 3%">Rotula.</th>
+            <th style="width: 3%">Últ/matto.</th>
+            <th style="width: 3%">Recarga</th>
+            <th style="width: 3%">Mant.</th>
+            <th style="width: 3%">Presión</th>
+            <th style="width: 3%">Peso</th>
+            <th style="width: 3%">Correcta</th>
+            <th style="width: 3%">Acceso</th>
+            <th style="width: 3%">Inst.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in detalles %}
+        <tr class="{% if 'vencido' in d.ph_estado|lower %}vencido{% endif %}">
+            <td>{{ forloop.counter }}</td>
+            <td>{{ d.agente }}</td>
+            <td>{{ d.nro_precinto }}</td>
+            <td>{{ d.ubicacion }}</td>
+            <td>{{ d.sello_incen }}</td>
+            <td>{{ d.sello_incen_ste }}</td>
+            <td>{{ d.certificado }}</td>
+            <td>{{ d.estado }}</td>
+            <td>{% if d.exterior %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.ph_ultima|date:"d/m/y" }}</td>
+            <td>{{ d.ph_estado }}</td>
+            <td>{{ d.ph_vencimiento|date:"d/m/y" }}</td>
+            
+            <!-- Campos booleanos con íconos -->
+            <td>{% if d.valvula %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.manometro %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.manguera %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.cintillo %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.agente_extintor }}</td>
+            <td>{% if d.tubo_sifon %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.sellos_seguro %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.seguridad %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.rotulacion %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.ultima_fecha|date:"d/m/y" }}</td>
+            <td>{% if d.recarga %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.mantencion %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.presion }}</td>
+            <td>{{ d.peso }}</td>
+            <td>{% if d.correcta %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.acceso %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.instrucciones %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div style="margin-top: 20px; text-align: right;">
+    {% if intervencion.tecnico.technician_profile.signature %}
+        <img src="file://{{ intervencion.tecnico.technician_profile.signature.path }}" 
+             alt="Firma" 
+             style="max-width: 120px; border-bottom: 1px solid black;">
+        <p>{{ intervencion.tecnico.get_full_name }}</p>
+        <p>N° Registro: {{ intervencion.tecnico.technician_profile.professional_id }}</p>
+    {% else %}
+        <p>Firma no disponible</p>
+    {% endif %}
+</div>
+{% if intervencion.imagenes.first %}
+    <hr style="margin: 10px 0;">
+    <h3 style="text-align:center; font-size:9px;">Fotografías del Servicio</h3>
+
+    {% with imagenes=intervencion.imagenes.first %}
+    <table style="width: 100%; table-layout: fixed; border: none;">
+        <tr>
+            {% if imagenes.imagen1 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen1.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 1</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen2 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen2.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 2</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen3 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen3.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 3</small>
+            </td>
+            {% endif %}
+        </tr>
+        <tr>
+            {% if imagenes.imagen4 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen4.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 4</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen5 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen5.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 5</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen6 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen6.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 6</small>
+            </td>
+            {% endif %}
+        </tr>
+    </table>
+    {% endwith %}
+{% endif %}
+
+
+</body>
+</html>

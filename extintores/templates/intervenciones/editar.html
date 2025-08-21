@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Editar Serviciox  #{{ intervencion.pk }}</h2>
+
+<style>
+    .counter-badge {
+        background-color: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.9em;
+        margin-right: 10px;
+    }
+</style>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ formset.management_form }}
+
+    <div id="form-container">
+        {% for form in formset %}
+            <div class="card mt-3 p-3" style="background-color: #DCDCDC;" data-form-index="{{ forloop.counter0 }}">
+                <h5 class="mb-3">
+                    <span class="counter-badge">#{{ forloop.counter }}</span>
+                    Extintor {% if form.instance.pk %}(Existente){% else %}(Nuevo){% endif %}
+                </h5>
+                {{ form|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Botón para agregar nuevos formularios -->
+    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-form">+ Agregar Extintor</button>
+
+    <hr>
+    <h4 class="mt-4">Fotografías del servicio (máximo 6)</h4>
+    <div class="row">
+        {{ imagenes_form.non_field_errors }}
+        {% for field in imagenes_form %}
+            <div class="col-md-4 mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button class="btn btn-sm btn-success" type="submit">Guardar</button>
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+</form>
+
+<!-- Formulario vacío para clonar -->
+<div id="empty-form" style="display: none;">
+    <div class="card mt-3 p-3" style="background-color: #DCDCDC;" data-form-index="__prefix__">
+        <h5 class="mb-3">
+            <span class="counter-badge">#<span class="form-counter">__prefix__</span></span>
+            Extintor (Nuevo)
+        </h5>
+        {{ formset.empty_form|crispy }}
+    </div>
+</div>
+
+<script>
+    document.getElementById('add-form').addEventListener('click', function () {
+        const container = document.getElementById('form-container');
+        const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
+        const emptyFormHtml = document.getElementById('empty-form').innerHTML;
+        const newFormIndex = parseInt(totalForms.value);
+
+        // Reemplazar __prefix__ con el nuevo índice
+        let newFormHtml = emptyFormHtml.replace(/__prefix__/g, newFormIndex);
+        container.insertAdjacentHTML('beforeend', newFormHtml);
+
+        // Actualizar TOTAL_FORMS
+        totalForms.value = newFormIndex + 1;
+    });
+</script>
+{% endblock %}

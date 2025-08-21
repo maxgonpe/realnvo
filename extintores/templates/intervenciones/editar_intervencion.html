@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+<h2>Editar Servicio  #{{ intervencion.pk }}</h2>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ formset.management_form }}
+
+    <div id="form-container">
+        {% for form in formset %}
+            <div class="card mt-3 p-3 position-relative overflow-hidden" style="background-color: #DCDCDC;" data-form-index="{{ forloop.counter0 }}">
+                <div class="watermark-card">#{{ forloop.counter }}</div>
+                {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+                <h5 class="mb-3">
+                    <span class="counter-badge">#{{ forloop.counter }}</span>
+                    Extintor {% if form.instance.pk %}(Existente){% else %}(Nuevo){% endif %}
+                </h5>
+                <fieldset>
+                    <legend>Datos del Extintor</legend>
+                    {{ form.agente|as_crispy_field }}
+                    {{ form.nro_precinto|as_crispy_field }}
+                    {{ form.ubicacion|as_crispy_field }}
+                    {{ form.sello_incen|as_crispy_field }}
+                    {{ form.sello_incen_ste|as_crispy_field }}
+                    {{ form.certificado|as_crispy_field }}
+                </fieldset>
+                <fieldset>
+                    <legend>Estado General</legend>
+                    {{ form.estado|as_crispy_field }}
+                    {{ form.exterior|as_crispy_field }}
+                    {{ form.ph_ultima|as_crispy_field }}
+                    {{ form.ph_estado|as_crispy_field }}
+                    {{ form.ph_vencimiento|as_crispy_field }}
+                    {{ form.valvula|as_crispy_field }}
+                    {{ form.manometro|as_crispy_field }}
+                    {{ form.manguera|as_crispy_field }}
+                    {{ form.cintillo|as_crispy_field }}
+                    {{ form.agente_extintor|as_crispy_field }}
+                    {{ form.tubo_sifon|as_crispy_field }}
+                    {{ form.sellos_seguro|as_crispy_field }}
+                    {{ form.seguridad|as_crispy_field }}
+                    {{ form.rotulacion|as_crispy_field }}
+                    {{ form.ultima_fecha|as_crispy_field }}
+                </fieldset>
+                <fieldset>
+                    <legend>Verificación Técnica</legend>
+                    {{ form.recarga|as_crispy_field }}
+                    {{ form.mantencion|as_crispy_field }}
+                    {{ form.presion|as_crispy_field }}
+                    {{ form.peso|as_crispy_field }}
+                    {{ form.correcta|as_crispy_field }}
+                    {{ form.acceso|as_crispy_field }}
+                    {{ form.instrucciones|as_crispy_field }}
+                </fieldset>
+                <fieldset style="border: 2px solid red; padding: 1em; margin-top: 1em;">
+                    <legend style="font-weight: bold; color: red;">Determinado por el Técnico</legend>
+                    {{ form.habilitado_un_ano|as_crispy_field }} 
+                    {{ form.baja_por_oxido|as_crispy_field }}
+                    {{ form.baja_por_ph|as_crispy_field }}
+                    {{ form.baja_por_fuera_norma|as_crispy_field }}
+                    {{ form.extintor_abollado|as_crispy_field }}
+                    {{ form.baja_otro|as_crispy_field }}
+                    {{ form.extintor_nuevo|as_crispy_field }}
+                </fieldset>
+                {% if form.instance.pk %}
+                    {{ form.DELETE|as_crispy_field }}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-form">+ Agregar Extintor</button>
+
+    <hr>
+    <h4 class="mt-4">Fotografías del servicio</h4>
+    <div class="row">
+        {{ imagenes_form.non_field_errors }}
+        {% for field in imagenes_form %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if field.value %}
+                        <img src="{{ field.value.url }}" class="card-img-top" style="object-fit: cover; height: 200px;" alt="Imagen actual">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center" style="height: 200px; background-color: #f8f9fa;">
+                            <span class="text-muted">Sin imagen</span>
+                        </div>
+                    {% endif %}
+                    <div class="card-body p-2">
+                        <label class="form-label small fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    {% if field.field.widget.is_initial and field.is_initial %}
+                        <div class="card-footer text-center bg-light">
+                            {{ field.clear_checkbox }} <label for="{{ field.clear_checkbox.id_for_label }}" class="small text-danger">Eliminar</label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button class="btn btn-sm btn-success" type="submit">Guardar</button>
+        <a href="#" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmExitModal">Regresar</a>
+    </div>
+</form>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmExitModal" tabindex="-1" aria-labelledby="confirmExitModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="confirmExitModalLabel">¿Estás seguro de salir?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>⚠ Atención:</strong> Salir sin guardar podría causar la pérdida de los cambios realizados.</p>
+        <p>¿Deseas continuar o prefieres quedarte en el formulario?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Quedarme</button>
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-danger">Salir sin guardar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Botones flotantes -->
+<div class="floating-buttons">
+  <button onclick="scrollToTop()" class="btn btn-primary btn-sm" title="Inicio">⤒</button>
+  <button onclick="scrollUp()" class="btn btn-secondary btn-sm" title="Subir">↑</button>
+  <button onclick="scrollDown()" class="btn btn-secondary btn-sm" title="Bajar">↓</button>
+  <button onclick="scrollToBottom()" class="btn btn-primary btn-sm" title="Final">⤓</button>
+</div>
+
+<style>
+.counter-badge {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+.watermark-card {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 190px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.226);
+    z-index: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+}
+.card.position-relative > *:not(.watermark-card) {
+    position: relative;
+    z-index: 2;
+}
+.floating-buttons {
+    position: fixed;
+    bottom: 40px;
+    left: 55%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+.floating-buttons button {
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    font-size: 1.2rem;
+    padding: 0;
+}
+</style>
+
+<script>
+    document.getElementById('add-form').addEventListener('click', function() {
+        const container = document.getElementById('form-container');
+        const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
+        const newIndex = parseInt(totalForms.value);
+        const emptyForm = document.getElementById('empty-form').innerHTML;
+
+        const newFormHtml = emptyForm
+            .replace(/__prefix__/g, newIndex)
+            .replace(/detalles-__prefix__/g, `detalles-${newIndex}`)
+            .replace(/id_detalles-__prefix__/g, `id_detalles-${newIndex}`);
+
+        container.insertAdjacentHTML('beforeend', newFormHtml);
+
+        totalForms.value = newIndex + 1;
+
+        const newCard = container.lastElementChild;
+        const counterSpan = newCard.querySelector('.form-counter');
+        const watermark = newCard.querySelector('.watermark-card');
+        if (counterSpan) counterSpan.textContent = newIndex + 1;
+        if (watermark) watermark.textContent = "#" + (newIndex + 1);
+    });
+
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function scrollToBottom() {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    function scrollDown() {
+        window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+    function scrollUp() {
+        window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

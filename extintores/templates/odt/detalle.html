@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% block content %}
+
+<h3>ODT #{{ odt.pk }} - {{ odt.alias }}</h3>
+
+<!-- FORMULARIO DE SUGERENCIAS -->
+{% if sugerencias %}
+<div class="alert alert-warning mt-4">
+    <h4>Extintores con componentes/servicios faltantes</h4>
+    <form method="post">
+        {% csrf_token %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Extintor</th>
+                    <th>Problema detectado</th>
+                    <th>Producto sugerido</th>
+                    <th>Cantidad</th>
+                    <th>Seleccionar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sug in sugerencias %}
+                    {% for problema in sug.problemas %}
+                    <tr>
+                        <td>
+                            #{{ sug.extintor.pk }}<br>
+                            Precinto: {{ sug.extintor.nro_precinto|default:"N/A" }}<br>
+                            Agente: {{ sug.extintor.agente|default:"N/A" }}
+                        </td>
+                        <td>{{ problema.nombre }}</td>
+                        <td>
+                            <select name="producto_id_{{ sug.extintor.pk }}_{{ problema.campo }}" class="form-select">
+                                <option value="">Seleccione producto</option>
+                                {% for producto in productos_disponibles %}
+                                    {% if problema.nombre|lower in producto.nombre|lower or problema.nombre|lower in producto.categoria.nombre|lower %}
+                                        <option value="{{ producto.pk }}">{{ producto.nombre }} - {{ producto.categoria.nombre }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="cantidad_{{ sug.extintor.pk }}_{{ problema.campo }}" 
+                                   value="1" min="1" class="form-control" style="width: 80px;">
+                        </td>
+                        <td>
+                            <input type="checkbox" name="seleccionado_{{ sug.extintor.pk }}_{{ problema.campo }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" name="agregar_sugeridos" class="btn btn-success">Agregar Seleccionados</button>
+    </form>
+</div>
+{% endif %}
+
+<hr>
+<h4>Productos/Servicios Asociados</h4>
+
+<!-- FORMULARIO DE EDICIÓN/ELIMINACIÓN -->
+<form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    
+    {% if formset.non_form_errors %}
+        <div class="alert alert-danger">
+            {{ formset.non_form_errors }}
+        </div>
+    {% endif %}
+    
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for form in formset %}
+                <tr>
+                    <td>
+                        {{ form.producto.errors }}
+                        {{ form.producto }}
+                    </td>
+                    <td>
+                        {{ form.cantidad.errors }}
+                        {{ form.cantidad }}
+                    </td>
+                    <td>
+                        {% if form.instance.pk %}
+                            {{ form.DELETE }} Eliminar
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" name="guardar_cambios" class="btn btn-primary">Guardar Cambios</button>
+</form>
+
+<!-- TABLA RESUMEN -->
+<table class="table table-sm table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in odt.items.all %}
+        <tr>
+            <td>{{ item.producto.nombre }}</td>
+            <td>{{ item.producto.categoria }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>
+                {% if item.precio_con_factor %}
+                    <span title="Precio ajustado por factor">${{ item.precio_con_factor|floatformat:0|intcomma }}</span>
+                {% else %}
+                    <span title="Precio estándar">${{ item.precio_unitario|floatformat:0|intcomma }}</span>
+                {% endif %}
+            </td>
+            <td>${{ item.subtotal|floatformat:0|intcomma }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Total</strong></td>
+            <td><strong>${{ total|floatformat:0|intcomma }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<a href="{% url 'odt_lista' %}" class="btn btn-warning btn-sm">Regresar</a>
+{% endblock %}

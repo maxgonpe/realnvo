@@ -1,0 +1,17 @@
+{% for o in odts %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <strong>ODT #{{ o.pk }}</strong> - {{ o.intervencion.cliente }} ({{ o.fecha|date:"d/m/Y" }})<br>
+            <strong>Alias:</strong> {{ o.alias }}<br>
+            <strong>Técnico:</strong> {{ o.tecnico.get_full_name }}<br>
+
+            <a href="{% url 'odt_editar_items' o.pk %}" class="btn btn-sm btn-info mt-2">Modificar Prod/Asociados</a>
+            <a href="{% url 'odt_agregar_productos' o.pk %}" class="btn btn-sm btn-info mt-2">Agregar Prod/Asociados</a>
+            <a href="{% url 'odt_editar' o.pk %}" class="btn btn-sm btn-primary mt-2">Editar</a>
+            <a href="{% url 'eliminar_odt' o.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+            <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+        </div>
+    </div>
+{% empty %}
+    <div class="alert alert-warning">No se encontraron ODTs con ese criterio.</div>
+{% endfor %}

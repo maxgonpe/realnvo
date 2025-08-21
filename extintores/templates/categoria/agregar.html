@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h2>Servicios</h2>
+
+<h2>Agregar Categoria</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit">Guardar</button>
+</form>
+<a href="{% url 'intervencion_lista' %}">Volver a la lista</a>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Órdenes de Trabajo</h2>
+
+<input type="text" id="busqueda" class="form-control mb-3" placeholder="Buscar por cliente, técnico o alias...">
+
+<div id="resultados-odt">
+    {% include 'odt/includes/odt_resultados.html' %}
+</div>
+
+<script>
+document.getElementById("busqueda").addEventListener("keyup", function() {
+    const valor = this.value;
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "?q=" + encodeURIComponent(valor), true);
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const datos = JSON.parse(xhr.responseText);
+            document.getElementById("resultados-odt").innerHTML = datos.html;
+        }
+    };
+
+    xhr.send();
+});
+</script>
+{% endblock %}

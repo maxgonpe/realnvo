@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Generar estadísticas para un mes</h3>
+<p>Esto calculará todas las estadísticas desde cero para el mes seleccionado.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="mes" class="form-label">Selecciona un mes:</label>
+        <select name="mes" id="mes" class="form-select">
+            {% for mes in meses_disponibles %}
+                <option value="{{ mes }}" {% if mes == mes_actual %}selected{% endif %}>{{ mes }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-sm btn-success">Generar estadísticas</button>
+    <a href="{% url 'ver_estadisticas' mes=mes_actual %}" class="btn btn-sm btn-secondary">Ver estadísticas actuales</a>
+
+    
+    <a href="" class="btn btn-sm btn-success">Descargar Excel</a>
+    <a href="" class="btn btn-sm btn-danger">Descargar PDF</a>
+    <a href="{% url 'intervencion_lista' %}"             class="btn btn-sm btn-warning">Regresar</a>
+
+
+</form>
+{% endblock %}

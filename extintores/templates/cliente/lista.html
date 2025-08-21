@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Clientes</h2>
+
+<input type="text" id="filterInput" class="form-control my-2" placeholder="Buscar cliente por nombre, rut, etc...">
+
+<a href="{% url 'agregar_cliente' %}" class="btn btn-primary mb-3">+ Nuevo Cliente</a>
+
+{% for cliente in clientes %}
+<div class="card mb-2">
+    <div class="card-body">
+        <strong>Nombre:</strong> {{ cliente.nombre }}<br>
+        <strong>RUT:</strong> {{ cliente.rut }}<br>
+        <strong>Correo:</strong> {{ cliente.correo }}<br>
+        <strong>Dirección:</strong> {{ cliente.direccion }}<br>
+        <strong>Teléfono:</strong> {{ cliente.telefono }}<br>
+        <strong>Contacto:</strong> {{ cliente.contacto }}<br>
+
+        <a href="{% url 'modificar_cliente' cliente.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
+        <a href="{% url 'eliminar_cliente' cliente.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+        
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+</div>
+{% empty %}
+<p>No hay clientes registrados.</p>
+{% endfor %}
+
+<a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const filterInput = document.getElementById('filterInput');
+    const cards = document.querySelectorAll('.card');
+
+    filterInput.addEventListener('keyup', function () {
+        const filterValue = filterInput.value.toLowerCase();
+
+        cards.forEach(function (card) {
+            const text = card.textContent.toLowerCase();
+            if (text.includes(filterValue)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

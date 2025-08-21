@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Servicio</title>
+    <style>
+    @page {
+        size: landscape;
+        margin: 10px;
+    }
+    body { 
+        font-family: Arial, sans-serif; 
+        font-size: 8px; 
+        margin: 0;
+        -webkit-print-color-adjust: exact; 
+    }
+    h2 { 
+        text-align: center; 
+        font-size: 10px;
+        margin: 2px 0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
+    }
+    tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    th, td {
+        border: 1px solid #aaa;
+        padding: 2px;
+        text-align: center;
+        word-wrap: break-word;
+        min-width: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    
+    .icono-verde {
+        color: #28A745;
+        font-weight: bold;
+        font-size: 8px;
+    }
+    .icono-rojo {
+        color: #DC3545;
+        font-weight: bold;
+        font-size: 8px;
+    }
+    .info-header {
+        margin-bottom: 4px;
+    }
+    .info-header p {
+        margin: 1px 0;
+        font-size: 12px;
+    }
+
+    .vencido-habilitado {
+    color: #FF0000 !important;
+    background-color: #C8E6C9 !important; /* verde claro */
+    font-weight: bold;
+    }
+
+    .extintor-nuevo {
+        color: #1E90FF !important;
+        background-color: #B0E0E6 !important; /* azul (suave) */
+        font-weight: bold;
+    }
+
+    .vencido-oxido {
+        color: #FF0000 !important;
+        background-color: #F8D7DA !important; /* rojo rosado (suave) */
+        font-weight: bold;
+    }
+
+    .vencido-ph {
+        color: #FF0000 !important;
+        background-color: #FDECEA !important; /* rojo más pálido que el anterior */
+        font-weight: bold;
+    }
+
+    .fuera-norma {
+        color: #FF0000 !important;
+        background-color: #FDECEA !important; /* rojo más pálido que el anterior */
+        font-weight: bold;
+    }
+    .extintor-abollado {
+        color: #FF0000 !important;
+        background-color: #FDECEA !important; /* rojo más pálido que el anterior */
+        font-weight: bold;
+    }
+    .baja-otro {
+        color: #FF0000 !important;
+        background-color: #FDECEA !important; /* rojo más pálido que el anterior */
+        font-weight: bold;
+    }
+
+        img {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+</style>
+</head>
+<body>
+
+<div style="position: relative; height: 150px; margin-bottom: 20px;">
+    <!-- Logo a la izquierda -->
+    <img src="{% static 'images/Recurso-13.png' %}" alt="Logo" style="height: 150px; position: absolute; left: 0; top: 0;">
+
+    <!-- Título centrado -->
+    <h1 style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0;">
+        REGISTRO DE MANTENCIÓN Y RECARGA DE EXTINTORES
+    </h1>
+</div>
+
+
+<div class="info-header">
+    
+    <p><strong>Orden de Trabajo:</strong> {{ intervencion.alias }}
+    <br>  
+    <strong>Fecha:</strong> {{ intervencion.fecha|date:"d/m/Y" }}
+    <br>   
+    <p><strong>Cliente:</strong> {{ intervencion.cliente }} 
+    <br>
+    <p><strong>Rut:</strong> {{ intervencion.cliente.rut }} 
+    <br>
+     <strong>Direccion:</strong>
+     {{ intervencion.cliente.direccion }}
+       
+     <strong>Telefono:</strong> {{ intervencion.cliente.telefono }} |
+     <strong>Correo:</strong> {{ intervencion.cliente.correo }} |
+     <strong>Contacto:</strong> {{ intervencion.cliente.contacto }} 
+     <br>    
+    <strong>Técnico:</strong> {{ intervencion.tecnico.get_full_name }}</p>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 2%">#</th>
+            <th style="width: 5%">Agente</th>
+            <th style="width: 4%">Pre-<br>cinto</th>
+            <th style="width: 5%">Ubica-<br>cion</th>
+            <th style="width: 3%">Sello<br>INCEN</th>
+            <th style="width: 3%">Sello<br>STE</th>
+            <th style="width: 5%">Certificado</th>
+            <th style="width: 4%">Estado<br>Ex-<br>tintor</th>
+            <th style="width: 3%">Exte-<br>rior</th>
+            <th style="width: 4%">Ultima-<br>PH</th>
+            <th style="width: 5%">Estado<br>de la<br>PH</th>
+            <th style="width: 4%">Venci-<br>miento<br>de PH</th>
+            <th style="width: 3%">Vál<br>vula</th>
+            <th style="width: 3%">Mano-<br>metro</th>
+            <th style="width: 3%">Man-<br>guera</th>
+            <th style="width: 3%">Cinti-<br>llo</th>
+            <th style="width: 3%">Agente<br>Extin<br>tor</th>
+            <th style="width: 3%">Tubo<br>Sifón</th>
+            <th style="width: 3%">Segu-<br>ros</th>
+            <!--th style="width: 4%">Seguridad</th-->
+            <th style="width: 3%">Rotu-<br>lacion</th>
+            <th style="width: 4%">Últi-<br>ma man-<br>tencion</th>
+            <th style="width: 3%">Re-<br>carga</th>
+            <th style="width: 3%">Man-<br>tencion</th>
+            <th style="width: 4%">Pre-<br>sión</th>
+            <th style="width: 3%">Peso</th>
+            <!--th style="width: 3%">Correcta</th>
+            <th style="width: 3%">Acceso</th>
+            <th style="width: 3%">Inst.</th-->
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in detalles %}
+            <tr class="
+                {% if d.habilitado_un_ano %}
+                    vencido-habilitado
+                {% elif d.baja_por_oxido %}
+                    vencido-oxido
+                {% elif d.baja_por_ph %}
+                    vencido-ph
+                {% elif d.baja_por_fuera_norma %}
+                    fuera-norma
+                {% elif d.extintor_abollado %}
+                    extintor-abollado
+                {% elif d.baja_otro %}
+                    baja-otro
+                {% elif d.extintor_nuevo %}
+                    extintor-nuevo
+                {% elif 'vencido' in d.ph_estado|lower %}
+                    vencido
+                {% endif %}
+                ">
+
+            <td>{{ forloop.counter }}</td>
+            <td>{{ d.agente }}</td>
+            <td>{{ d.nro_precinto }}</td>
+            <td>{{ d.ubicacion }}</td>
+            <td>{{ d.sello_incen }}</td>
+            <td>{{ d.sello_incen_ste }}</td>
+            <td>{{ d.certificado }}</td>
+            <td>{{ d.estado }}</td>
+            <td>{% if d.exterior %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.ph_ultima|date:"d/m/y" }}</td>
+            <td>{{ d.ph_estado }}</td>
+            <td>{{ d.ph_vencimiento|date:"d/m/y" }}</td>
+            
+            <!-- Campos booleanos con íconos -->
+            <td>{% if d.valvula %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.manometro %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.manguera %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.cintillo %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.agente_extintor %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.tubo_sifon %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.sellos_seguro %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <!--td>{% if d.seguridad %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td-->
+            <td>{% if d.rotulacion %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.ultima_fecha|date:"d/m/y" }}</td>
+            <td>{% if d.recarga %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.mantencion %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{{ d.presion }}
+             {% if d.presion == '250' %}
+             bar
+             {% else %}
+             psi
+             {% endif %}
+           </td>
+            <td>{{ d.peso }}</td>
+            <!--td>{% if d.correcta %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.acceso %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            <td>{% if d.instrucciones %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td-->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 class="mb-0">📊  Estadística de Extintores por Estado</h4>
+
+<table class="table table-bordered table-sm">
+
+    <thead>
+        <tr>
+            <th>Estado</th>
+            <th>Cantidad</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for fila in estadistica %}
+        <tr>
+            <td>{{ fila.estado }}</td>
+            <td style="text-align: center;">{{ fila.cantidad }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <th>Total extintores</th>
+            <th style="text-align: center;">{{ total_extintores }}</th>
+        </tr>
+    </tbody>
+</table>
+
+<h3 class="mt-4">📊 Estadística por Tipo de Agente</h5>
+<table class="table table-bordered table-sm">
+  <thead>
+    <tr>
+      <th>Tipo de Agente</th>
+      <th>Cantidad</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for agente, cantidad in conteo_agente.items %}
+    <tr>
+      <td>{{ agente }}</td>
+      <td>{{ cantidad }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<h3 class="mt-4">📊 Estadística por Peso General</h5>
+<table class="table table-bordered table-sm">
+  <thead>
+    <tr>
+      <th>Peso</th>
+      <th>Cantidad</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for peso, cantidad in conteo_peso.items %}
+    <tr>
+      <td>{{ peso }}</td>
+      <td>{{ cantidad }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if conteo_pqs_por_peso %}
+<!--h4>Extintores PQS por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h3 class="mb-0">🧯 Extintores PQS por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_pqs_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_pqs_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total PQS</strong></td>
+            <td><span class="badge bg-primary">{{ total_pqs }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores PQS registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if conteo_co2_por_peso %}
+<!--h4>Extintores CO2 por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h3 class="mb-0">🧯 Extintores CO2 por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_co2_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_co2_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total CO2</strong></td>
+            <td><span class="badge bg-primary">{{ total_co2 }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores CO2 registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% if conteo_agua_por_peso %}
+<!--h4>Extintores AGUA por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h3 class="mb-0">🧯 Extintores AGUA por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_agua_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_agua_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total AGUA</strong></td>
+            <td><span class="badge bg-primary">{{ total_agua }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores AGUA registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% if conteo_k_por_peso %}
+<!--h4>Extintores TIPO K por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h3 class="mb-0">🧯 Extintores TIPO K por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_k_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_k_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total TIPO K</strong></td>
+            <td><span class="badge bg-primary">{{ total_k }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores TIPO K registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% if conteo_cf3_por_peso %}
+<!--h4>Extintores CF302 por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h5 class="mb-0">🧯 Extintores CF302 por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_cf3_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_cf3_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total CF302</strong></td>
+            <td><span class="badge bg-primary">{{ total_cf3 }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores CF302 registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% if conteo_afff_por_peso %}
+<!--h4>Extintores AFFF por Peso</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-warning text-dark">
+    <h3 class="mb-0">🧯 Extintores AFFF por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_afff_por_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_afff_por_peso.items %}
+          <tr>
+            <td>{{ peso }}</td>
+            <td><span class="badge bg-success">{{ cantidad }}</span></td>
+          </tr>
+          {% endfor %}
+          <tr class="table-info">
+            <td><strong>Total AFFF</strong></td>
+            <td><span class="badge bg-primary">{{ total_afff }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay extintores AFFF registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+
+{% if resumen_agrupado %}
+<!--h4>Resumen de necesidades detectadas</h4-->
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <h3 class="mb-0">⚠️ Necesidades Detectadas</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Agente</th>
+          <th>Peso</th>
+          <th>Problema detectado</th>
+          <th>Cant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in resumen_agrupado %}
+        <tr>
+          <td>{{ item.agente }}</td>
+          <td>{{ item.peso }}</td>
+          <td>{{ item.problema }}</td>
+          <td><span class="badge bg-danger">{{ item.cantidad }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div style="margin-top: 20px; text-align: right;">
+    {% if intervencion.tecnico.technician_profile.signature %}
+        <img src="file://{{ intervencion.tecnico.technician_profile.signature.path }}" 
+             alt="Firma" 
+             style="max-width: 120px; border-bottom: 1px solid black;">
+        <p>{{ intervencion.tecnico.get_full_name }}</p>
+
+        <p>Rut :{{ intervencion.tecnico.technician_profile.rut }}
+
+         -- N° Certificado: {{ intervencion.tecnico.technician_profile.professional_id }}</p>
+    {% else %}
+        <p>Firma no disponible</p>
+    {% endif %}
+</div>
+{% if intervencion.imagenes.first %}
+    <hr style="margin: 10px 0;">
+    <h3 style="text-align:center; font-size:9px;">Fotografías del Servicio</h3>
+
+    {% with imagenes=intervencion.imagenes.first %}
+    <table style="width: 100%; table-layout: fixed; border: none;">
+        <!-- Fila 1: Imágenes 1-3 -->
+        <tr>
+            {% if imagenes.imagen1 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen1.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 1</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen2 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen2.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 2</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen3 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen3.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 3</small>
+            </td>
+            {% endif %}
+        </tr>
+        
+        <!-- Fila 2: Imágenes 4-6 -->
+        <tr>
+            {% if imagenes.imagen4 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen4.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 4</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen5 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen5.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 5</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen6 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen6.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 6</small>
+            </td>
+            {% endif %}
+        </tr>
+        
+        <!-- Nueva Fila 3: Imágenes 7-9 -->
+        <tr>
+            {% if imagenes.imagen7 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen7.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 7</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen8 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen8.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 8</small>
+            </td>
+            {% endif %}
+            {% if imagenes.imagen9 %}
+            <td style="text-align: center; padding: 5px;">
+                <img src="file://{{ imagenes.imagen9.path }}" style="width: 100%; max-width: 200px;"><br>
+                <small>Foto 9</small>
+            </td>
+            {% endif %}
+        </tr>
+    </table>
+    {% endwith %}
+{% endif %}
+
+<hr style="margin-top: 20px; margin-bottom: 10px;">
+<!--h3>Notas del Servicio</h3>
+<div style="
+    border: 1px solid #999;
+    padding: 10px;    
+    margin-bottom: 20px;">
+    {{ intervencion.notas|safe }}
+</div-->
+
+</body>
+</html>
+

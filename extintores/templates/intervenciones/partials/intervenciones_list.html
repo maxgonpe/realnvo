@@ -1,0 +1,27 @@
+{% for i in intervenciones %}
+<div class="card mb-2">
+    <div class="card-body">
+        <strong>{{ i.get_tipo_display }} # {{i.id}} -- {{i.alias}}:</strong><br>
+        <strong>Fecha:</strong> {{ i.fecha|date:"d/m/Y" }}<br>
+        <strong>Cliente:</strong> {{ i.cliente }}<br>
+        
+        <strong>Tecnico:</strong> {{ i.tecnico.get_full_name }}<br>
+
+        <strong>ODT:</strong>
+        {% if i.con_odt and i.odt_rel %}
+            <a href="{% url 'odt_editar' i.odt_rel.pk %}" class="badge bg-success text-decoration-none">
+                ODT #{{ i.odt_rel.pk }}
+            </a>
+        {% else %}
+            <span class="badge bg-danger">Sin ODT</span>
+        {% endif %}
+
+        <br>
+        <a href="{% url 'intervencion_detalle' i.pk %}" class="btn btn-sm btn-outline-info mt-2">Ver</a>
+        <a href="{% url 'intervencion_editar' i.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
+        <a href="{% url 'eliminar_intervencion' i.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+    </div>
+</div>
+{% empty %}
+<p>No hay Servicios aún.</p>
+{% endfor %}

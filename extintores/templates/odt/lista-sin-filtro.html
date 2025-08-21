@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Órdenes de Trabajo</h2>
+{% for o in odts %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <strong>ODT #{{ o.pk }}</strong> - {{ o.intervencion.cliente }} ({{ o.fecha }})<br>
+            <strong>Alias:</strong> {{o.alias}}<br>
+            <strong>Tecnico:</strong> {{ o.tecnico.get_full_name }}<br>
+
+            <a href="{% url 'odt_detalle' o.pk %}" class="btn btn-sm btn-info mt-2">Ver</a>
+            <a href="{% url 'odt_editar' o.pk %}" class="btn btn-sm btn-primary mt-2">Editar</a>
+            <a href="{% url 'eliminar_odt' o.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+            <a href="{% url 'intervencion_lista' %}"  class="btn btn-sm btn-warning">Regresar</a>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}

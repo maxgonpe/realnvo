@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Hola {{ user.username }} !!!
+<form method="post" action="{% url 'logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">Cerrar sesión</button>
+</form>
+</h2>
+
+<div class="mb-4">
+    <a href="{% url 'intervencion_crear' %}" class="btn btn-primary me-2">+ Nuevo Servicio</a>
+    <a href="{% url 'lista_clientes' %}" class="btn btn-outline-primary me-2">Clientes</a>
+    <a href="{% url 'lista_productos' %}" class="btn btn-outline-primary">Productos</a>
+    <a href="{% url 'odt_lista' %}" class="btn btn-outline-success">ODT</a>
+</div>
+
+<input type="text" id="searchInput" class="form-control mb-3" placeholder="Buscar por cliente, tecnico o tipo...">
+
+<div id="intervenciones-container">
+    {% include 'intervenciones/partials/intervenciones_list.html' %}
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('input', function() {
+    const query = this.value;
+    fetch(`{% url 'ajax_intervenciones' %}?q=${query}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('intervenciones-container').innerHTML = data.html;
+        });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 400px;">
+    <h2 class="mb-4">Iniciar sesión</h2>
+
+    {% if form.errors %}
+        <div class="alert alert-danger">Usuario o contraseña incorrectos</div>
+    {% endif %}
+
+    <form method="post" class="border p-3 rounded shadow-sm bg-light">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary w-100 mt-2">Entrar</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<h3>ODT #{{ odt.pk }} – {{ odt.alias }}</h3>
+
+<form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    {% if formset.non_form_errors %}
+        <div class="alert alert-danger">
+            {{ formset.non_form_errors }}
+        </div>
+    {% endif %}
+
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for form in formset %}
+            <tr>
+                <!-- Este campo ID oculto es necesario para que Django sepa cuál objeto es -->
+                {{ form.id }}
+                <td>{{ form.producto }}</td>
+                <td>{{ form.cantidad }}</td>
+                <td class="text-center">
+                    {% if form.instance.pk %}
+                        {{ form.DELETE }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+</form>
+
+<hr>
+<h4>Resumen de Productos/Servicios Asociados</h4>
+<table class="table table-sm table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in odt.items.all %}
+        <tr>
+            <td>{{ item.producto.nombre }}</td>
+            <td>{{ item.producto.categoria }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>
+                {% if item.precio_con_factor %}
+                    <span title="Precio ajustado">${{ item.precio_con_factor|floatformat:0|intcomma }}</span>
+                {% else %}
+                    <span title="Precio estándar">${{ item.precio_unitario|floatformat:0|intcomma }}</span>
+                {% endif %}
+            </td>
+            <td>${{ item.subtotal|floatformat:0|intcomma }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Total</strong></td>
+            <td><strong>${{ total|floatformat:0|intcomma }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<a href="{% url 'odt_agregar_productos' odt.pk %}" class="btn btn-secondary mt-3">Ir a agregar productos sugeridos</a>
+<a href="{% url 'odt_excel' odt.pk %}" class="btn btn-sm btn-success mt-3">Descargar Excel</a>
+<a href="{% url 'odt_pdf' odt.pk %}" class="btn btn-sm btn-danger mt-3">Descargar PDF</a>
+<a href="{% url 'odt_lista' %}" class="btn btn-warning mt-3">Regresar</a>
+
+
+
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Productos</h2>
+<a href="{% url 'agregar_producto' %}" class="btn btn-primary mb-3">+ Nuevo Producto</a>
+<a href="{% url 'agregar_categoria' %}" class="btn btn-primary mb-3">+ Nueva Categoria</a>
+<a href="{% url 'ingreso_stock_nuevo' %}" class="btn btn-primary mb-3">+ Compras</a>
+<a href="{% url 'factorajustecliente_lista' %}" class="btn btn-primary mb-3">+ Fijar Factor de Precios</a>
+<a href="{% url 'inventario_excel' %}" class="btn  btn-success mb-3">Descargar Excel</a>
+    <a href="{% url 'inventario_pdf' %}" class="btn btn-danger mb-3">Descargar PDF</a>
+
+
+<input type="text" id="filterInput" class="form-control my-2" placeholder="Buscar producto por nombre, categoria, precio...">
+
+{% for producto in productos %}
+<div class="card mb-2">
+    <div class="card-body">
+        <strong>Nombre:</strong> {{ producto.nombre }}<br>
+        <strong>Categoria:</strong> {{ producto.categoria }}<br>
+        <strong>Precio:</strong> {{ producto.precio_unitario }}<br>
+        <strong>Stock:</strong> {{ producto.stock }}<br>
+        
+
+        <a href="{% url 'modificar_producto' producto.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
+        <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+</div>
+{% empty %}
+<p>No hay productos registrados.</p>
+{% endfor %}
+
+<a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const filterInput = document.getElementById('filterInput');
+    const cards = document.querySelectorAll('.card');
+
+    filterInput.addEventListener('keyup', function () {
+        const filterValue = filterInput.value.toLowerCase();
+
+        cards.forEach(function (card) {
+            const text = card.textContent.toLowerCase();
+            if (text.includes(filterValue)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

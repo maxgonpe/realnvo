@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Editar ODT #{{ odt.pk }}</h2>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.alias|as_crispy_field }}
+    {{ form.estatus|as_crispy_field }}
+    {{ form.observaciones|as_crispy_field }}
+
+    <h4 class="mt-4">Extintores del Servicio</h4>
+    {{ formset.management_form }}
+    <div id="formset-container">
+        {% for form in formset %}
+        <div class="card mt-3 p-3 position-relative overflow-hidden" style="background-color: #DCDCDC;" data-form-index="{{ forloop.counter0 }}">
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+            <div class="watermark-card">#{{ forloop.counter }}</div>
+            <h5 class="mb-3">
+                <span class="counter-badge">#{{ forloop.counter }}</span>
+                Extintor {% if form.instance.pk %}(Existente){% else %}(Nuevo){% endif %}
+            </h5>
+            {{ form|crispy }}
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-formset">+ Agregar Extintor</button>
+
+    <h4 class="mt-4">Productos / Servicios Asociados</h4>
+    {{ itemset.management_form }}
+    <div id="itemset-container">
+        {% for f, subtotal, factor in itemset_con_subtotales %}
+        <div class="card mt-3 p-3 bg-light border">
+            {% for hidden in f.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+            <h5 class="mb-3">
+                <span class="counter-badge">#{{ forloop.counter }}</span>
+                Ítem {% if f.instance.pk %}(Existente){% else %}(Nuevo){% endif %}
+            </h5>
+            {{ f|crispy }}
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-sm btn-secondary mt-3" id="add-itemset">+ Agregar Producto</button>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="submit" class="btn btn-sm btn-success">Guardar</button>
+        <a href="{% url 'odt_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+
+    <!-- Empty forms (para JS) -->
+    <div id="empty-formset" class="d-none">
+        <div class="card mt-3 p-3 position-relative overflow-hidden" style="background-color: #DCDCDC;">
+            <div class="watermark-card">#N</div>
+            <h5 class="mb-3">
+                <span class="counter-badge">#N</span>
+                Extintor (Nuevo)
+            </h5>
+            {{ formset.empty_form|crispy }}
+        </div>
+    </div>
+
+    <div id="empty-itemset" class="d-none">
+        <div class="card mt-3 p-3 bg-light border">
+            <h5 class="mb-3">
+                <span class="counter-badge">#N</span>
+                Ítem (Nuevo)
+            </h5>
+            {{ itemset.empty_form.as_p }}
+        </div>
+    </div>
+</form>
+
+<!-- Botones flotantes -->
+<div class="floating-buttons">
+  <button onclick="scrollToTop()" class="btn btn-primary btn-sm" title="Inicio">⤒</button>
+  <button onclick="scrollUp()" class="btn btn-secondary btn-sm" title="Subir">↑</button>
+  <button onclick="scrollDown()" class="btn btn-secondary btn-sm" title="Bajar">↓</button>
+  <button onclick="scrollToBottom()" class="btn btn-primary btn-sm" title="Final">⤓</button>
+</div>
+
+<style>
+.counter-badge {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+.watermark-card {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 190px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.226);
+    z-index: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+}
+.card.position-relative > *:not(.watermark-card) {
+    position: relative;
+    z-index: 2;
+}
+.floating-buttons {
+    position: fixed;
+    bottom: 40px;
+    left: 55%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+.floating-buttons button {
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    font-size: 1.2rem;
+    padding: 0;
+}
+</style>
+
+<script>
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+function scrollDown() { window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' }); }
+function scrollUp() { window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' }); }
+
+document.getElementById('add-formset').addEventListener('click', function () {
+    const container = document.getElementById('formset-container');
+    const totalForms = document.getElementById('id_detalleodt-TOTAL_FORMS');
+    const newIndex = parseInt(totalForms.value);
+    const emptyForm = document.getElementById('empty-formset').innerHTML;
+
+    const newFormHtml = emptyForm
+        .replace(/__prefix__/g, newIndex)
+        .replace(/detalleodt-__prefix__/g, `detalleodt-${newIndex}`)
+        .replace(/id_detalleodt-__prefix__/g, `id_detalleodt-${newIndex}`);
+
+    const div = document.createElement('div');
+    div.innerHTML = newFormHtml;
+    container.appendChild(div);
+    totalForms.value = newIndex + 1;
+});
+
+document.getElementById('add-itemset').addEventListener('click', function () {
+    const container = document.getElementById('itemset-container');
+    const totalForms = document.getElementById('id_itemodt_set-TOTAL_FORMS');
+    const newIndex = parseInt(totalForms.value);
+    const emptyForm = document.getElementById('empty-itemset').innerHTML;
+
+    const newFormHtml = emptyForm
+        .replace(/itemodt_set-__prefix__/g, `itemodt_set-${newIndex}`)
+        .replace(/__prefix__/g, newIndex)
+        .replace(/id_itemodt_set-__prefix__/g, `id_itemodt_set-${newIndex}`);
+
+    const div = document.createElement('div');
+    div.innerHTML = newFormHtml;
+    container.appendChild(div);
+    totalForms.value = newIndex + 1;
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,283 @@
+.fondo0{
+
+background-image: url(/media/photo/fondo-lana3.jpg) ;
+background-repeat: no-repeat;
+background-attachment: fixed;
+background-position: center 50px;
+/*background-color:red; */
+}
+   
+
+.fondo1{
+
+     /* background-color:#fae0d9; */
+
+      background: linear-gradient(top, white 15%, #B19CD9 50%, #ADD8E6);
+      background: -webkit-linear-gradient(top, white 15%, #B19CD9 50%, #ADD8E6);
+      background: -ms-linear-gradient(top, white 15%, #B19CD9 50%, #ADD8E6);
+      background: -o-linear-gradient(top, white 15%, #B19CD9 50%, #ADD8E6);
+      background: -moz-linear-gradient(top, white 15%, #B19CD9 50%, #ADD8E6);
+     
+      font-family: "Playball";
+      font-size: 25px;
+      text-align: justify;
+      text-shadow: 0px 0px 0px #000;
+      color: rgb(112,66,20);
+ }
+
+.fondo2{
+
+      background-color:#f9fad9;
+ }
+
+.fondo3{
+
+      background-color: #e4fad9 ;
+ }
+
+
+
+.fondo4{
+      /*
+      background-color: #fa8464; */ 
+      background: -moz-linear-gradient(top,  #34495e  10%, black 75%,  #34495e);
+      background: linear-gradient(top,  #34495e  10%, black 75%,  #34495e);
+      background: -webkit-linear-gradient(top,  #34495e  10%, black 75%,  #34495e);
+      background: -ms-linear-gradient(top,  #34495e  10%, black 75%,  #34495e);
+      background: -o-linear-gradient(top,  #34495e  10%, black 75%,  #34495e);     
+      /* background: linear-gradient(top, brown 10%, yellow 75%, white);
+      background: -webkit-linear-gradient(top, brown 10%, yellow 75%, white);
+      background: -ms-linear-gradient(top, brown 10%, yellow 75%, white);
+      background: -o-linear-gradient(top, brown 10%, yellow 75%, white);      
+      background: -moz-linear-gradient(top, brown 15%, yellow 50%, pink); */  
+
+      font-family: "Playball";
+      font-size: 25px;
+      text-align: justify;
+      text-shadow: 0px 0px 0px #000;
+      /*color: rgb(112,66,20); */
+      color: rgb( 255,255,255 );
+
+ }
+
+.fondo5{
+
+      background-color:#fae0d9;
+ }
+
+.fondo6{
+
+      background-color: #ebee12 ;
+ }
+
+ .fondo7{
+
+   background-color: rgb(241, 240, 220) ;
+   font-family: "Playball";
+   font-size: 25px;
+   text-align: justify;
+   text-shadow: 0px 0px 0px #000;
+}
+
+
+h2 {
+font-family: "Playball";
+font-weight: normal;
+text-align:center;
+text-shadow: 0px 0px 1px #000;   
+}
+
+.uno{
+font-family: "Arial";
+font-size: 25px;
+text-align: justify;
+text-shadow: 0px 0px 0px #000;
+color: rgb(102,102,102); 
+}
+
+
+.dos{
+font-family: "Playball";
+font-size: 25px;
+text-align: justify;
+text-shadow: 0px 0px 0px #000;
+color: rgb(112,66,20);
+}
+
+.tres{
+
+font-family: Sans-Serif;
+font-size: 28px;
+text-align: justify;
+text-shadow: 0px 0px 0px #000;
+color: rgb(77,77,77);
+}
+
+img.shadow {
+background: url(shadow-1000x1000.gif) no-repeat right bottom;
+padding: 5px 10px 10px 5px;
+}
+
+img.double-border {
+border: 5px solid #ddd;
+padding: 5px; /*Inner border size*/
+background: #fff; /*Inner border color*/
+}
+
+.transp-block {
+background: #000 url(watermark.jpg) no-repeat;
+width: 575px;
+height: 335px;
+}
+img.transparent {
+filter:alpha(opacity=75);
+opacity:.75;
+}
+
+.frame-block {
+position: relative;
+display: block;
+height:335px;
+width: 575px;
+}
+.frame-block span {
+background: url(frame.png) no-repeat center top;
+height:335px;
+width: 575px;
+display: block;
+position: absolute;
+}
+
+.redondo {
+border: 2px solid grey;
+margin: 0;
+padding: 0;
+border-radius: 800px;
+overflow: hidden;
+}
+
+.pie {
+font-size: 35px;
+text-align: center;
+}
+
+/* background:linear-gradient(top, red, gold);
+background:-webkit-linear-gradient(top, red, gold);
+background:-moz-linear-gradient(top, red, gold);
+background:-o-linear-gradient(top, red, gold);
+background:-ms-linear-gradient(top, red, gold);
+*/
+
+.tabla {
+  margin: 0 auto;
+}
+.tabla thead {
+  cursor: pointer;
+  background: rgba(82, 82, 81, 0.95);
+     
+}
+.tabla thead tr th { 
+  font-weight: bold;
+  padding: 10px 20px;
+}
+.tabla thead tr th span { 
+  padding-right: 20px;
+  background-repeat: no-repeat;
+  background-position: 100% 55%;
+}
+.tabla thead tr th.headerSortUp,
+.tabla thead tr th.headerSortDown {
+  background: rgba(0, 0, 0, .2);
+}
+.tabla thead tr th.headerSortUp span {
+  background-image: url('http://tablesorter.com/themes/blue/asc.gif');
+}
+.tabla thead tr th.headerSortDown span {
+  background-image: url('http://tablesorter.com/themes/blue/desc.gif');
+}
+.tabla tbody tr td {
+  text-align: center;
+  padding: 10px 20px;
+}
+.tabla tbody tr td.align-left {
+  text-align: left;
+}
+
+
+.btn-ttc10 {
+   background-color:  #ffff00;
+   background: -moz-color(#ffff00);
+   background: color#ffff00);
+   background: -webkit-color(#ffff00);
+   background: -ms-color(#ffff00);
+   background: -o-color(#ffff00); 
+   
+    
+}
+
+.btn-ttc20 {
+   background-color: #ffe600;
+   
+    
+}
+
+
+
+.btn-ttc30 {
+   background-color:  #ffcc00;
+   
+    
+}
+
+.btn-ttc40 {
+   background-color: #ffb200;
+   
+    
+}
+
+.btn-ttc50 {
+   background-color:  #ff9900;
+   
+    
+}
+
+.btn-ttc60 {
+   background-color: #ff8000;
+   
+    
+}
+
+.btn-ttc70 {
+   background-color:  #ff6600;
+   
+    
+}
+
+.btn-ttc80 {
+   background-color: #ff5900;
+   
+}
+
+.btn-ttc90 {
+   background-color:  #ff4d00;
+    
+}
+
+.btn-ttc99 {
+   background-color: #ff4000;
+   
+    
+}
+
+}
+
+.btn-completo {
+   background-color: #A4A4A4;
+   
+    
+}
+
+.mi-color {
+   color: #FF0000; 
+}
+

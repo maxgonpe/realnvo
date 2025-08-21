@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h3>Ingreso de Productos al Inventario</h3>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+
+    {{ formset.management_form }}
+    <div id="formset-container">
+        {% for form in formset %}
+            <div class="card p-3 mt-3 bg-light">
+                <h5>Producto #{{ forloop.counter }}</h5>
+                {{ form|crispy }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Aquí se agregará dinámicamente el formulario vacío -->
+    <div id="empty-form" class="d-none">
+        <div class="card p-3 mt-3 bg-light">
+            <h5>Producto nuevo</h5>
+            {{ formset.empty_form.as_p|safe }}
+        </div>
+    </div>
+
+    <button type="button" id="add-form" class="btn btn-outline-primary mt-3">+ Agregar otro producto</button>
+
+    <div class="d-flex justify-content-end mt-4">
+        <button type="submit" class="btn btn-success mt-3">Guardar Ingreso</button>
+        <a href="{% url 'lista_productos' %}" class="btn btn-sm btn-warning mt-3">Regresar</a>
+    </div>
+
+</form>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('formset-container');
+    const emptyFormDiv = document.getElementById('empty-form');
+    const totalForms = document.getElementById('id_detalleingreso_set-TOTAL_FORMS');
+    const addFormBtn = document.getElementById('add-form');
+
+    addFormBtn.addEventListener('click', function () {
+        const index = parseInt(totalForms.value);
+        let newFormHtml = emptyFormDiv.innerHTML;
+
+        // Reemplaza correctamente los __prefix__ por el nuevo índice
+        newFormHtml = newFormHtml.replace(/detalleingreso_set-__prefix__/g, `detalleingreso_set-${index}`);
+        newFormHtml = newFormHtml.replace(/__prefix__/g, index);
+
+        // Crear contenedor
+        const wrapper = document.createElement('div');
+        wrapper.className = "card p-3 mt-3 bg-light";
+        wrapper.innerHTML = "<h5>Producto nuevo</h5>" + newFormHtml;
+
+        container.appendChild(wrapper);
+        totalForms.value = index + 1;
+    });
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Nuevo Servicio</h2>
+<style>
+    .counter-badge {
+        background-color: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.9em;
+        margin-right: 10px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        margin: 1rem 0;
+        color: #6c757d;
+    }
+    .bi-fire {
+        font-size: 3rem;
+        color: #dc3545;
+    }
+</style>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {{ formset.management_form }}
+
+    <h4 class="mt-4">Extintores</h4>
+    <div id="form-container">
+        <!-- Estado vacío inicial -->
+        <div class="empty-state" id="empty-state">
+            <i class="bi bi-fire"></i>
+            <p class="mt-2">No se han agregado extintores aún</p>
+            <p class="text-muted">Use los botones abajo para agregar extintores</p>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-sm btn-primary" id="add-form">
+            <i class="bi bi-plus-circle"></i> Agregar Extintor
+        </button>
+        <button type="button" class="btn btn-sm btn-info" id="btnMultiExtintores">
+            <i class="bi bi-collection"></i> Agregar Múltiples
+        </button>
+    </div>
+
+    <hr>
+    <h4 class="mt-4">Fotografías del servicio (máximo 9)</h4>
+    <div class="row">
+        {{ imagenes_form.non_field_errors }}
+        {% for field in imagenes_form %}
+            <div class="col-md-4 mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button class="btn btn-sm btn-success" type="submit">Guardar Cambios</button>
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
+    </div>
+
+    <!-- Modal para agregar múltiples extintores -->
+    <div class="modal fade" id="multiExtModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar múltiples extintores</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad de extintores:</label>
+                        <input type="number" class="form-control" id="cantExtintores" min="1" max="325" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Agente predeterminado:</label>
+                        <select class="form-select" id="agentePredeterminado">
+                            {% for value, label in formset.empty_form.agente.field.choices %}
+                                {% if value %}  <!-- Evitar opción vacía -->
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGenerarExtintores">Generar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Template oculto para nuevos formularios -->
+<div id="empty-form" style="display: none;">
+    <div class="card mt-3 p-3" style="background-color: #DCDCDC;">
+        <h5 class="mb-3">
+            <span class="counter-badge form-counter">#0</span>
+            Extintor (Nuevo)
+        </h5>
+        {{ formset.empty_form|crispy }}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const prefix = '{{ prefix }}';
+    const emptyForm = document.getElementById('empty-form').innerHTML;
+    const formContainer = document.getElementById('form-container');
+    const emptyState = document.getElementById('empty-state');
+    const totalForms = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+    
+    // Contador de formularios
+    let formCounter = parseInt(totalForms.value) || 0;
+    
+    // Función para agregar un formulario
+    function agregarFormulario(agente = null) {
+        // Ocultar estado vacío si existe
+        if(emptyState) emptyState.style.display = 'none';
+        
+        const newIndex = formCounter;
+        const newFormHtml = emptyForm
+            .replace(/__prefix__/g, newIndex)
+            .replace(new RegExp(`${prefix}-__prefix__`, 'g'), `${prefix}-${newIndex}`)
+            .replace(new RegExp(`id_${prefix}-__prefix__`, 'g'), `id_${prefix}-${newIndex}`);
+        
+        formContainer.insertAdjacentHTML('beforeend', newFormHtml);
+        const newCard = formContainer.lastElementChild;
+        
+        // Actualizar contador visual
+        const counterSpan = newCard.querySelector('.form-counter');
+        if(counterSpan) counterSpan.textContent = `#${formCounter + 1}`;
+        
+        // Establecer agente predeterminado si se especifica
+        if(agente) {
+            const agenteSelect = newCard.querySelector(`select[name="${prefix}-${newIndex}-agente"]`);
+            if(agenteSelect) agenteSelect.value = agente;
+        }
+        
+        // Actualizar contador de formularios
+        formCounter++;
+        totalForms.value = formCounter;
+    }
+    
+    // Agregar formulario individual
+    document.getElementById('add-form').addEventListener('click', function() {
+        agregarFormulario();
+    });
+    
+    // Función para agregar múltiples formularios
+    function agregarMultiplesFormularios(cantidad, agente) {
+        for(let i = 0; i < cantidad; i++) {
+            agregarFormulario(agente);
+        }
+    }
+    
+    // Eventos para el modal
+    document.getElementById('btnMultiExtintores').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('multiExtModal'));
+        modal.show();
+    });
+    
+    document.getElementById('btnGenerarExtintores').addEventListener('click', function() {
+        const cantidad = parseInt(document.getElementById('cantExtintores').value) || 1;
+        const agente = document.getElementById('agentePredeterminado').value;
+        
+        if(cantidad > 0 && cantidad <= 325 && agente) {
+            agregarMultiplesFormularios(cantidad, agente);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('multiExtModal'));
+            modal.hide();
+        } else {
+            alert('Por favor ingrese una cantidad válida (1-325) y seleccione un agente');
+        }
+    });
+});
+</script>
+{% endblock %}

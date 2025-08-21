@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de Servicio</title>
+    <style>
+        /* Estilos generales */
+        body { 
+        font-family: Arial, sans-serif; 
+        font-size: 8px; 
+        margin: 0;
+        -webkit-print-color-adjust: exact; 
+        }
+        h2 { 
+            text-align: center; 
+            font-size: 10px;
+            margin: 2px 0;
+        }
+
+            table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        thead {
+            display: table-header-group;
+        }
+        tfoot {
+            display: table-footer-group;
+        }
+        tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 2px;
+            text-align: center;
+            word-wrap: break-word;
+            min-width: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .vencido {
+            color: #FF0000 !important;
+            background-color: #C8E6C9 !important;
+            font-weight: bold;
+        }
+        .icono-verde {
+            color: #28A745;
+            font-weight: bold;
+            font-size: 32px;
+        }
+        .icono-rojo {
+            color: #DC3545;
+            font-weight: bold;
+            font-size: 32px;
+        }
+        .info-header {
+            margin-bottom: 4px;
+        }
+        .info-header p {
+            margin: 1px 0;
+            font-size: 7px;
+        }
+
+        /* Marca de agua en cada tarjeta */
+        .card.position-relative > *:not(.watermark-card) { position: relative; z-index: 2; }
+        .watermark-card {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 190px; font-weight: bold;
+            color: rgba(0,0,0,0.226);
+            pointer-events: none; user-select: none;
+            z-index: 1; white-space: nowrap;
+        }
+
+        
+
+        /* Filtrado */
+        #filterInput { width: 100%; padding: 4px; margin-bottom: 8px; }
+    /* Estilos para la galería de imágenes */
+        .gallery-section {
+            margin-top: 30px;
+        }
+        
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .gallery-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 150px;
+            background-color: #f1f1f1;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        
+        .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+        }
+        
+        .gallery-item:hover .gallery-img {
+            transform: scale(1.05);
+        }
+        
+        .gallery-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            text-align: center;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-item:hover .gallery-caption {
+            transform: translateY(0);
+        }
+        
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 80vh;
+            border: 3px solid white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        }
+        
+        .lightbox-caption {
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            background: rgba(0,0,0,0.7);
+            max-width: 80%;
+            margin: 0 auto;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+        
+        .prev-btn, .next-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        
+        .prev-btn:hover, .next-btn:hover {
+            background: rgba(0,0,0,0.8);
+        }
+        
+        .prev-btn {
+            left: 30px;
+        }
+        
+        .next-btn {
+            right: 30px;
+        }
+        
+        /* Mensaje cuando no hay imágenes */
+        .no-images {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px dashed #ddd;
+            border-radius: 5px;
+            color: #6c757d;
+            margin: 20px 0;
+        }
+        .form-wrapper {
+    position: relative;
+}
+
+    </style>
+</head>
+
+<h3>Servicio: {{ intervencion.get_tipo_display }} #{{ intervencion.pk }}</h3>
+
+    <p><strong>Alias - ODT/ODC:</strong> {{ intervencion.alias }}</p>
+    <p><strong>Cliente:</strong> {{ intervencion.cliente }}</p>
+    <p><strong>Fecha:</strong> {{ intervencion.fecha|date:"d/m/Y" }}</p>
+    <p><strong>Técnico:</strong> {{ intervencion.tecnico.get_full_name }}</p>
+    <p><strong>ODT:</strong>
+       {% if intervencion.con_odt %} {{ intervencion.odt }} 
+       {% else %}<span class="text-danger">Sin ODT</span>{% endif %}
+    </p>
+
+
+<hr>
+<input type="text" id="filterInput" placeholder="Buscar extintor por ubicación, precinto, agente...">
+
+<h4>Extintores</h4>
+{% if intervencion.detalles.all %}
+    {% for d in intervencion.detalles.all %}
+        <div class="card position-relative mb-2 p-2" style="background-color: #DCDCDC;">
+            <div class="watermark-card">#{{ forloop.counter }}</div>
+            <table>
+                <tbody>
+                    <tr><td><b>Extintor:</b></td><td><b>{{ forloop.counter }}</b></td></tr>
+                    <tr><td><b>Agente:</b></td><td>{{ d.agente }}</td></tr>
+                    <tr><td><b>Nro Precinto:</b></td><td>{{ d.nro_precinto }}</td></tr>
+                    <tr><td><b>Ubicación:</b></td><td>{{ d.ubicacion }}</td></tr>
+                    <tr><td><b>Sello INCEN:</b></td><td>{{ d.sello_incen }}</td></tr>
+                    <tr><td><b>Sello STE:</b></td><td>{{ d.sello_incen_ste }}</td></tr>
+                    <tr><td><b>Certificado:</b></td><td>{{ d.certificado }}</td></tr>
+                    <tr><td><b>Estado Extintor:</b></td><td>{{ d.estado }}</td></tr>
+                    <tr><td><b>Cilindro Exterior:</b></td>
+                        <td>{% if d.exterior %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Última PH:</b></td><td>{{ d.ph_ultima|date:"d/m/Y" }}</td></tr>
+                    <tr><td><b>Estado PH:</b></td><td>{{ d.ph_estado }}</td></tr>
+                    <tr><td><b>Vencimiento PH:</b></td><td>{{ d.ph_vencimiento|date:"d/m/Y" }}</td></tr>
+                    <tr><td><b>Válvula:</b></td>
+                        <td>{% if d.valvula %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Manómetro:</b></td>
+                        <td>{% if d.manometro %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Manguera:</b></td>
+                        <td>{% if d.manguera %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Cintillo:</b></td>
+                        <td>{% if d.cintillo %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Agente Extintor:</b></td>
+                        <td>{% if d.agente_extintor %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Tubo/Sifón:</b></td>
+                        <td>{% if d.tubo_sifon %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Sellos Seguro:</b></td>
+                        <td>{% if d.sellos_seguro %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Rotulación:</b></td>
+                        <td>{% if d.rotulacion %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Último Mantención:</b></td><td>{{ d.ultima_fecha|date:"d/m/Y" }}</td></tr>
+                    <tr><td><b>Recarga:</b></td>
+                        <td>{% if d.recarga %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Mantención:</b></td>
+                        <td>{% if d.mantencion %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Presión Trabajo:</b></td><td>{{ d.presion }}
+                     {% if d.presion == '250' %}
+                     bar
+                     {% else %}
+                     psi
+                     {% endif %}   
+                    </td></tr>
+                    <tr><td><b>Peso:</b></td><td>{{ d.peso }}</td></tr>
+                    <tr><td><b>Instalación Correcta:</b></td>
+                        <td>{% if d.correcta %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Acceso:</b></td>
+                        <td>{% if d.acceso %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Instrucciones:</b></td>
+                        <td>{% if d.instrucciones %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td colspan="2"><h4>Determinado por el Técnico</h4></td></tr>
+                    <tr><td><b>Autorizado un año más:</b></td>
+                        <td>{% if d.habilitado_un_ano %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>De Baja por Óxido:</b></td>
+                        <td>{% if d.baja_por_oxido %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>De Baja por PH:</b></td>
+                        <td>{% if d.baja_por_ph %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><b>Fuera de Norma:</b></td>
+                        <td>{% if d.baja_por_fuera_norma %}<span class="icono-verde">✓</span>
+                            {% else %}<span class="icono-rojo">✗</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                <td><b>Extintor Abollado:</b></td>
+                <td>{% if d.extintor_abollado %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            </tr>
+            <tr>
+                <td><b>De Baja por otra Razon:</b></td>
+                <td>{% if d.baja_otro %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            </tr>
+            <tr>
+                <td><b>Extintor Nuevo:</b></td>
+                <td>{% if d.extintor_nuevo %}<span class="icono-verde">✓</span>{% else %}<span class="icono-rojo">✗</span>{% endif %}</td>
+            </tr>
+
+
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No hay detalles registrados.</p>
+{% endif %}
+
+<h4>Estadística de Extintores por Estado</h4>
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">📊 Estadísticas de Extintores por Estado</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-bordered table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Estado</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in estadistica %}
+        <tr>
+          <td>{{ fila.estado|title }}</td>
+          <td>{{ fila.cantidad }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th>Total extintores</th>
+          <th>{{ total_extintores }}</th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if resumen_agrupado %}
+<h4>Resumen de necesidades detectadas</h4>
+<div class="card mb-4 shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-sm table-bordered mb-0">
+      <thead>
+        <tr>
+          <th>Agente</th>
+          <th>Peso</th>
+          <th>Problema detectado</th>
+          <th>Cantidad de extintores</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in resumen_agrupado %}
+        <tr>
+          <td>{{ item.agente }}</td>
+          <td>{{ item.peso }}</td>
+          <td>{{ item.problema }}</td>
+          <td><strong>{{ item.cantidad }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<h5 class="mb-0">Estadísticas de Extintores por Agente</h5>
+
+
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">📊 Estadísticas de Extintores por Agente</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_agente %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Agente</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for agente, cantidad in conteo_agente.items %}
+            {% if cantidad > 0 %}
+              <tr>
+                <td>{{ agente|title }}</td>
+                <td><span class="badge bg-success">{{ cantidad }}</span></td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay datos de extintores tratados por agente.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<h4>Estadística de Extintores por Peso</h4>
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">📊 Estadísticas de Extintores por Peso</h5>
+  </div>
+  <div class="card-body p-0">
+    {% if conteo_peso %}
+      <table class="table table-hover table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Peso</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for peso, cantidad in conteo_peso.items %}
+            {% if cantidad > 0 %}
+              <tr>
+                <td>{{ peso|title }}</td>
+                <td><span class="badge bg-success">{{ cantidad }}</span></td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-3">
+        <p class="text-muted mb-0">No hay datos de extintores tratados por peso.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+
+
+
+
+
+<hr>
+<h4>Notas del Servicio</h4>
+<div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
+    {{ intervencion.notas|safe }}
+</div>
+
+<h4>Fotografías del Servicio</h4>
+<!-- Sección de imágenes -->
+        <div class="gallery-section">
+            <div class="gallery-header">
+                
+                <h2>Haz clic en las miniaturas para ver las imágenes en tamaño completo</h2>
+            </div>
+            
+            {% if intervencion.imagenes.first %}
+                {% with imagenes=intervencion.imagenes.first %}
+                    <div class="gallery-grid">
+                        <!-- Generamos las miniaturas para cada imagen -->
+                        {% if imagenes.imagen1 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen1.url }}" alt="Foto 1" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen1.url }}', 'Foto 1')">
+                            <div class="gallery-caption">Foto 1</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen2 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen2.url }}" alt="Foto 2" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen2.url }}', 'Foto 2')">
+                            <div class="gallery-caption">Foto 2</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen3 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen3.url }}" alt="Foto 3" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen3.url }}', 'Foto 3')">
+                            <div class="gallery-caption">Foto 3</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen4 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen4.url }}" alt="Foto 4" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen4.url }}', 'Foto 4')">
+                            <div class="gallery-caption">Foto 4</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen5 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen5.url }}" alt="Foto 5" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen5.url }}', 'Foto 5')">
+                            <div class="gallery-caption">Foto 5</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen6 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen6.url }}" alt="Foto 6" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen6.url }}', 'Foto 6')">
+                            <div class="gallery-caption">Foto 6</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen7 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen7.url }}" alt="Foto 7" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen7.url }}', 'Foto 7')">
+                            <div class="gallery-caption">Foto 7</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen8 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen8.url }}" alt="Foto 8" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen8.url }}', 'Foto 8')">
+                            <div class="gallery-caption">Foto 8</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if imagenes.imagen9 %}
+                        <div class="gallery-item">
+                            <img src="{{ imagenes.imagen9.url }}" alt="Foto 9" class="gallery-img" onclick="openLightbox('{{ imagenes.imagen9.url }}', 'Foto 9')">
+                            <div class="gallery-caption">Foto 9</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endwith %}
+            {% else %}
+                <div class="no-images">
+                    <p>No se han adjuntado fotografías para este servicio.</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Lightbox -->
+        <div id="lightbox" class="lightbox">
+            <span class="close-btn" onclick="closeLightbox()">&times;</span>
+            <span class="prev-btn" onclick="changeImage(-1)">&#10094;</span>
+            <span class="next-btn" onclick="changeImage(1)">&#10095;</span>
+            
+            <div class="lightbox-content">
+                <img id="lightbox-img" class="lightbox-img" src="" alt="">
+                <div id="lightbox-caption" class="lightbox-caption"></div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <br>
+
+    <!-- Botones flotantes (horizontal) -->
+<div class="floating-buttons">
+  <button onclick="scrollToTop()" class="btn btn-primary btn-sm" title="Inicio">⤒</button>
+  <button onclick="scrollUp()" class="btn btn-secondary btn-sm" title="Subir">↑</button>
+  <button onclick="scrollDown()" class="btn btn-secondary btn-sm" title="Bajar">↓</button>
+  <button onclick="scrollToBottom()" class="btn btn-primary btn-sm" title="Final">⤓</button>
+</div>
+
+
+
+<!-- Estilos -->
+<style>
+.counter-badge {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+.watermark-card {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 190px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.226);
+    z-index: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+}
+.card.position-relative > *:not(.watermark-card) {
+    position: relative;
+    z-index: 2;
+}
+
+.floating-buttons {
+    position: fixed;
+    bottom: 40px;
+    left: 55%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+.floating-buttons button {
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    font-size: 1.2rem;
+    padding: 0;
+}
+
+
+</style>
+
+
+
+
+
+<!-- Botones -->
+<div style="margin-top:20px;">
+    <a href="{% url 'intervencion_excel' intervencion.pk %}" class="btn btn-sm btn-success">Descargar Excel</a>
+    <a href="{% url 'intervencion_pdf'  intervencion.pk %}" class="btn btn-sm btn-danger">Descargar PDF</a>
+    <a href="{% url 'intervencion_lista' %}"             class="btn btn-sm btn-warning">Regresar</a>
+</div>
+
+<script>
+    document.getElementById('filterInput')
+      .addEventListener('keyup', function(){
+        let v = this.value.toLowerCase();
+        document.querySelectorAll('.card').forEach(c=>{
+          c.style.display = c.innerText.toLowerCase().includes(v) ? '' : 'none';
+        });
+      });
+      function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function scrollToBottom() {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    function scrollDown() {
+    window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+    function scrollUp() {
+        window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+    }
+
+
+</script>
+{% endblock %}

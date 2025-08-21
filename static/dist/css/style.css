@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css?family=Roboto");
+* {
+  font-family: "Roboto", sans-serif;
+}
+
+body {
+  height: 150vh;
+  background-color: rgba(241, 245, 245, 0.904);
+ 
+}
+
+.progress .progress-bar {
+  -webkit-transition: all ease 0.5s;
+  transition: all ease 0.5s;
+  width: 0;
+}
+/*# sourceMappingURL=style.css.map */

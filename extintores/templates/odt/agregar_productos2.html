@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<h3>ODT #{{ odt.pk }} – {{ odt.alias }}</h3>
+
+{% if resumen_agrupado %}
+    <h4>Resumen de necesidades detectadas</h4>
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Agente</th>
+                <th>Peso</th>
+                <th>Problema detectado</th>
+                <th>Cantidad de extintores</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in resumen_agrupado %}
+            <tr>
+                <td>{{ item.agente }}</td>
+                <td>{{ item.peso }}</td>
+                <td>{{ item.problema }}</td>
+                <td><strong>{{ item.cantidad }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if sugerencias %}
+<div class="alert alert-warning mt-4">
+    <h4>Extintores con componentes/servicios faltantes</h4>
+    <form method="post">
+        {% csrf_token %}
+
+        {% regroup sugerencias by problemas.0.nombre as grupos %}
+        {% for grupo in grupos %}
+            <h5 class="mt-4">🔧 Problema detectado: {{ grupo.grouper }}</h5>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Extintor</th>
+                        <th>Agente</th>
+                        <th>Peso</th>
+                        <th>Problema detectado</th>
+                        <th>Producto sugerido</th>
+                        <th>Cantidad</th>
+                        <th>Seleccionar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sug in grupo.list %}
+                        {% for problema in sug.problemas %}
+                            {% if problema.nombre == grupo.grouper %}
+                            <tr>
+                                <td>
+                                    #{{ sug.extintor.pk }}<br>
+                                    Precinto: {{ sug.extintor.nro_precinto|default:"N/A" }}
+                                </td>
+                                <td>Agente: {{ sug.extintor.agente|default:"N/A" }}</td>
+                                <td>Peso: {{ sug.extintor.peso|default:"N/A" }}</td>
+                                <td>{{ problema.nombre }}</td>
+                                <td>
+                                    <select name="producto_id_{{ sug.extintor.pk }}_{{ problema.campo }}" class="form-select">
+                                        <option value="">Seleccione producto</option>
+                                        {% for producto in productos_disponibles %}
+                                            {% if problema.nombre|lower in producto.nombre|lower or problema.nombre|lower in producto.categoria.nombre|lower %}
+                                                <option value="{{ producto.pk }}">{{ producto.nombre }} - {{ producto.categoria.nombre }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="cantidad_{{ sug.extintor.pk }}_{{ problema.campo }}" value="1" min="1" class="form-control" style="width: 80px;">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="seleccionado_{{ sug.extintor.pk }}_{{ problema.campo }}">
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+        <button type="submit" class="btn btn-success">Agregar Seleccionados</button>
+    </form>
+</div>
+{% endif %}
+
+<hr>
+<h4>Resumen de Productos/Servicios Asociados</h4>
+<table class="table table-sm table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in odt.items.all %}
+        <tr>
+            <td>{{ item.producto.nombre }}</td>
+            <td>{{ item.producto.categoria }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>
+                {% if item.precio_con_factor %}
+                    <span title="Precio ajustado por factor">${{ item.precio_con_factor|floatformat:0|intcomma }}</span>
+                {% else %}
+                    <span title="Precio estándar">${{ item.precio_unitario|floatformat:0|intcomma }}</span>
+                {% endif %}
+            </td>
+            <td>${{ item.subtotal|floatformat:0|intcomma }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="4" class="text-end"><strong>Total</strong></td>
+            <td><strong>${{ total|floatformat:0|intcomma }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+<a href="{% url 'odt_editar_items' odt.pk %}" class="btn btn-primary mt-3">Ir a editar/eliminar productos</a>
+<a href="{% url 'odt_excel' odt.pk %}" class="btn btn-sm btn-success mt-3">Descargar Excel</a>
+<a href="{% url 'odt_pdf' odt.pk %}" class="btn btn-sm btn-danger mt-3">Descargar PDF</a>
+<a href="{% url 'odt_lista' %}" class="btn btn-warning btn-sm">Regresar</a>
+
+{% endblock %}
