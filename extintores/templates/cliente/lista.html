@@ -15,6 +15,14 @@
         <strong>Dirección:</strong> {{ cliente.direccion }}<br>
         <strong>Teléfono:</strong> {{ cliente.telefono }}<br>
         <strong>Contacto:</strong> {{ cliente.contacto }}<br>
+        
+        {% if cliente.fecha_ultima_intervencion != None %}
+        <div class="alert alert-info mt-3" style="color: #007bff;">
+            <strong>Último Servicio:</strong> {{ cliente.fecha_ultima_intervencion|date:"d/m/Y" }}<br>
+            <strong>Descripción del Último Servicio:</strong> {{ cliente.ultima_intervencion }}<br>
+            <strong>Último Alias:</strong> {{ cliente.ultimo_alias }}<br>
+        </div>
+        {% endif %}
 
         <a href="{% url 'modificar_cliente' cliente.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
         <a href="{% url 'eliminar_cliente' cliente.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>

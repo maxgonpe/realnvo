@@ -4,29 +4,193 @@
     <meta charset="UTF-8">
     <title>{% block title %}Extintores{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap CSS para diseño responsive -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            font-size: 1rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ===== TEMAS ===== */
+        /* 🔴 ROJO */
+        body.theme-red {
+            background-color: #f54927;
+            color: #fff;
+        }
+        body.theme-red nav { background-color: #b22222; color: #fff; }
+        body.theme-red nav .nav-link, 
+        body.theme-red nav .navbar-brand { color: #fff !important; }
+        body.theme-red .card { background-color: #ff6f61; color: #fff; }
+        body.theme-red footer { background-color: #b22222; color: #fff; }
+        body.theme-red .btn-outline-dark { color: #fff; border-color: #fff; }
+
+        /* 🟡 AMARILLO */
+        body.theme-yellow {
+            background-color: #f5d427;
+            color: #000;
+        }
+        body.theme-yellow nav { background-color: #fff8dc; color: #000; }
+        body.theme-yellow nav .nav-link, 
+        body.theme-yellow nav .navbar-brand { color: #000 !important; }
+        body.theme-yellow .card { background-color: #fffacd; color: #000; }
+        body.theme-yellow footer { background-color: #f4e17a; color: #000; }
+        body.theme-yellow .btn-outline-dark { color: #000; border-color: #000; }
+
+        /* 🔵 CELESTE */
+        body.theme-blue {
+            background-color: #5dade2;
+            color: #fff;
+        }
+        body.theme-blue nav { background-color: #2e86c1; color: #fff; }
+        body.theme-blue nav .nav-link, 
+        body.theme-blue nav .navbar-brand { color: #fff !important; }
+        body.theme-blue .card { background-color: #85c1e9; color: #fff; }
+        body.theme-blue footer { background-color: #2e86c1; color: #fff; }
+        body.theme-blue .btn-outline-dark { color: #fff; border-color: #fff; }
+
+        /* ⚪ GRIS */
+        body.theme-gray {
+            background-color: #7f8c8d;
+            color: #fff;
+        }
+        body.theme-gray nav { background-color: #555; color: #fff; }
+        body.theme-gray nav .nav-link, 
+        body.theme-gray nav .navbar-brand { color: #fff !important; }
+        body.theme-gray .card { background-color: #95a5a6; color: #fff; }
+        body.theme-gray footer { background-color: #555; color: #fff; }
+        body.theme-gray .btn-outline-dark { color: #fff; border-color: #fff; }
+
+        nav {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+        }
+        .nav-link {
+            font-size: 1.1rem;
+        }
+        .tab-content {
+            margin-top: 1rem;
+        }
+        footer {
+            padding: 0.5rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+    /* ===== BOTONES SEGÚN TEMA ===== */
+
+    /* 🔴 ROJO */
+    body.theme-red .btn-primary { background-color: #b22222; border-color: #b22222; }
+    body.theme-red .btn-success { background-color: #d9534f; border-color: #d43f3a; }
+    body.theme-red .btn-warning { background-color: #f0ad4e; border-color: #eea236; }
+    body.theme-red .btn-info    { background-color: #5bc0de; border-color: #46b8da; }
+body.theme-red .btn-danger  { background-color: #8b0000; border-color: #8b0000; }
+
+    /* 🟡 AMARILLO */
+    body.theme-yellow .btn-primary { background-color: #f1c40f; border-color: #d4ac0d; }
+    body.theme-yellow .btn-success { background-color: #27ae60; border-color: #229954; }
+    body.theme-yellow .btn-warning { background-color: #f39c12; border-color: #d68910; }
+    body.theme-yellow .btn-info    { background-color: #3498db; border-color: #2980b9; }
+    body.theme-yellow .btn-danger  { background-color: #c0392b; border-color: #922b21; }
+
+    /* 🔵 CELESTE */
+    body.theme-blue .btn-primary { background-color: #2e86c1; border-color: #2874a6; }
+    body.theme-blue .btn-success { background-color: #28b463; border-color: #239b56; }
+    body.theme-blue .btn-warning { background-color: #f4d03f; border-color: #d4ac0d; }
+    body.theme-blue .btn-info    { background-color: #5dade2; border-color: #3498db; }
+    body.theme-blue .btn-danger  { background-color: #c0392b; border-color: #922b21; }
+
+    /* ⚪ GRIS */
+    body.theme-gray .btn-primary { background-color: #34495e; border-color: #2c3e50; }
+    body.theme-gray .btn-success { background-color: #27ae60; border-color: #229954; }
+    body.theme-gray .btn-warning { background-color: #e67e22; border-color: #ca6f1e; }
+    body.theme-gray .btn-info    { background-color: #16a085; border-color: #138d75; }
+    body.theme-gray .btn-danger  { background-color: #7f8c8d; border-color: #707b7c; }
+
+    /* mas */
+
+    body.theme-red .btn-outline-primary {
+  color: #b22222;
+  border-color: #b22222;
+    }
+    body.theme-red .btn-outline-primary:hover {
+  background-color: #b22222;
+  color: #fff;
+    }
+
+
+
+
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
-<nav class="mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        
-        <a href="{% url 'ver_estadisticas_redirect' %}" class="btn btn-outline-dark btn-sm">
-            📊 Ver Estadísticas
-        </a>
-    </div>
-</nav>
-<body class="container mt-4" style="font-size: 1.3rem; background-color:#f9d62e;">
+<body class="container mt-3">
 
-    {% block content %}
+    <!-- Barra superior -->
+    <nav class="d-flex justify-content-between align-items-center">
+        <span class="fw-bold navbar-brand">🔥 Extintores</span>
 
+        <div class="d-flex align-items-center">
+            <!-- Botones de selección de tema -->
+            <div class="btn-group me-2" role="group" aria-label="Selector de tema">
+                <button class="btn btn-sm btn-danger theme-btn" data-theme="red">🔴</button>
+                <button class="btn btn-sm btn-warning theme-btn" data-theme="yellow">🟡</button>
+                <button class="btn btn-sm btn-info theme-btn" data-theme="blue">🔵</button>
+                <button class="btn btn-sm btn-secondary theme-btn" data-theme="gray">⚪</button>
+            </div>
 
-    {% endblock %}
+            <a href="{% url 'ver_estadisticas_redirect' %}" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-graph-up"></i> Estadísticas
+            </a>
+        </div>
+    </nav>
 
-    <!-- Bootstrap JS + Popper.js -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Contenido -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer>
+        © {{ now|date:"Y" }} Sistema de Extintores
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const buttons = document.querySelectorAll(".theme-btn");
+            const body = document.body;
+
+            // Restaurar el tema guardado
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) {
+                body.classList.add(`theme-${savedTheme}`);
+            } else {
+                body.classList.add("theme-red"); // default
+            }
+
+            // Manejar clicks en botones
+            buttons.forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const theme = this.getAttribute("data-theme");
+
+                    // Eliminar clases previas
+                    body.classList.remove("theme-red", "theme-yellow", "theme-blue", "theme-gray");
+
+                    // Agregar nueva
+                    body.classList.add(`theme-${theme}`);
+
+                    // Guardar preferencia
+                    localStorage.setItem("theme", theme);
+                });
+            });
+        });
+    </script>
 </body>
-
-
 </html>

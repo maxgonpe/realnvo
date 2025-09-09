@@ -18,7 +18,8 @@ from .views import IntervencionListView, crear_intervencion,\
                    factorajustecliente_eliminar,odt_agregar_productos,\
                    odt_editar_items, ingreso_stock_nuevo, exportar_inventario_pdf,\
                    exportar_inventario_excel, generar_estadisticas_view,\
-                   generar_estadisticas_mensuales, ver_estadisticas_view 
+                   generar_estadisticas_mensuales, ver_estadisticas_view,\
+                   alertas_view 
 
 urlpatterns = [
     path('', IntervencionListView.as_view(), name='intervencion_lista'),
@@ -42,6 +43,7 @@ urlpatterns = [
     path('cliente/nuevo/', agregar_cliente, name='agregar_cliente'),
     path('cliente/editar/<int:pk>/', modificar_cliente, name='modificar_cliente'),
     path('cliente/eliminar/<int:pk>/', eliminar_cliente, name='eliminar_cliente'),
+    path('cliente/alertas/', alertas_view, name='alertas'),
     path('producto/', lista_productos, name='lista_productos'),
     path('producto/nuevo/', agregar_producto, name='agregar_producto'),
     path('producto/editar/<int:pk>/', modificar_producto, name='modificar_producto'),
@@ -60,7 +62,7 @@ urlpatterns = [
     path('estadisticas/generar/', generar_estadisticas_view, name='generar_estadisticas'),
     path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),  # Ajusta esto
     path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),  # Agrega esta línea
-
+    
 
 
 

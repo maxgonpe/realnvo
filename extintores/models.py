@@ -162,6 +162,13 @@ class Cliente(models.Model):
     comuna = models.CharField(max_length=100, blank=True)
     telefono = models.CharField(max_length=20, blank=True)
     contacto = models.CharField(max_length=100, blank=True)
+    # Campos de referencia rápida
+    fecha_ultima_intervencion = models.DateField(blank=True, null=True)
+    ultima_intervencion = models.ForeignKey(
+        "Intervencion", on_delete=models.SET_NULL, blank=True, null=True, related_name="ultimo_servicio_cliente"
+    )
+    ultimo_alias = models.CharField(max_length=200, blank=True, null=True)
+
 
     class Meta:
         ordering = ['nombre']
@@ -189,6 +196,15 @@ class Intervencion(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} {self.pk} - {self.cliente}"
+
+class HistorialServicio(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="historial_servicios")
+    intervencion = models.ForeignKey(Intervencion, on_delete=models.CASCADE, related_name="historial")
+    fecha = models.DateField(default=timezone.now)
+    alias = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.fecha} ({self.alias})"
 
 
 class DetalleIntervencion(models.Model):

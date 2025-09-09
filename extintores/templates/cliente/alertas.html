@@ -1,0 +1,19 @@
+{% extends "base.html" %}  {# si tienes base.html, si no quita esta línea #}
+
+{% block content %}
+<h1>Alertas de próximos servicios</h1>
+
+{% if proximas %}
+    <ul>
+        {% for intervencion in proximas %}
+            <li>
+                Cliente: {{ intervencion.cliente }} <br>
+                Fecha del servicio: {{ intervencion.fecha }} <br>
+                Vence: {{ intervencion.fecha|add:"365" }} días
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>✅ No hay servicios próximos a vencer.</p>
+{% endif %}
+{% endblock %}

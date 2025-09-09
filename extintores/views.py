@@ -1999,3 +1999,23 @@ def ver_estadisticas_view(request, mes=None):
         "estadisticas_estado": estadisticas_estado,
     })
 
+def alertas_servicios2(request):
+    hoy = timezone.now().date()
+    limite = hoy - timedelta(days=365)  # 1 año atrás
+
+    clientes_alerta = Cliente.objects.filter(
+        fecha_ultima_intervencion__lte=limite
+    )
+    return render(request, "cliente/alertas.html", {
+        "clientes_alerta": clientes_alerta
+    })
+
+
+def alertas_view(request):
+    hoy = timezone.now().date()
+    # Aquí calculamos "fecha + 365 días" al vuelo
+    proximas = [
+        intervencion for intervencion in Intervencion.objects.all()
+        if intervencion.fecha + timedelta(days=365) <= hoy - timedelta(days=30)
+    ]
+    return render(request, 'cliente/alertas.html', {'proximas': proximas})    

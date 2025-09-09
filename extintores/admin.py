@@ -7,7 +7,7 @@ from .models import Cliente, Intervencion, DetalleIntervencion,\
                     CategoriaProducto,ImagenIntervencion,\
                     Bitacora, FactorAjusteCliente, IngresoStock,\
                     DetalleIngreso, EstadisticaMensual, EstadisticaDetalleExtintor,\
-                    EstadisticaDetalleProducto 
+                    EstadisticaDetalleProducto, HistorialServicio 
 
 User = get_user_model()
 
@@ -71,3 +71,4 @@ admin.site.register(IngresoStock)
 admin.site.register(EstadisticaMensual, EstadisticaMensualAdmin )
 admin.site.register(EstadisticaDetalleExtintor, EstadisticaDetalleExtintorAdmin)
 admin.site.register(EstadisticaDetalleProducto, EstadisticaDetalleProductoAdmin)
+admin.site.register(HistorialServicio)

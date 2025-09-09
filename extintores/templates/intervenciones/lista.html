@@ -1,23 +1,61 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<h2>Hola {{ user.username }} !!!
-<form method="post" action="{% url 'logout' %}" style="display: inline;">
+<h4 class="mb-3">Hola {{ user.username }} 👋</h4>
+<form method="post" action="{% url 'logout' %}" class="mb-3">
     {% csrf_token %}
-    <button type="submit" class="btn btn-outline-danger btn-sm">Cerrar sesión</button>
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+    </button>
 </form>
-</h2>
 
-<div class="mb-4">
-    <a href="{% url 'intervencion_crear' %}" class="btn btn-primary me-2">+ Nuevo Servicio</a>
-    <a href="{% url 'lista_clientes' %}" class="btn btn-outline-primary me-2">Clientes</a>
-    <a href="{% url 'lista_productos' %}" class="btn btn-outline-primary">Productos</a>
-    <a href="{% url 'odt_lista' %}" class="btn btn-outline-success">ODT</a>
-</div>
+<!-- Pestañas -->
+<ul class="nav nav-tabs" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="servicios-tab" data-bs-toggle="tab" data-bs-target="#servicios" type="button" role="tab">
+            <i class="bi bi-tools"></i> Servicios
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="gestion-tab" data-bs-toggle="tab" data-bs-target="#gestion" type="button" role="tab">
+            <i class="bi bi-folder"></i> Gestión
+        </button>
+    </li>
+</ul>
 
-<input type="text" id="searchInput" class="form-control mb-3" placeholder="Buscar por cliente, tecnico o tipo...">
+<div class="tab-content" id="mainTabsContent">
+    <!-- Pestaña Servicios -->
+    <div class="tab-pane fade show active" id="servicios" role="tabpanel">
+        <div class="d-flex flex-wrap gap-2 mb-3 mt-3">
+            <a href="{% url 'intervencion_crear' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Servicio
+            </a>
+        </div>
 
-<div id="intervenciones-container">
-    {% include 'intervenciones/partials/intervenciones_list.html' %}
+        <input type="text" id="searchInput" class="form-control mb-3" placeholder="🔍 Buscar por cliente, técnico o tipo...">
+
+        <div id="intervenciones-container">
+            {% include 'intervenciones/partials/intervenciones_list.html' %}
+        </div>
+    </div>
+
+    <!-- Pestaña Gestión -->
+    <div class="tab-pane fade" id="gestion" role="tabpanel">
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="{% url 'lista_clientes' %}" class="btn btn-outline-primary">
+                <i class="bi bi-people"></i> Clientes
+            </a>
+            <a href="{% url 'lista_productos' %}" class="btn btn-outline-primary">
+                <i class="bi bi-box-seam"></i> Productos
+            </a>
+            <a href="{% url 'odt_lista' %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-text"></i> ODT
+            </a>
+            <a href="{% url 'alertas' %}" class="btn btn-outline-warning">
+                <i class="bi bi-bell"></i> Alertas
+            </a>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -31,3 +69,4 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 </script>
 {% endblock %}
+
