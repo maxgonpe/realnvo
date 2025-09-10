@@ -21,12 +21,12 @@
         /* 🔴 ROJO */
         body.theme-red {
             background-color: #f54927;
-            color: #fff;
+            color: #000;
         }
         body.theme-red nav { background-color: #b22222; color: #fff; }
         body.theme-red nav .nav-link, 
         body.theme-red nav .navbar-brand { color: #fff !important; }
-        body.theme-red .card { background-color: #ff6f61; color: #fff; }
+        body.theme-red .card { background-color: #ff6f61; color: #000; }
         body.theme-red footer { background-color: #b22222; color: #fff; }
         body.theme-red .btn-outline-dark { color: #fff; border-color: #fff; }
 
@@ -45,24 +45,24 @@
         /* 🔵 CELESTE */
         body.theme-blue {
             background-color: #5dade2;
-            color: #fff;
+            color: #000;
         }
         body.theme-blue nav { background-color: #2e86c1; color: #fff; }
         body.theme-blue nav .nav-link, 
         body.theme-blue nav .navbar-brand { color: #fff !important; }
-        body.theme-blue .card { background-color: #85c1e9; color: #fff; }
+        body.theme-blue .card { background-color: #85c1e9; color: #000; }
         body.theme-blue footer { background-color: #2e86c1; color: #fff; }
         body.theme-blue .btn-outline-dark { color: #fff; border-color: #fff; }
 
         /* ⚪ GRIS */
         body.theme-gray {
             background-color: #7f8c8d;
-            color: #fff;
+            color: #000;
         }
         body.theme-gray nav { background-color: #555; color: #fff; }
         body.theme-gray nav .nav-link, 
         body.theme-gray nav .navbar-brand { color: #fff !important; }
-        body.theme-gray .card { background-color: #95a5a6; color: #fff; }
+        body.theme-gray .card { background-color: #95a5a6; color: #000; }
         body.theme-gray footer { background-color: #555; color: #fff; }
         body.theme-gray .btn-outline-dark { color: #fff; border-color: #fff; }
 
@@ -134,7 +134,9 @@ body.theme-red .btn-danger  { background-color: #8b0000; border-color: #8b0000; 
 
     <!-- Barra superior -->
     <nav class="d-flex justify-content-between align-items-center">
-        <span class="fw-bold navbar-brand">🔥 Extintores</span>
+        <a href="{% url 'intervencion_lista' %}" class="fw-bold navbar-brand text-decoration-none text-dark">
+  🔥 EXTINTORES REAL
+</a>
 
         <div class="d-flex align-items-center">
             <!-- Botones de selección de tema -->
