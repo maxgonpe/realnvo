@@ -43,7 +43,16 @@
             color: red;
         }
         .right { text-align: right; }
+
         .total-row { font-weight: bold; }
+
+        .observa {
+
+        border: 2px solid #ccc;
+        padding: 8px;
+        margin-bottom: 20px; 
+            }
+
     </style>
 </head>
 <body>
@@ -147,13 +156,13 @@
     </table>
 
   <!-- cuadro observaciones -->
-{% if odt.observaciones %}
-<h4>Notas del Servicio</h4>
-<div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
+  {% if odt.observaciones %}
+    <h4>Notas del Servicio</h4>
+    <div class="observa">
     {{ odt.observaciones|safe }}
-</div>
-{% endif %}
-<!-- fin cuadro observaciones -->
+    </div>
+   {% endif %}
+  <!-- fin cuadro observa -->
 
 
     <div style="margin-top: 20px; text-align: right;">

@@ -36,6 +36,9 @@ from django.shortcuts import redirect
 from django.forms import modelform_factory, inlineformset_factory
 from .models import IngresoStock, DetalleIngreso
 from django.apps import apps
+from bs4 import BeautifulSoup
+
+
 # === MODELOS ===
 from .models import (
     Intervencion, DetalleIntervencion, ImagenIntervencion,
@@ -495,6 +498,57 @@ def odt_detalle(request, pk):
 
 
 def odt_pdf(request, pk):
+    odt = get_object_or_404(Odt, pk=pk)
+    items = odt.items.all()
+    total = sum(item.subtotal for item in items)
+    iva = total * Decimal('0.19')
+    total_final = total + iva
+
+    # 🔹 Procesar campo de notas (igual que en IntervencionPDF)
+    observaciones_html = odt.observaciones or ""
+    soup = BeautifulSoup(observaciones_html, "html.parser")
+
+    for font in soup.find_all("font"):
+        style = font.get("style", "")
+        color = font.get("color")
+        if color:
+            style += f"color: {color};"
+        span = soup.new_tag("span", style=style)
+        span.string = font.text
+        font.replace_with(span)
+
+    odt.observaciones = str(soup)
+
+    # 🔹 Generar PDF
+    html_content = render_to_string("odt/pdf_odt.html", {
+        "odt": odt,
+        "items": items,
+        "total": total,
+        "iva": iva,
+        "total_final": total_final,
+    })
+
+    html = HTML(string=html_content, base_url=request.build_absolute_uri('/'))
+    pdf_file = html.write_pdf(stylesheets=[CSS(string='@page { size: A4; margin: 1cm }')])
+
+    response = HttpResponse(pdf_file, content_type="application/pdf")
+    response['Content-Disposition'] = f'inline; filename="ODT-{odt.pk}.pdf"'
+
+    # 🔹 Registrar en bitácora
+    registrar_bitacora(
+        usuario=request.user,
+        accion='Crear',
+        modelo='Odt',
+        objeto_id=pk,
+        descripcion=f"El usuario {request.user.username} creó el PDF para la ODT #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+    )
+
+    return response
+
+
+
+
+def odt_pdf2(request, pk):
     odt = get_object_or_404(Odt, pk=pk)
     items = odt.items.all()
     total = sum(item.subtotal for item in items)
@@ -1173,6 +1227,19 @@ class IntervencionPDF(View):
 
         detalles = intervencion.detalles.all().order_by('id')
         imagenes = intervencion.imagenes.first()
+        notas_html = intervencion.notas or ""
+        soup = BeautifulSoup(notas_html, "html.parser")
+
+        for font in soup.find_all("font"):
+            style = font.get("style", "")
+            color = font.get("color")
+            if color:
+                style += f"color: {color};"
+            span = soup.new_tag("span", style=style)
+            span.string = font.text
+            font.replace_with(span)
+
+        intervencion.notas = str(soup)
 
         # Contar por estado
         conteo = Counter([d.estado for d in detalles])

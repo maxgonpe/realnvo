@@ -112,6 +112,16 @@
             page-break-inside: avoid;
             break-inside: avoid;
         }
+
+    .nota {
+
+      border: 2px solid #ccc;
+      padding: 8px;
+      margin-bottom: 20px; "
+        }
+    
+
+
 </style>
 </head>
 <body>
@@ -248,7 +258,7 @@
 <!-- cuadro de notas -->
 {% if intervencion.notas %}
 <h4>Notas del Servicio</h4>
-<div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
+<div class="nota">
     {{ intervencion.notas|safe }}
 </div>
 {% endif %}
@@ -565,19 +575,6 @@
   </div>
 </div>
 {% endif %}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <div style="margin-top: 20px; text-align: right;">
