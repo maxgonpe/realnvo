@@ -804,10 +804,14 @@
 {% endif %}
 
 <hr>
+<!-- cuadro de notas -->
+{% if intervencion.notas %}
 <h4>Notas del Servicio</h4>
 <div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
     {{ intervencion.notas|safe }}
 </div>
+{% endif %}
+<!-- fin cuadro de notas -->
 
 <h4>Fotografías del Servicio</h4>
 <!-- Sección de imágenes -->

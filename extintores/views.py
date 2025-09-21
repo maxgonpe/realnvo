@@ -1647,7 +1647,7 @@ def ingreso_stock_nuevo(request):
 
 
 def exportar_inventario_excel(request):
-    accesorios = Producto.objects.filter(categoria__nombre__iexact='Accesorio')
+    accesorios = Producto.objects.all().order_by('categoria__nombre','nombre') #filter(categoria__nombre__iexact='Accesorio')
     #accesorios = Producto.objects.all()
 
     wb = openpyxl.Workbook()
@@ -1683,7 +1683,7 @@ def exportar_inventario_excel(request):
 
 
 def exportar_inventario_pdf(request):
-    accesorios = Producto.objects.filter(categoria__nombre='Accesorio')
+    accesorios = Producto.objects.all().order_by('categoria__nombre','nombre') #filter(categoria__nombre='Accesorio')
     #accesorios = Producto.objects.all()
     total_valor = 0
     for p in accesorios:

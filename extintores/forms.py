@@ -99,6 +99,7 @@ class OdtForm(forms.ModelForm):
     class Meta:
         model = Odt
         fields = ['alias','observaciones','estatus']
+        widgets = {'observaciones': SummernoteWidget()}
 
 class DetalleOdtForm(forms.ModelForm):
     class Meta:

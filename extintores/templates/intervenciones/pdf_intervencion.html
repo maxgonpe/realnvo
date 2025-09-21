@@ -245,6 +245,16 @@
     </tbody>
 </table>
 
+<!-- cuadro de notas -->
+{% if intervencion.notas %}
+<h4>Notas del Servicio</h4>
+<div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
+    {{ intervencion.notas|safe }}
+</div>
+{% endif %}
+<!-- fin cuadro de notas -->
+
+
 <h3 class="mb-0">📊  Estadística de Extintores por Estado</h4>
 
 <table class="table table-bordered table-sm">

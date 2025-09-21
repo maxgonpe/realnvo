@@ -146,6 +146,16 @@
         </tbody>
     </table>
 
+  <!-- cuadro observaciones -->
+{% if odt.observaciones %}
+<h4>Notas del Servicio</h4>
+<div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px; font-size:10px;">
+    {{ odt.observaciones|safe }}
+</div>
+{% endif %}
+<!-- fin cuadro observaciones -->
+
+
     <div style="margin-top: 20px; text-align: right;">
     {% if odt.intervencion.tecnico.technician_profile.signature %}
         <img src="file://{{ odt.intervencion.tecnico.technician_profile.signature.path }}" 
