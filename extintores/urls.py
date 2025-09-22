@@ -19,7 +19,7 @@ from .views import IntervencionListView, crear_intervencion,\
                    odt_editar_items, ingreso_stock_nuevo, exportar_inventario_pdf,\
                    exportar_inventario_excel, generar_estadisticas_view,\
                    generar_estadisticas_mensuales, ver_estadisticas_view,\
-                   alertas_view 
+                   alertas_view, editar_consumos_intervencion 
 
 urlpatterns = [
     path('', IntervencionListView.as_view(), name='intervencion_lista'),
@@ -28,6 +28,7 @@ urlpatterns = [
     path('editar/<int:pk>/', editar_intervencion, name='intervencion_editar'),
     path('eliminar/<int:pk>/', eliminar_intervencion, name='eliminar_intervencion'),
     path('detalle/<int:pk>/', detalle_intervencion, name='intervencion_detalle'),
+    path("intervenciones/<int:pk>/consumos/", editar_consumos_intervencion, name="editar_consumos_intervencion"),
     path('excel/<int:pk>/', IntervencionExcel.as_view(), name='intervencion_excel'),
     path('pdf/<int:pk>/', IntervencionPDF.as_view(), name='intervencion_pdf'),
     path('odt/', OdtListView.as_view(), name='odt_lista'),

@@ -197,6 +197,7 @@ class Intervencion(models.Model):
     def __str__(self):
         return f"{self.get_tipo_display()} {self.pk} - {self.cliente}"
 
+
 class HistorialServicio(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="historial_servicios")
     intervencion = models.ForeignKey(Intervencion, on_delete=models.CASCADE, related_name="historial")
@@ -352,7 +353,34 @@ class CompatibilidadProducto(models.Model):
 
 
 
+class ItemIntervencion(models.Model):
+    intervencion = models.ForeignKey(
+        Intervencion,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # snapshot
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        # Toma snapshot del precio
+        self.precio_unitario = self.producto.precio_unitario
+        self.subtotal = (self.precio_unitario or 0) * self.cantidad
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Al eliminar, devolver stock del producto"""
+        if self.producto and self.cantidad:
+            self.producto.stock = (self.producto.stock or 0) + self.cantidad
+            self.producto.save()
+        super().delete(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.intervencion} - {self.producto.nombre} ({self.cantidad})"
+
+    
 
 class ItemOdt(models.Model):
     odt = models.ForeignKey(Odt, on_delete=models.CASCADE, related_name='items')

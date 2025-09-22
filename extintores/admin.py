@@ -7,7 +7,7 @@ from .models import Cliente, Intervencion, DetalleIntervencion,\
                     CategoriaProducto,ImagenIntervencion,\
                     Bitacora, FactorAjusteCliente, IngresoStock,\
                     DetalleIngreso, EstadisticaMensual, EstadisticaDetalleExtintor,\
-                    EstadisticaDetalleProducto, HistorialServicio 
+                    EstadisticaDetalleProducto, HistorialServicio,ItemIntervencion 
 
 User = get_user_model()
 
@@ -55,6 +55,9 @@ class EstadisticaDetalleExtintorAdmin(admin.ModelAdmin):
 class EstadisticaDetalleProductoAdmin(admin.ModelAdmin):
     list_display = ['id', 'mes','producto','cantidad','subtotal','cliente','nombre']
 
+class ItemIntervencionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'intervencion','producto','cantidad']
+
 admin.site.register(Cliente)
 #admin.site.register(Intervencion)
 admin.site.register(DetalleIntervencion,DetalleIntervencionAdmin)
@@ -72,3 +75,4 @@ admin.site.register(EstadisticaMensual, EstadisticaMensualAdmin )
 admin.site.register(EstadisticaDetalleExtintor, EstadisticaDetalleExtintorAdmin)
 admin.site.register(EstadisticaDetalleProducto, EstadisticaDetalleProductoAdmin)
 admin.site.register(HistorialServicio)
+admin.site.register(ItemIntervencion,ItemIntervencionAdmin)

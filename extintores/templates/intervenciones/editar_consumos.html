@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2 class="mb-4">Consumos en Intervención #{{ intervencion.pk }}</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div id="form-container">
+    {% for form in formset %}
+
+      <input type="hidden" name="{{ form.prefix }}-id" value="{{ form.instance.id }}">
+
+      <div class="card mb-2 shadow-sm p-3">
+        <div class="row align-items-end">
+          <div class="col-md-6">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Producto</label>
+              {{ form.producto }}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Cantidad</label>
+              {{ form.cantidad }}
+            </div>
+          </div>
+          <div class="col-md-3 text-center">
+            <div class="form-check mt-4">
+              {{ form.DELETE }} 
+              <label class="form-check-label text-danger">Eliminar</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">No hay consumos aún. Usa el botón para agregar uno.</p>
+    {% endfor %}
+  </div>
+
+  <!-- formulario vacío oculto -->
+  <template id="empty-form">
+  {{ formset.empty_form|crispy}}
+</template>
+
+
+
+  <button type="button" class="btn btn-sm btn-primary mt-2" id="add-form">+ Agregar Producto</button>
+
+  <hr>
+  <div class="d-flex justify-content-end gap-2">
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{% url 'intervencion_detalle' intervencion.pk %}" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+
+<script>
+  const addButton = document.getElementById("add-form");
+  const container = document.getElementById("form-container");
+  const totalForms = document.getElementById("id_form-TOTAL_FORMS");  // Asegúrate que este ID coincida
+  const emptyTemplate = document.getElementById("empty-form").innerHTML;
+
+  addButton.addEventListener("click", function () {
+    const newIndex = parseInt(totalForms.value);
+    const newFormHtml = emptyTemplate.replace(/__prefix__/g, newIndex);
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = newFormHtml;
+    container.appendChild(wrapper);
+
+    totalForms.value = newIndex + 1;
+  });
+</script>
+
+{% endblock %}
+

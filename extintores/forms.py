@@ -9,7 +9,7 @@ from django_summernote.widgets import SummernoteWidget
 from .models import (
     Intervencion, DetalleIntervencion, Odt, DetalleOdt,
     Producto, ItemOdt, Cliente, CategoriaProducto, ImagenIntervencion,
-    FactorAjusteCliente, ItemOdt
+    FactorAjusteCliente, ItemOdt, ItemIntervencion
 )
 
 ### FORMULARIO PARA INTERVENCIÓN ###
@@ -163,11 +163,15 @@ class FactorAjusteClienteForm(forms.ModelForm):
         model = FactorAjusteCliente
         fields = ['cliente', 'categoria', 'factor']
 
-'''
-ItemOdtFormSet = forms.modelformset_factory(
-    ItemOdt,
-    form=ItemOdtForm,
+class ItemIntervencionForm(forms.ModelForm):
+    class Meta:
+        model = ItemIntervencion
+        fields = ['producto', 'cantidad']
+
+ItemIntervencionFormSet = inlineformset_factory(
+    Intervencion,
+    ItemIntervencion,
+    form=ItemIntervencionForm,
     extra=1,
     can_delete=True
 )
-'''

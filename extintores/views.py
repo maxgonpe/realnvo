@@ -45,14 +45,14 @@ from .models import (
     Odt, DetalleOdt, Producto, Cliente, CompatibilidadProducto,
     ItemOdt, CategoriaProducto, Bitacora, FactorAjusteCliente,
     IngresoStock, DetalleIngreso, EstadisticaMensual,
-    EstadisticaDetalleExtintor, EstadisticaDetalleProducto
+    EstadisticaDetalleExtintor, EstadisticaDetalleProducto,ItemIntervencion
 )
 
 # === FORMULARIOS ===
 from .forms import (
     IntervencionForm, DetalleIntervencionForm, ItemOdtForm, ImagenIntervencionForm,
     OdtForm, DetalleOdtFormSet, ItemOdtFormSet, ProductoForm, ClienteForm,
-    CategoriaForm, ImagenIntervencionFormSet, FactorAjusteClienteForm
+    CategoriaForm, ImagenIntervencionFormSet, FactorAjusteClienteForm, ItemIntervencionForm
 )
 
 # === UTILIDADES ===
@@ -548,33 +548,6 @@ def odt_pdf(request, pk):
 
 
 
-def odt_pdf2(request, pk):
-    odt = get_object_or_404(Odt, pk=pk)
-    items = odt.items.all()
-    total = sum(item.subtotal for item in items)
-    iva = total * Decimal('0.19')
-    total_final = total + iva
-    html_content = render_to_string("odt/pdf_odt.html", {
-        "odt": odt,
-        "items": items,
-        "total": total,
-        "iva": iva,
-        "total_final": total_final,
-    })
-    response = HttpResponse(content_type="application/pdf")
-    response['Content-Disposition'] = f'inline; filename="ODT-{odt.pk}.pdf"'
-    HTML(string=html_content,base_url=request.build_absolute_uri('/')).write_pdf(response)
-    # ... registrar_bitacora ...
-    registrar_bitacora(
-        usuario=request.user,
-        accion='Crear',
-        modelo='Odt',
-        objeto_id=pk,
-        descripcion=f"El usuario {request.user.username} creo el documento PDF para la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-    )
-
-
-    return response
 
 
 def odt_excel(request, pk):
@@ -1082,6 +1055,10 @@ def detalle_intervencion(request, pk):
         dict(ESTADO_CHOICES).get(k, k): v for k, v in conteo.items()
     }
 
+    total_consumos = sum([i.subtotal for i in intervencion.items.all() if i.subtotal])
+
+
+
     return render(request, 'intervenciones/detalle_intervencion.html', {
         'intervencion': intervencion,
         'estadistica': estadistica,
@@ -1104,6 +1081,7 @@ def detalle_intervencion(request, pk):
         'total_afff': total_afff,
         'estadisticas_estado': dict(estadisticas_estado),
         'estadisticas_boleanas': dict(estadisticas_boleanas),
+        'total_consumos': total_consumos,
     })
 
 
@@ -2066,17 +2044,6 @@ def ver_estadisticas_view(request, mes=None):
         "estadisticas_estado": estadisticas_estado,
     })
 
-def alertas_servicios2(request):
-    hoy = timezone.now().date()
-    limite = hoy - timedelta(days=365)  # 1 año atrás
-
-    clientes_alerta = Cliente.objects.filter(
-        fecha_ultima_intervencion__lte=limite
-    )
-    return render(request, "cliente/alertas.html", {
-        "clientes_alerta": clientes_alerta
-    })
-
 
 def alertas_view(request):
     hoy = timezone.now().date()
@@ -2086,3 +2053,53 @@ def alertas_view(request):
         if intervencion.fecha + timedelta(days=365) <= hoy - timedelta(days=30)
     ]
     return render(request, 'cliente/alertas.html', {'proximas': proximas})    
+
+
+def editar_consumos_intervencion(request, pk):
+    intervencion = get_object_or_404(Intervencion, pk=pk)
+
+    ItemFormSet = modelformset_factory(
+        ItemIntervencion,
+        fields=('producto', 'cantidad'),
+        can_delete=True,
+        extra=0
+    )
+
+    queryset = ItemIntervencion.objects.filter(intervencion=intervencion)
+
+    if request.method == 'POST':
+        formset = ItemFormSet(request.POST, queryset=queryset)
+
+        if formset.is_valid():
+            print("TOTAL FORMS:", formset.total_form_count())
+            print("DELETED FORMS:", len(formset.deleted_forms))
+
+            # Guardar los que no están marcados para eliminar
+            for idx, form in enumerate(formset.forms):
+                print(f"[{idx}] cleaned_data:", form.cleaned_data)
+                print(f"[{idx}] DELETE marked:", form.cleaned_data.get('DELETE'))
+                print(f"[{idx}] instance pk:", form.instance.pk)
+
+                if form not in formset.deleted_forms:
+                    item = form.save(commit=False)
+                    item.intervencion = intervencion
+                    item.save()
+
+            # Eliminar los marcados si tienen pk (existen en DB)
+            for form in formset.deleted_forms:
+                if form.instance.pk:
+                    print(f"Deleting ItemIntervencion pk={form.instance.pk}")
+                    form.instance.delete()
+                else:
+                    print("Intento de eliminar objeto sin PK, ignorado.")
+
+            return redirect('intervencion_detalle', pk=intervencion.pk)
+
+    else:
+        formset = ItemFormSet(queryset=queryset)
+
+    return render(request, 'intervenciones/editar_consumos.html', {
+        'formset': formset,
+        'intervencion': intervencion
+    })
+

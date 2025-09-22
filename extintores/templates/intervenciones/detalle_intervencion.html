@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <head>
@@ -397,6 +398,46 @@
 {% else %}
     <p>No hay detalles registrados.</p>
 {% endif %}
+
+{% if intervencion.items.all %}
+<h4>Consumos Internos</h4>
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-dark text-white">
+    <h5 class="mb-0">🛠️ Productos consumidos en la Intervención</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio Unitario</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in intervencion.items.all %}
+        <tr>
+          <td>{{ item.producto.nombre }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>${{ item.precio_unitario|floatformat:0|intcomma }}</td>
+          <td>${{ item.subtotal|floatformat:0|intcomma }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="table-info">
+  <th colspan="3" class="text-end">Total</th>
+  <th>${{ total_consumos|floatformat:0|intcomma }}</th>
+</tr>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+
+
+
 
 <h4>Estadística de Extintores por Estado</h4>
 <div class="card mb-4 shadow-sm">
@@ -917,6 +958,8 @@
   <button onclick="scrollUp()" class="btn btn-secondary btn-sm" title="Subir">↑</button>
   <button onclick="scrollDown()" class="btn btn-secondary btn-sm" title="Bajar">↓</button>
   <button onclick="scrollToBottom()" class="btn btn-primary btn-sm" title="Final">⤓</button>
+
+
 </div>
 
 

@@ -17,7 +17,12 @@
         {% endif %}
 
         <br>
-        <a href="{% url 'intervencion_detalle' i.pk %}" class="btn btn-sm btn-outline-info mt-2">Ver</a>
+        <a href="{% url 'intervencion_detalle' i.pk %}" class="btn btn-sm btn-success mt-2">Ver</a>
+
+        <a href="{% url 'editar_consumos_intervencion' i.pk %}" class="btn btn-sm btn-warning mt-2">
+    ➕ Registrar consumos
+</a>
+
         <a href="{% url 'intervencion_editar' i.pk %}" class="btn btn-sm btn-secondary mt-2">Editar</a>
         <a href="{% url 'eliminar_intervencion' i.pk %}" class="btn btn-sm btn-danger mt-2">Eliminar</a>
     </div>
