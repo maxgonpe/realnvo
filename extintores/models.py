@@ -365,9 +365,22 @@ class ItemIntervencion(models.Model):
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Toma snapshot del precio
+        # Detectar si ya existía antes de guardar
+        if self.pk:
+            old = ItemIntervencion.objects.get(pk=self.pk)
+            diff = self.cantidad - old.cantidad
+        else:
+            diff = self.cantidad  # todo el consumo es nuevo
+
+        # Ajustar stock si hay diferencia
+        if self.producto and diff != 0:
+            self.producto.stock = (self.producto.stock or 0) - diff
+            self.producto.save()
+
+        # Snapshot precio y subtotal
         self.precio_unitario = self.producto.precio_unitario
         self.subtotal = (self.precio_unitario or 0) * self.cantidad
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
