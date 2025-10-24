@@ -19,7 +19,7 @@ from .views import IntervencionListView, crear_intervencion,\
                    odt_editar_items, ingreso_stock_nuevo, exportar_inventario_pdf,\
                    exportar_inventario_excel, generar_estadisticas_view,\
                    generar_estadisticas_mensuales, ver_estadisticas_view,\
-                   alertas_view, editar_consumos_intervencion 
+                   alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax 
 
 urlpatterns = [
     path('', IntervencionListView.as_view(), name='intervencion_lista'),
@@ -63,6 +63,8 @@ urlpatterns = [
     path('estadisticas/generar/', generar_estadisticas_view, name='generar_estadisticas'),
     path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),  # Ajusta esto
     path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),  # Agrega esta línea
+    path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
+    path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
     
 
 

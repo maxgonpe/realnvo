@@ -372,14 +372,29 @@ class ItemIntervencion(models.Model):
         else:
             diff = self.cantidad  # todo el consumo es nuevo
 
-        # Ajustar stock si hay diferencia
-        if self.producto and diff != 0:
-            self.producto.stock = (self.producto.stock or 0) - diff
-            self.producto.save()
+        # Ajustar stock si hay diferencia - con verificación defensiva
+        try:
+            if self.producto and diff != 0:
+                self.producto.stock = (self.producto.stock or 0) - diff
+                self.producto.save()
+        except ItemIntervencion.producto.RelatedObjectDoesNotExist:
+            # El item no tiene producto asociado (línea en blanco)
+            # Continuar sin procesar el producto
+            pass
 
-        # Snapshot precio y subtotal
-        self.precio_unitario = self.producto.precio_unitario
-        self.subtotal = (self.precio_unitario or 0) * self.cantidad
+        # Snapshot precio y subtotal - con verificación defensiva
+        try:
+            if self.producto:
+                self.precio_unitario = self.producto.precio_unitario
+                self.subtotal = (self.precio_unitario or 0) * self.cantidad
+            else:
+                # Si no hay producto, usar valores por defecto
+                self.precio_unitario = 0
+                self.subtotal = 0
+        except ItemIntervencion.producto.RelatedObjectDoesNotExist:
+            # El item no tiene producto asociado (línea en blanco)
+            self.precio_unitario = 0
+            self.subtotal = 0
 
         super().save(*args, **kwargs)
 

@@ -2074,16 +2074,21 @@ def editar_consumos_intervencion(request, pk):
             print("TOTAL FORMS:", formset.total_form_count())
             print("DELETED FORMS:", len(formset.deleted_forms))
 
-            # Guardar los que no están marcados para eliminar
+            # Guardar los que no están marcados para eliminar Y tienen producto
             for idx, form in enumerate(formset.forms):
                 print(f"[{idx}] cleaned_data:", form.cleaned_data)
                 print(f"[{idx}] DELETE marked:", form.cleaned_data.get('DELETE'))
                 print(f"[{idx}] instance pk:", form.instance.pk)
 
                 if form not in formset.deleted_forms:
-                    item = form.save(commit=False)
-                    item.intervencion = intervencion
-                    item.save()
+                    # Verificar que el formulario tiene producto antes de guardar
+                    if form.cleaned_data.get('producto'):
+                        item = form.save(commit=False)
+                        item.intervencion = intervencion
+                        item.save()
+                        print(f"[{idx}] Guardado ItemIntervencion con producto: {item.producto}")
+                    else:
+                        print(f"[{idx}] Formulario sin producto, ignorado")
 
             # Eliminar los marcados si tienen pk (existen en DB)
             for form in formset.deleted_forms:
@@ -2102,4 +2107,79 @@ def editar_consumos_intervencion(request, pk):
         'formset': formset,
         'intervencion': intervencion
     })
+
+
+# === BÚSQUEDA AJAX DE CLIENTES ===
+def buscar_clientes_ajax(request):
+    """
+    Endpoint AJAX para búsqueda de clientes por múltiples campos
+    """
+    if request.method == 'GET':
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:  # Mínimo 2 caracteres para buscar
+            return JsonResponse({'clientes': []})
+        
+        # Búsqueda en múltiples campos
+        clientes = Cliente.objects.filter(
+            Q(nombre__icontains=query) |
+            Q(rut__icontains=query) |
+            Q(correo__icontains=query) |
+            Q(direccion__icontains=query) |
+            Q(telefono__icontains=query) |
+            Q(contacto__icontains=query)
+        ).order_by('nombre')[:10]  # Máximo 10 resultados
+        
+        # Formatear resultados
+        resultados = []
+        for cliente in clientes:
+            resultados.append({
+                'id': cliente.id,
+                'nombre': cliente.nombre,
+                'rut': cliente.rut or '',
+                'correo': cliente.correo or '',
+                'direccion': cliente.direccion or '',
+                'telefono': cliente.telefono or '',
+                'contacto': cliente.contacto or '',
+                'display': f"{cliente.nombre} - {cliente.rut or 'Sin RUT'}"
+            })
+        
+        return JsonResponse({'clientes': resultados})
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+# === BÚSQUEDA AJAX DE PRODUCTOS ===
+def buscar_productos_ajax(request):
+    """
+    Endpoint AJAX para búsqueda de productos por múltiples campos
+    """
+    if request.method == 'GET':
+        query = request.GET.get('q', '').strip()
+        
+        if len(query) < 2:  # Mínimo 2 caracteres para buscar
+            return JsonResponse({'productos': []})
+        
+        # Búsqueda en múltiples campos
+        productos = Producto.objects.filter(
+            Q(nombre__icontains=query) |
+            Q(categoria__nombre__icontains=query)
+        ).order_by('nombre')[:10]  # Máximo 10 resultados
+        
+        # Formatear resultados
+        resultados = []
+        for producto in productos:
+            resultados.append({
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
+                'codigo': 'N/A',  # Campo no disponible en el modelo
+                'precio': float(producto.precio_unitario) if producto.precio_unitario else 0,
+                'stock': producto.stock or 0,
+                'display': f"{producto.nombre} - {producto.categoria.nombre if producto.categoria else 'Sin categoría'}"
+            })
+        
+        return JsonResponse({'productos': resultados})
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 

@@ -24,11 +24,111 @@
         font-size: 3rem;
         color: #dc3545;
     }
+    
+    /* Estilos para búsqueda de cliente */
+    .cliente-results {
+        top: 100%;
+        left: 0;
+        right: 0;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+    }
+    
+    .cliente-result-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .cliente-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .cliente-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .cliente-result-name {
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 4px;
+    }
+    
+    .cliente-result-details {
+        font-size: 0.875rem;
+        color: #6c757d;
+        line-height: 1.3;
+    }
+    
+    .cliente-search-container .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
 </style>
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form|crispy }}
+    
+    <!-- Campo de búsqueda AJAX para cliente -->
+    <div class="mb-4">
+        <label class="form-label fw-bold">Cliente:</label>
+        <div class="cliente-search-container position-relative">
+            <input type="text" 
+                   id="cliente-search" 
+                   class="form-control form-control-lg" 
+                   placeholder="Buscar cliente por nombre, RUT, correo, dirección, teléfono o contacto..."
+                   autocomplete="off">
+            <div id="cliente-results" class="cliente-results position-absolute w-100 bg-white border rounded shadow-lg" style="display: none; z-index: 1000; max-height: 300px; overflow-y: auto;">
+                <!-- Los resultados se cargarán aquí -->
+            </div>
+            <input type="hidden" id="cliente-id" name="cliente" value="">
+            <div id="cliente-selected" class="mt-2" style="display: none;">
+                <div class="alert alert-success d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong id="cliente-nombre"></strong>
+                        <br><small class="text-muted" id="cliente-details"></small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="cliente-clear">
+                        <i class="bi bi-x"></i> Cambiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Campos del formulario original -->
+    <div class="row">
+        <div class="col-md-6">
+            <div style="display: none;">
+                {{ form.cliente|as_crispy_field }}
+            </div>
+            {{ form.fecha|as_crispy_field }}
+        </div>
+        <div class="col-md-6">
+            {{ form.tipo|as_crispy_field }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            {{ form.tecnico|as_crispy_field }}
+        </div>
+        <div class="col-md-6">
+            {{ form.alias|as_crispy_field }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{ form.notas|as_crispy_field }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{ form.con_odt|as_crispy_field }}
+        </div>
+    </div>
+    
     {{ formset.management_form }}
 
     <h4 class="mt-4">Extintores</h4>
@@ -118,6 +218,129 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // === BÚSQUEDA AJAX DE CLIENTES ===
+    const clienteSearch = document.getElementById('cliente-search');
+    const clienteResults = document.getElementById('cliente-results');
+    const clienteId = document.getElementById('cliente-id');
+    const clienteSelected = document.getElementById('cliente-selected');
+    const clienteNombre = document.getElementById('cliente-nombre');
+    const clienteDetails = document.getElementById('cliente-details');
+    const clienteClear = document.getElementById('cliente-clear');
+    
+    let searchTimeout;
+    let currentResults = [];
+    
+    // Función para buscar clientes
+    function buscarClientes(query) {
+        if (query.length < 2) {
+            clienteResults.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/ajax/buscar-clientes/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                currentResults = data.clientes;
+                mostrarResultados(data.clientes);
+            })
+            .catch(error => {
+                console.error('Error en búsqueda:', error);
+                clienteResults.style.display = 'none';
+            });
+    }
+    
+    // Función para mostrar resultados
+    function mostrarResultados(clientes) {
+        if (clientes.length === 0) {
+            clienteResults.innerHTML = '<div class="cliente-result-item text-muted">No se encontraron clientes</div>';
+        } else {
+            clienteResults.innerHTML = clientes.map(cliente => `
+                <div class="cliente-result-item" data-cliente-id="${cliente.id}">
+                    <div class="cliente-result-name">${cliente.nombre}</div>
+                    <div class="cliente-result-details">
+                        ${cliente.rut ? `RUT: ${cliente.rut}` : ''}
+                        ${cliente.telefono ? ` | Tel: ${cliente.telefono}` : ''}
+                        ${cliente.correo ? ` | ${cliente.correo}` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        clienteResults.style.display = 'block';
+    }
+    
+    // Event listeners para búsqueda
+    clienteSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            buscarClientes(this.value);
+        }, 300);
+    });
+    
+    // Event listener para seleccionar cliente
+    clienteResults.addEventListener('click', function(e) {
+        const item = e.target.closest('.cliente-result-item');
+        if (item) {
+            const clienteIdValue = item.dataset.clienteId;
+            const cliente = currentResults.find(c => c.id == clienteIdValue);
+            
+            if (cliente) {
+                seleccionarCliente(cliente);
+            }
+        }
+    });
+    
+    // Función para seleccionar cliente
+    function seleccionarCliente(cliente) {
+        clienteId.value = cliente.id;
+        clienteNombre.textContent = cliente.nombre;
+        clienteDetails.textContent = `${cliente.rut || 'Sin RUT'} | ${cliente.telefono || 'Sin teléfono'} | ${cliente.correo || 'Sin correo'}`;
+        
+        // Sincronizar con el campo oculto del formulario
+        const formClienteField = document.querySelector('select[name="cliente"]');
+        if (formClienteField) {
+            formClienteField.value = cliente.id;
+        }
+        
+        clienteSearch.style.display = 'none';
+        clienteResults.style.display = 'none';
+        clienteSelected.style.display = 'block';
+    }
+    
+    // Event listener para limpiar selección
+    clienteClear.addEventListener('click', function() {
+        clienteId.value = '';
+        clienteSearch.value = '';
+        
+        // Limpiar el campo del formulario
+        const formClienteField = document.querySelector('select[name="cliente"]');
+        if (formClienteField) {
+            formClienteField.value = '';
+        }
+        
+        clienteSearch.style.display = 'block';
+        clienteSelected.style.display = 'none';
+        clienteResults.style.display = 'none';
+    });
+    
+    // Ocultar resultados al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.cliente-search-container')) {
+            clienteResults.style.display = 'none';
+        }
+    });
+    
+    // Validación antes de enviar el formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const formClienteField = document.querySelector('select[name="cliente"]');
+        if (!formClienteField || !formClienteField.value) {
+            e.preventDefault();
+            alert('Por favor seleccione un cliente antes de continuar.');
+            clienteSearch.focus();
+            return false;
+        }
+    });
+    
+    // === FUNCIONALIDAD ORIGINAL DE EXTINTORES ===
     const prefix = '{{ prefix }}';
     const emptyForm = document.getElementById('empty-form').innerHTML;
     const formContainer = document.getElementById('form-container');
@@ -178,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cantidad = parseInt(document.getElementById('cantExtintores').value) || 1;
         const agente = document.getElementById('agentePredeterminado').value;
         
-        if(cantidad > 0 && cantidad <= 325 && agente) {
+        if(cantidad > 0 && cantidad <= 500 && agente) {
             agregarMultiplesFormularios(cantidad, agente);
             const modal = bootstrap.Modal.getInstance(document.getElementById('multiExtModal'));
             modal.hide();
