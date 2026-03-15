@@ -11,7 +11,7 @@ from .views import IntervencionListView, crear_intervencion,\
                    modificar_cliente, eliminar_cliente,\
                    lista_clientes,agregar_producto,\
                    modificar_producto,eliminar_producto,\
-                   lista_productos, agregar_item_odt, agregar_categoria,\
+                   lista_productos, consulta_stock_productos, agregar_item_odt, agregar_categoria,\
                    modificar_categoria,eliminar_categoria,lista_categorias,\
                    IntervencionAjaxListView, factorajustecliente_lista,\
                    factorajustecliente_crear, factorajustecliente_editar,\
@@ -19,7 +19,8 @@ from .views import IntervencionListView, crear_intervencion,\
                    odt_editar_items, ingreso_stock_nuevo, exportar_inventario_pdf,\
                    exportar_inventario_excel, generar_estadisticas_view,\
                    generar_estadisticas_mensuales, ver_estadisticas_view,\
-                   alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax 
+                   alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
+                   usuarios_simple
 
 urlpatterns = [
     path('', IntervencionListView.as_view(), name='intervencion_lista'),
@@ -50,6 +51,7 @@ urlpatterns = [
     path('producto/editar/<int:pk>/', modificar_producto, name='modificar_producto'),
     path('producto/eliminar/<int:pk>/', eliminar_producto, name='eliminar_producto'),
     path('producto/ingreso/', ingreso_stock_nuevo, name='ingreso_stock_nuevo'),
+    path('producto/consulta-stock/', consulta_stock_productos, name='consulta_stock_productos'),
     path('productos/inventario/excel/', exportar_inventario_excel, name='inventario_excel'),
     path('productos/inventario/pdf/', exportar_inventario_pdf, name='inventario_pdf'),
     path('categoria/', lista_categorias, name='lista_categorias'),
@@ -65,7 +67,8 @@ urlpatterns = [
     path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),  # Agrega esta línea
     path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
     path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
-    
+    path('usuarios/', usuarios_simple, name='usuarios_simple'),
+
 
 
 

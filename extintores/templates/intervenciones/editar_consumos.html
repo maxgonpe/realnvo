@@ -63,7 +63,33 @@
         padding: 8px 12px;
         margin-top: 8px;
     }
+    
+    /* Modal de alerta stock bajo */
+    #modal-stock-bajo .modal-dialog { max-width: 480px; }
+    #modal-stock-bajo .modal-header { background: #dc3545; color: #fff; border-bottom: none; }
+    #modal-stock-bajo .modal-content { border: 2px solid #dc3545; box-shadow: 0 0 20px rgba(220, 53, 69, 0.4); }
+    #modal-stock-bajo .btn-close { filter: invert(1); }
+    #modal-stock-bajo .alert-icon { font-size: 3rem; }
 </style>
+
+<!-- Modal alerta stock bajo -->
+<div class="modal fade" id="modal-stock-bajo" tabindex="-1" aria-labelledby="modalStockBajoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalStockBajoLabel"><span class="alert-icon">⚠️</span> Stock bajo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="fw-bold mb-2">El producto <strong id="modal-stock-bajo-nombre"></strong> tiene stock por debajo de 100 unidades.</p>
+        <p class="text-danger mb-0">Se recomienda realizar compra del insumo para reponer inventario.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <form method="post">
   {% csrf_token %}
@@ -225,6 +251,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
+    // Escapar para uso en atributo HTML
+    function escapeAttr(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     // Función para mostrar resultados de productos
     function mostrarResultadosProductos(productos, searchInput) {
         const results = searchInput.parentElement.querySelector('.producto-results');
@@ -238,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
             results.innerHTML = '<div class="producto-result-item text-muted">No se encontraron productos</div>';
         } else {
             results.innerHTML = productos.map(producto => `
-                <div class="producto-result-item" data-producto-id="${producto.id}">
+                <div class="producto-result-item" data-producto-id="${producto.id}" data-producto-stock="${producto.stock}" data-producto-nombre="${escapeAttr(producto.nombre)}">
                     <div class="producto-result-name">${producto.nombre}</div>
                     <div class="producto-result-details">
                         ${producto.categoria} | Código: ${producto.codigo || 'N/A'} | 
@@ -314,15 +350,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Mostrar modal de alerta cuando stock < 100
+    function mostrarAlertaStockBajo(nombreProducto) {
+        const modalEl = document.getElementById('modal-stock-bajo');
+        const nombreEl = document.getElementById('modal-stock-bajo-nombre');
+        if (modalEl && nombreEl) {
+            nombreEl.textContent = nombreProducto;
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
     // Event listener para seleccionar producto
     document.addEventListener('click', function(e) {
         if (e.target.closest('.producto-result-item')) {
             const item = e.target.closest('.producto-result-item');
             const searchInput = item.closest('.producto-search-container').querySelector('.producto-search');
             const productoId = item.dataset.productoId;
-            
-            // Obtener datos del producto desde el HTML
-            const productoNombre = item.querySelector('.producto-result-name').textContent;
+            const productoStock = parseFloat(item.dataset.productoStock) || 0;
+            const productoNombre = item.dataset.productoNombre || item.querySelector('.producto-result-name').textContent;
             const productoDetails = item.querySelector('.producto-result-details').textContent;
             
             const producto = {
@@ -331,10 +377,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoria: productoDetails.split(' | ')[0],
                 codigo: productoDetails.split('Código: ')[1]?.split(' | ')[0] || 'N/A',
                 precio: parseFloat(productoDetails.split('Precio: $')[1]?.split(' | ')[0]?.replace(/,/g, '') || 0),
-                stock: parseInt(productoDetails.split('Stock: ')[1] || 0)
+                stock: productoStock
             };
             
             seleccionarProducto(producto, searchInput);
+            
+            if (productoStock < 100) {
+                mostrarAlertaStockBajo(producto.nombre);
+            }
         }
     });
     

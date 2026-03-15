@@ -59,6 +59,7 @@ from .forms import (
 from .utils import obtener_factor, descontar_stock,\
                    revertir_stock, actualizar_stock_item_odt,\
                    generar_estadisticas_mensuales
+from .decorators import solo_gestor_usuarios
 
 from django.template.loader import render_to_string
 from weasyprint import HTML
@@ -1405,6 +1406,45 @@ def lista_productos(request):
     return render(request, 'producto/lista.html', {'productos': productos})
 
 
+def consulta_stock_productos(request):
+    """Listado de productos con filtros por stock (<= cantidad) y búsqueda por nombre/categoría."""
+    import math
+    qs = Producto.objects.select_related('categoria').order_by('categoria__nombre', 'nombre')
+    stock_max = request.GET.get('stock_max', '').strip()
+    buscar = request.GET.get('buscar', '').strip()
+    stock_max_num = None
+    threshold = None  # primera mitad = amarillo (>= threshold), segunda mitad = rojo (< threshold)
+
+    if stock_max != '':
+        try:
+            valor = Decimal(stock_max.replace(',', '.'))
+            stock_max_num = float(valor)
+            qs = qs.filter(stock__lte=valor)
+            threshold = math.ceil(stock_max_num / 2)
+        except Exception:
+            pass
+    if buscar:
+        qs = qs.filter(
+            Q(nombre__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        )
+    # Anotar valor total (stock * precio) para la tabla
+    productos = [
+        {
+            'producto': p,
+            'valor_total': (p.stock or 0) * (p.precio_unitario or 0),
+        }
+        for p in qs
+    ]
+    return render(request, 'producto/consulta_stock.html', {
+        'productos': productos,
+        'stock_max': stock_max,
+        'stock_max_num': stock_max_num,
+        'threshold': threshold,
+        'buscar': buscar,
+    })
+
+
 def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST)
@@ -2182,4 +2222,79 @@ def buscar_productos_ajax(request):
         return JsonResponse({'productos': resultados})
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+
+# === GESTIÓN SIMPLE DE USUARIOS (solo andres o superuser) ===
+@login_required
+@solo_gestor_usuarios
+def usuarios_simple(request):
+    """Lista todos los usuarios. Crear, editar, asignar contraseña y eliminar. Acceso: superuser o usuario 'andres'."""
+    usuarios = User.objects.all().order_by('username')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'crear':
+            username = request.POST.get('username', '').strip()
+            password = request.POST.get('password', '')
+            if not username:
+                messages.error(request, "El nombre de usuario es obligatorio.")
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, f"El usuario '{username}' ya existe.")
+            elif len(password) < 4:
+                messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
+            else:
+                User.objects.create_user(username=username, password=password)
+                messages.success(request, f"Usuario '{username}' creado. Puedes compartir usuario y contraseña.")
+
+        elif action == 'editar':
+            user_id = request.POST.get('user_id')
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            is_active = request.POST.get('is_active') == 'on'
+            try:
+                user = User.objects.get(id=user_id)
+                user.first_name = first_name
+                user.last_name = last_name
+                user.email = email
+                user.is_active = is_active
+                user.save()
+                messages.success(request, f"Datos de '{user.username}' actualizados.")
+            except User.DoesNotExist:
+                messages.error(request, "Usuario no encontrado.")
+
+        elif action == 'cambiar_password':
+            user_id = request.POST.get('user_id')
+            new_password = request.POST.get('new_password', '')
+            confirm = request.POST.get('confirm_password', '')
+            if new_password != confirm:
+                messages.error(request, "Las contraseñas no coinciden.")
+            elif len(new_password) < 4:
+                messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
+            else:
+                try:
+                    user = User.objects.get(id=user_id)
+                    user.set_password(new_password)
+                    user.save()
+                    messages.success(request, f"Contraseña de '{user.username}' actualizada. Nueva contraseña: {new_password}")
+                except User.DoesNotExist:
+                    messages.error(request, "Usuario no encontrado.")
+
+        elif action == 'eliminar':
+            user_id = request.POST.get('user_id')
+            try:
+                user = User.objects.get(id=user_id)
+                if user == request.user:
+                    messages.error(request, "No puedes eliminar tu propio usuario.")
+                else:
+                    username = user.username
+                    user.delete()
+                    messages.success(request, f"Usuario '{username}' eliminado.")
+            except User.DoesNotExist:
+                messages.error(request, "Usuario no encontrado.")
+
+        return redirect('usuarios_simple')
+
+    return render(request, 'usuarios_simple.html', {'usuarios': usuarios})
 

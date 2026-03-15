@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person-gear"></i> Usuarios</h5>
+            <small>Crear, editar y asignar contraseñas. Solo visible para el gestor de usuarios.</small>
+        </div>
+    </div>
+
+    <!-- Crear usuario -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="card-title"><i class="bi bi-plus-circle"></i> Crear usuario</h6>
+            <form method="post" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="crear">
+                <div class="col-md-4">
+                    <label class="form-label">Usuario (nombre para entrar)</label>
+                    <input type="text" class="form-control" name="username" required placeholder="Ej: juan">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" name="password" required minlength="4" placeholder="Mín. 4 caracteres">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">Crear y asignar contraseña</button>
+                </div>
+            </form>
+            <p class="small text-muted mt-2 mb-0">Luego puedes compartir usuario y contraseña con la persona.</p>
+        </div>
+    </div>
+
+    <!-- Lista de usuarios -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="card-title"><i class="bi bi-people"></i> Usuarios del sistema</h6>
+            {% if usuarios %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td>
+                                <strong>{{ u.username }}</strong>
+                                {% if u == request.user %}<span class="badge bg-info ms-1">Tú</span>{% endif %}
+                                {% if u.is_superuser %}<span class="badge bg-warning text-dark ms-1">Super</span>{% endif %}
+                            </td>
+                            <td>{{ u.get_full_name|default:"—" }}</td>
+                            <td>{{ u.email|default:"—" }}</td>
+                            <td>{% if u.is_active %}Sí{% else %}No{% endif %}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditar"
+                                    data-id="{{ u.id }}" data-username="{{ u.username }}" data-first="{{ u.first_name }}" data-last="{{ u.last_name }}" data-email="{{ u.email|default:'' }}" data-active="{{ u.is_active|yesno:'1,0' }}">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#modalPassword"
+                                    data-id="{{ u.id }}" data-username="{{ u.username }}">
+                                    <i class="bi bi-key"></i> Contraseña
+                                </button>
+                                {% if u != request.user %}
+                                <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar usuario {{ u.username }}?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay usuarios.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <p class="text-muted small">
+        <a href="{% url 'intervencion_lista' %}"><i class="bi bi-arrow-left"></i> Volver</a>
+    </p>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="editar">
+                <input type="hidden" name="user_id" id="editar_user_id">
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Usuario: <strong id="editar_username_display"></strong></p>
+                    <div class="mb-2">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="first_name" id="editar_first_name">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" class="form-control" name="last_name" id="editar_last_name">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" id="editar_email">
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_active" id="editar_is_active" value="on">
+                        <label class="form-check-label" for="editar_is_active">Usuario activo (puede entrar al sistema)</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Contraseña -->
+<div class="modal fade" id="modalPassword" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="cambiar_password">
+                <input type="hidden" name="user_id" id="password_user_id">
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Usuario: <strong id="password_username_display"></strong></p>
+                    <div class="mb-2">
+                        <label class="form-label">Nueva contraseña</label>
+                        <input type="password" class="form-control" name="new_password" minlength="4" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Repetir contraseña</label>
+                        <input type="password" class="form-control" name="confirm_password" minlength="4" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var modalEditar = document.getElementById('modalEditar');
+    if (modalEditar) {
+        modalEditar.addEventListener('show.bs.modal', function(e) {
+            var btn = e.relatedTarget;
+            if (!btn) return;
+            document.getElementById('editar_user_id').value = btn.dataset.id;
+            document.getElementById('editar_username_display').textContent = btn.dataset.username || '';
+            document.getElementById('editar_first_name').value = btn.dataset.first || '';
+            document.getElementById('editar_last_name').value = btn.dataset.last || '';
+            document.getElementById('editar_email').value = btn.dataset.email || '';
+            document.getElementById('editar_is_active').checked = btn.dataset.active === '1';
+        });
+    }
+    var modalPassword = document.getElementById('modalPassword');
+    if (modalPassword) {
+        modalPassword.addEventListener('show.bs.modal', function(e) {
+            var btn = e.relatedTarget;
+            if (!btn) return;
+            document.getElementById('password_user_id').value = btn.dataset.id;
+            document.getElementById('password_username_display').textContent = btn.dataset.username || '';
+        });
+    }
+})();
+</script>
+{% endblock %}
