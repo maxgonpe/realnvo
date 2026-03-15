@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">PRO-COMPRADO_ELIMINAR-{% now "d-m-y" %}</label>{% endblock %}
+{% block content %}
+<h2>Eliminar compra</h2>
+<p>¿Está seguro de que desea eliminar la compra <strong>#{{ ingreso.pk }}</strong> del {{ ingreso.fecha|date:"d/m/Y" }}?</p>
+<p class="text-muted">Se descontará del stock la cantidad de cada ítem de esta compra.</p>
+<ul class="list-group mb-3">
+    {% for d in ingreso.detalles.all %}
+    <li class="list-group-item">{{ d.producto.nombre }} — Cantidad: {{ d.cantidad }}</li>
+    {% empty %}
+    <li class="list-group-item text-muted">Sin ítems.</li>
+    {% endfor %}
+</ul>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'comprado_lista' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

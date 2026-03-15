@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">FAC-FACTORAJUSTECLIENTE_ELIMINAR-{% now "d-m-y" %}</label>{% endblock %}
 {% block content %}
 <h2>Eliminar Factor de Ajuste</h2>
 <p>¿Estás seguro de que deseas eliminar el factor para <strong>{{ factor.cliente }}</strong> y <strong>{{ factor.categoria }}</strong>?</p>

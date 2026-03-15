@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
-{% block template_label %}<label class="badge bg-secondary text-uppercase">PRO-INGRESO_FORM-{% now "d-m-y" %}</label>{% endblock %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">PRO-COMPRADO_EDITAR-{% now "d-m-y" %}</label>{% endblock %}
 {% load crispy_forms_tags %}
 {% block content %}
-<h3>Ingreso de Productos al Inventario</h3>
+<h3>Editar compra #{{ ingreso.pk }}</h3>
+<p class="text-muted">Fecha: {{ ingreso.fecha|date:"d/m/Y" }}</p>
 
 <form method="post">
     {% csrf_token %}
@@ -22,15 +23,16 @@
                                        class="form-control producto-search"
                                        placeholder="Buscar producto por nombre o categoría..."
                                        autocomplete="off"
-                                       data-form-prefix="{{ form.prefix }}">
+                                       data-form-prefix="{{ form.prefix }}"
+                                       {% if form.instance.producto_id %}style="display: none;"{% endif %}>
                                 <div class="producto-results position-absolute w-100 bg-white border rounded shadow-lg" style="display: none; z-index: 10;">
                                 </div>
                                 <div style="display: none;">{{ form.producto }}</div>
-                                <div class="producto-selected" style="display: none;">
+                                <div class="producto-selected" style="{% if not form.instance.producto_id %}display: none;{% endif %}">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <strong class="producto-nombre"></strong>
-                                            <br><small class="text-muted producto-details"></small>
+                                            <strong class="producto-nombre">{% if form.instance.producto %}{{ form.instance.producto.nombre }}{% endif %}</strong>
+                                            <br><small class="text-muted producto-details">{% if form.instance.producto %}{{ form.instance.producto.categoria.nombre|default:"—" }} | Stock: {{ form.instance.producto.stock|default:0 }}{% endif %}</small>
                                         </div>
                                         <button type="button" class="btn btn-sm btn-outline-danger producto-clear">Cambiar</button>
                                     </div>
@@ -102,8 +104,8 @@
     <button type="button" id="add-form" class="btn btn-outline-primary mt-3">+ Agregar otro producto</button>
 
     <div class="d-flex justify-content-end mt-4">
-        <button type="submit" class="btn btn-success mt-3">Guardar Ingreso</button>
-        <a href="{% url 'lista_productos' %}" class="btn btn-sm btn-warning mt-3">Regresar</a>
+        <button type="submit" class="btn btn-success mt-3">Guardar cambios</button>
+        <a href="{% url 'comprado_lista' %}" class="btn btn-sm btn-warning mt-3">Regresar a Comprado</a>
     </div>
 </form>
 

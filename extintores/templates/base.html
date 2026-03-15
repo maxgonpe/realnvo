@@ -153,6 +153,11 @@ body.theme-red .btn-danger  { background-color: #8b0000; border-color: #8b0000; 
         </div>
     </nav>
 
+    <!-- Etiqueta identificadora del template (carpeta-nombre-fecha) -->
+    <div class="d-flex justify-content-end align-items-center pe-2 mt-1 mb-0">
+        {% block template_label %}{% endblock %}
+    </div>
+
     <!-- Contenido -->
     {% block content %}{% endblock %}
 

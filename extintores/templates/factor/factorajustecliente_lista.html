@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">FAC-FACTORAJUSTECLIENTE_LISTA-{% now "d-m-y" %}</label>{% endblock %}
 {% block content %}
 <h2>Factores de Ajuste por Cliente y Categoría</h2>
 <a href="{% url 'factorajustecliente_crear' %}" class="btn btn-primary mb-3">+ Nuevo Factor</a>

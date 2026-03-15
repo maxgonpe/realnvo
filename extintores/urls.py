@@ -16,8 +16,8 @@ from .views import IntervencionListView, crear_intervencion,\
                    IntervencionAjaxListView, factorajustecliente_lista,\
                    factorajustecliente_crear, factorajustecliente_editar,\
                    factorajustecliente_eliminar,odt_agregar_productos,\
-                   odt_editar_items, ingreso_stock_nuevo, exportar_inventario_pdf,\
-                   exportar_inventario_excel, generar_estadisticas_view,\
+                   odt_editar_items, ingreso_stock_nuevo, lista_comprado, comprado_editar, comprado_eliminar,\
+                   exportar_inventario_pdf, exportar_inventario_excel, generar_estadisticas_view,\
                    generar_estadisticas_mensuales, ver_estadisticas_view,\
                    alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
                    usuarios_simple
@@ -52,6 +52,9 @@ urlpatterns = [
     path('producto/eliminar/<int:pk>/', eliminar_producto, name='eliminar_producto'),
     path('producto/ingreso/', ingreso_stock_nuevo, name='ingreso_stock_nuevo'),
     path('producto/consulta-stock/', consulta_stock_productos, name='consulta_stock_productos'),
+    path('producto/comprado/', lista_comprado, name='comprado_lista'),
+    path('producto/comprado/editar/<int:pk>/', comprado_editar, name='comprado_editar'),
+    path('producto/comprado/eliminar/<int:pk>/', comprado_eliminar, name='comprado_eliminar'),
     path('productos/inventario/excel/', exportar_inventario_excel, name='inventario_excel'),
     path('productos/inventario/pdf/', exportar_inventario_pdf, name='inventario_pdf'),
     path('categoria/', lista_categorias, name='lista_categorias'),

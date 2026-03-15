@@ -1,4 +1,5 @@
 {% extends "base.html" %}  {# si tienes base.html, si no quita esta línea #}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">CLI-ALERTAS-{% now "d-m-y" %}</label>{% endblock %}
 
 {% block content %}
 <h1>Alertas de próximos servicios</h1>

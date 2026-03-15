@@ -1704,9 +1704,19 @@ def agregar_item_odt(request, odt_pk):
 
 IngresoStockForm = modelform_factory(IngresoStock, fields=['observaciones'])
 
+
+class DetalleIngresoForm(forms.ModelForm):
+    """Form para detalle de ingreso: producto como hidden para búsqueda AJAX."""
+    class Meta:
+        model = DetalleIngreso
+        fields = ('producto', 'cantidad')
+        widgets = {'producto': forms.HiddenInput()}
+
+
 DetalleIngresoFormSet = inlineformset_factory(
     IngresoStock,
     DetalleIngreso,
+    form=DetalleIngresoForm,
     fields=('producto', 'cantidad'),
     extra=1,
     can_delete=True
@@ -1729,6 +1739,80 @@ def ingreso_stock_nuevo(request):
         'form': form,
         'formset': formset
     })
+
+
+def lista_comprado(request):
+    """Listado de compras (IngresoStock) con filtros y detalle expandible."""
+    qs = IngresoStock.objects.prefetch_related('detalles__producto').order_by('-fecha', '-pk')
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+    buscar = request.GET.get('buscar', '').strip()
+    if fecha_desde:
+        try:
+            qs = qs.filter(fecha__gte=fecha_desde)
+        except Exception:
+            pass
+    if fecha_hasta:
+        try:
+            qs = qs.filter(fecha__lte=fecha_hasta)
+        except Exception:
+            pass
+    if buscar:
+        qs = qs.filter(observaciones__icontains=buscar)
+    ingresos = list(qs)
+    for ing in ingresos:
+        ing.total_items = sum(d.cantidad for d in ing.detalles.all())
+    return render(request, 'producto/comprado_lista.html', {
+        'ingresos': ingresos,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'buscar': buscar,
+    })
+
+
+def comprado_editar(request, pk):
+    """Editar una compra (IngresoStock) y sus detalles; ajusta stock al guardar."""
+    ingreso = get_object_or_404(IngresoStock.objects.prefetch_related('detalles__producto'), pk=pk)
+    form = IngresoStockForm(request.POST or None, instance=ingreso)
+    formset = DetalleIngresoFormSet(request.POST or None, instance=ingreso, prefix='detalleingreso_set')
+
+    if request.method == 'POST':
+        if form.is_valid() and formset.is_valid():
+            # Restar del stock actual las cantidades de los detalles existentes (antes de guardar formset)
+            for d in ingreso.detalles.all():
+                p = d.producto
+                if p.stock is not None:
+                    p.stock = max(0, (p.stock or 0) - d.cantidad)
+                else:
+                    p.stock = 0
+                p.save()
+            form.save()
+            detalles = formset.save(commit=False)
+            for d in detalles:
+                d.ingreso = ingreso
+                d.save()
+            return redirect('comprado_lista')
+    return render(request, 'producto/comprado_editar.html', {
+        'form': form,
+        'formset': formset,
+        'ingreso': ingreso,
+    })
+
+
+def comprado_eliminar(request, pk):
+    """Eliminar una compra y restar del stock las cantidades de sus detalles."""
+    ingreso = get_object_or_404(IngresoStock.objects.prefetch_related('detalles__producto'), pk=pk)
+    if request.method == 'POST':
+        for d in ingreso.detalles.all():
+            p = d.producto
+            if p.stock is not None:
+                p.stock = max(0, (p.stock or 0) - d.cantidad)
+            else:
+                p.stock = 0
+            p.save()
+        ingreso.delete()
+        return redirect('comprado_lista')
+    return render(request, 'producto/comprado_eliminar.html', {'ingreso': ingreso})
 
 
 def exportar_inventario_excel(request):

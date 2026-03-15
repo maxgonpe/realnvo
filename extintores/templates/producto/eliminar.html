@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">PRO-ELIMINAR-{% now "d-m-y" %}</label>{% endblock %}
 {% block content %}
 <h2>Eliminar Producto</h2>
 <p>¿Estás seguro de que deseas eliminar el producto <strong>{{ producto.nombre }}</strong>?</p>

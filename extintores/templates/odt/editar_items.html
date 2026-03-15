@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">ODT-EDITAR_ITEMS-{% now "d-m-y" %}</label>{% endblock %}
 {% load humanize %}
 {% block content %}
 <h3>ODT #{{ odt.pk }} – {{ odt.alias }}</h3>
