@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block template_label %}<label class="badge bg-secondary text-uppercase">INT-CREAR-{% now "d-m-y" %}</label>{% endblock %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">INT-CREAR-16-06-26</label>{% endblock %}
 {% load crispy_forms_tags %}
 
 {% block content %}
@@ -66,6 +66,12 @@
     .cliente-search-container .form-control:focus {
         border-color: #0d6efd;
         box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    #multiExtPreview {
+        font-size: 0.875rem;
+        max-height: 180px;
+        overflow-y: auto;
     }
 </style>
 
@@ -174,31 +180,54 @@
 
     <!-- Modal para agregar múltiples extintores -->
     <div class="modal fade" id="multiExtModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Agregar múltiples extintores</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Cantidad de extintores:</label>
-                        <input type="number" class="form-control" id="cantExtintores" min="1" max="325" value="1">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="cantExtintores">Cantidad de extintores</label>
+                            <input type="number" class="form-control" id="cantExtintores" min="1" max="325" value="1">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label" for="agentePredeterminado">Agente predeterminado</label>
+                            <select class="form-select" id="agentePredeterminado">
+                                {% for value, label in formset.empty_form.agente.field.choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="ubicacionPredeterminada">Ubicación (todos)</label>
+                            <input type="text" class="form-control" id="ubicacionPredeterminada" maxlength="150" placeholder="Ej. Piso 1 - Hall central">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="ultimaFechaPredeterminada">Último servicio (todos)</label>
+                            <input type="date" class="form-control" id="ultimaFechaPredeterminada">
+                            <div class="form-text">Se replica en <code>ultima_fecha</code> de cada extintor generado.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="precintoInicial">N° precinto inicial</label>
+                            <input type="number" class="form-control" id="precintoInicial" min="0" step="1" placeholder="Ej. 23456">
+                            <div class="form-text">Se incrementa de 1 en 1 por cada extintor generado.</div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Agente predeterminado:</label>
-                        <select class="form-select" id="agentePredeterminado">
-                            {% for value, label in formset.empty_form.agente.field.choices %}
-                                {% if value %}  <!-- Evitar opción vacía -->
-                                    <option value="{{ value }}">{{ label }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
+
+                    <div class="mt-3">
+                        <label class="form-label">Vista previa</label>
+                        <div id="multiExtPreview" class="border rounded bg-light p-2 text-muted">
+                            Complete cantidad y precinto inicial para ver la numeración.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="btnGenerarExtintores">Generar</button>
+                    <button type="button" class="btn btn-primary" id="btnGenerarExtintores">Generar extintores</button>
                 </div>
             </div>
         </div>
@@ -352,64 +381,184 @@ document.addEventListener('DOMContentLoaded', function() {
     let formCounter = parseInt(totalForms.value) || 0;
     
     // Función para agregar un formulario
-    function agregarFormulario(agente = null) {
-        // Ocultar estado vacío si existe
+    function agregarFormulario(opciones = {}) {
+        const agente = opciones.agente || null;
+        const ubicacion = opciones.ubicacion || '';
+        const ultimaFecha = opciones.ultimaFecha || '';
+        const nroPrecinto = opciones.nroPrecinto;
+
         if(emptyState) emptyState.style.display = 'none';
-        
+
         const newIndex = formCounter;
         const newFormHtml = emptyForm
             .replace(/__prefix__/g, newIndex)
             .replace(new RegExp(`${prefix}-__prefix__`, 'g'), `${prefix}-${newIndex}`)
             .replace(new RegExp(`id_${prefix}-__prefix__`, 'g'), `id_${prefix}-${newIndex}`);
-        
+
         formContainer.insertAdjacentHTML('beforeend', newFormHtml);
         const newCard = formContainer.lastElementChild;
-        
-        // Actualizar contador visual
+
         const counterSpan = newCard.querySelector('.form-counter');
         if(counterSpan) counterSpan.textContent = `#${formCounter + 1}`;
-        
-        // Establecer agente predeterminado si se especifica
+
         if(agente) {
             const agenteSelect = newCard.querySelector(`select[name="${prefix}-${newIndex}-agente"]`);
             if(agenteSelect) agenteSelect.value = agente;
         }
-        
-        // Actualizar contador de formularios
+
+        if(ubicacion) {
+            const ubicacionInput = newCard.querySelector(`input[name="${prefix}-${newIndex}-ubicacion"]`);
+            if(ubicacionInput) ubicacionInput.value = ubicacion;
+        }
+
+        if(ultimaFecha) {
+            const ultimaFechaInput = newCard.querySelector(`input[name="${prefix}-${newIndex}-ultima_fecha"]`);
+            if(ultimaFechaInput) ultimaFechaInput.value = ultimaFecha;
+        }
+
+        if(nroPrecinto !== undefined && nroPrecinto !== null && nroPrecinto !== '') {
+            const precintoInput = newCard.querySelector(`input[name="${prefix}-${newIndex}-nro_precinto"]`);
+            if(precintoInput) precintoInput.value = nroPrecinto;
+        }
+
         formCounter++;
         totalForms.value = formCounter;
+        return newCard;
     }
-    
+
     // Agregar formulario individual
     document.getElementById('add-form').addEventListener('click', function() {
         agregarFormulario();
     });
-    
-    // Función para agregar múltiples formularios
-    function agregarMultiplesFormularios(cantidad, agente) {
+
+    function agregarMultiplesFormularios(cantidad, agente, ubicacion, precintoInicial, ultimaFecha) {
+        const precintoBase = parseInt(precintoInicial, 10);
+        const usarPrecinto = !Number.isNaN(precintoBase);
+        let primerCard = null;
+
         for(let i = 0; i < cantidad; i++) {
-            agregarFormulario(agente);
+            const card = agregarFormulario({
+                agente: agente,
+                ubicacion: ubicacion,
+                ultimaFecha: ultimaFecha,
+                nroPrecinto: usarPrecinto ? precintoBase + i : null,
+            });
+            if(i === 0) primerCard = card;
+        }
+
+        if(primerCard) {
+            primerCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            primerCard.classList.add('border', 'border-success');
+            setTimeout(() => primerCard.classList.remove('border', 'border-success'), 2500);
         }
     }
-    
+
+    function formatearFechaPreview(isoDate) {
+        if(!isoDate) return '(sin fecha)';
+        const partes = isoDate.split('-');
+        if(partes.length !== 3) return isoDate;
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    function actualizarVistaPreviaMultiExt() {
+        const preview = document.getElementById('multiExtPreview');
+        const cantidad = parseInt(document.getElementById('cantExtintores').value, 10) || 0;
+        const ubicacion = document.getElementById('ubicacionPredeterminada').value.trim();
+        const ultimaFecha = document.getElementById('ultimaFechaPredeterminada').value;
+        const precintoInicial = document.getElementById('precintoInicial').value.trim();
+
+        if(cantidad < 1 || cantidad > 325) {
+            preview.innerHTML = '<span class="text-danger">Cantidad debe estar entre 1 y 325.</span>';
+            return;
+        }
+
+        if(!precintoInicial) {
+            preview.innerHTML = '<span class="text-warning">Indique el N° de precinto inicial para ver la numeración.</span>';
+            return;
+        }
+
+        const precintoBase = parseInt(precintoInicial, 10);
+        if(Number.isNaN(precintoBase)) {
+            preview.innerHTML = '<span class="text-danger">El precinto inicial debe ser un número entero.</span>';
+            return;
+        }
+
+        const fechaTxt = formatearFechaPreview(ultimaFecha);
+        const filas = [];
+        const mostrar = Math.min(cantidad, 5);
+        for(let i = 0; i < mostrar; i++) {
+            const ubicacionTxt = ubicacion || '(sin ubicación)';
+            filas.push(`<div><strong>#${i + 1}</strong> Precinto <code>${precintoBase + i}</code> · ${ubicacionTxt} · ${fechaTxt}</div>`);
+        }
+        if(cantidad > mostrar) {
+            filas.push(`<div class="text-muted mt-1">… y ${cantidad - mostrar} extintor${cantidad - mostrar === 1 ? '' : 'es'} más hasta precinto <code>${precintoBase + cantidad - 1}</code></div>`);
+        }
+        preview.innerHTML = filas.join('');
+    }
+
+    ['cantExtintores', 'ubicacionPredeterminada', 'precintoInicial', 'ultimaFechaPredeterminada'].forEach(id => {
+        document.getElementById(id).addEventListener('input', actualizarVistaPreviaMultiExt);
+        document.getElementById(id).addEventListener('change', actualizarVistaPreviaMultiExt);
+    });
+
+    function sugerirFechaServicioEnModal() {
+        const campoFechaServicio = document.querySelector('input[name="fecha"]');
+        const campoUltimaFecha = document.getElementById('ultimaFechaPredeterminada');
+        if(campoFechaServicio && campoFechaServicio.value && !campoUltimaFecha.value) {
+            campoUltimaFecha.value = campoFechaServicio.value;
+        }
+    }
+
     // Eventos para el modal
     document.getElementById('btnMultiExtintores').addEventListener('click', function() {
+        sugerirFechaServicioEnModal();
+        actualizarVistaPreviaMultiExt();
         const modal = new bootstrap.Modal(document.getElementById('multiExtModal'));
         modal.show();
     });
-    
+
     document.getElementById('btnGenerarExtintores').addEventListener('click', function() {
-        const cantidad = parseInt(document.getElementById('cantExtintores').value) || 1;
+        const cantidad = parseInt(document.getElementById('cantExtintores').value, 10) || 0;
         const agente = document.getElementById('agentePredeterminado').value;
-        
-        if(cantidad > 0 && cantidad <= 500 && agente) {
-            agregarMultiplesFormularios(cantidad, agente);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('multiExtModal'));
-            modal.hide();
-        } else {
-            alert('Por favor ingrese una cantidad válida (1-325) y seleccione un agente');
+        const ubicacion = document.getElementById('ubicacionPredeterminada').value.trim();
+        const ultimaFecha = document.getElementById('ultimaFechaPredeterminada').value;
+        const precintoInicial = document.getElementById('precintoInicial').value.trim();
+
+        if(cantidad < 1 || cantidad > 325) {
+            alert('Ingrese una cantidad válida entre 1 y 325.');
+            return;
         }
+        if(!agente) {
+            alert('Seleccione un agente predeterminado.');
+            return;
+        }
+        if(!precintoInicial) {
+            alert('Ingrese el número de precinto inicial.');
+            return;
+        }
+        if(Number.isNaN(parseInt(precintoInicial, 10))) {
+            alert('El precinto inicial debe ser un número entero.');
+            return;
+        }
+
+        agregarMultiplesFormularios(cantidad, agente, ubicacion, precintoInicial, ultimaFecha);
+
+        try {
+            const ultimo = parseInt(precintoInicial, 10) + cantidad;
+            sessionStorage.setItem('realnvo_precinto_siguiente', String(ultimo));
+        } catch (e) {}
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('multiExtModal'));
+        modal.hide();
     });
+
+    // Sugerir siguiente precinto si se usó antes en esta sesión/navegador
+    try {
+        const siguiente = sessionStorage.getItem('realnvo_precinto_siguiente');
+        if(siguiente && !document.getElementById('precintoInicial').value) {
+            document.getElementById('precintoInicial').value = siguiente;
+        }
+    } catch (e) {}
 });
 </script>
 {% endblock %}

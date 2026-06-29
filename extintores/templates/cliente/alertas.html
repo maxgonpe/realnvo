@@ -1,20 +1,332 @@
-{% extends "base.html" %}  {# si tienes base.html, si no quita esta línea #}
-{% block template_label %}<label class="badge bg-secondary text-uppercase">CLI-ALERTAS-{% now "d-m-y" %}</label>{% endblock %}
+{% extends "base.html" %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">CLI-ALERTAS-15-06-26</label>{% endblock %}
 
 {% block content %}
-<h1>Alertas de próximos servicios</h1>
+<style>
+    .timeline-track {
+        position: relative;
+        padding-left: 1.25rem;
+        border-left: 3px solid #dee2e6;
+    }
+    .timeline-month {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-month::before {
+        content: '';
+        position: absolute;
+        left: -1.45rem;
+        top: 0.35rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #0d6efd;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #0d6efd;
+    }
+    .timeline-month.vencido::before { background: #dc3545; box-shadow: 0 0 0 2px #dc3545; }
+    .timeline-month.activo::before { background: #ffc107; box-shadow: 0 0 0 2px #ffc107; }
+</style>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h2 class="mb-1">Alertas de próximos servicios</h2>
+        <p class="text-muted mb-0">
+            Ciclo {{ ciclo_dias }} días · fecha de referencia: {{ hoy|date:"d/m/Y" }}
+            · basado en el <strong>último servicio real</strong> de cada cliente
+        </p>
+    </div>
+    <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">
+        <i class="bi bi-arrow-left"></i> Regresar
+    </a>
+</div>
 
-{% if proximas %}
-    <ul>
-        {% for intervencion in proximas %}
-            <li>
-                Cliente: {{ intervencion.cliente }} <br>
-                Fecha del servicio: {{ intervencion.fecha }} <br>
-                Vence: {{ intervencion.fecha|add:"365" }} días
-            </li>
-        {% endfor %}
-    </ul>
+{% if clientes_sin_cache %}
+<div class="alert alert-info py-2">
+    <i class="bi bi-info-circle"></i>
+    {{ clientes_sin_cache }} cliente{{ clientes_sin_cache|pluralize }} tenían el campo «último servicio» vacío en ficha,
+    pero sí tienen intervenciones registradas. Las alertas se calculan desde la base de servicios, no solo desde ese campo.
+</div>
+{% endif %}
+
+<!-- Línea de tiempo 2025 → 2026 -->
+{% if timeline_2025 %}
+<h5 class="mb-3"><i class="bi bi-calendar-range"></i> Línea de tiempo — servicios 2025 y repetición en 2026</h5>
+<p class="text-muted small">
+    {{ total_ciclo_2025 }} cliente{{ total_ciclo_2025|pluralize }} con último servicio en 2025.
+    Cada uno debería repetirse ~{{ ciclo_dias }} días después (mismo mes de 2026).
+</p>
+
+<div class="timeline-track mb-4">
+    {% for bloque in timeline_2025 %}
+    <div class="timeline-month {% if bloque.en_ventana_60 == bloque.total and bloque.en_ventana_60 > 0 %}activo{% elif bloque.en_ventana_60 > 0 %}activo{% endif %}">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <div>
+                <strong>{{ bloque.mes_servicio }}</strong>
+                <i class="bi bi-arrow-right mx-1"></i>
+                <span class="text-primary">{{ bloque.mes_repeticion }}</span>
+            </div>
+            <div>
+                <span class="badge bg-secondary">{{ bloque.total }} cliente{{ bloque.total|pluralize }}</span>
+                {% if bloque.en_ventana_60 %}
+                <span class="badge bg-warning text-dark">{{ bloque.en_ventana_60 }} en ventana 60 d</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered bg-white mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Último servicio</th>
+                        <th>Próximo (2026)</th>
+                        <th class="text-center">Días</th>
+                        <th class="text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in bloque.items %}
+                    <tr class="{% if item.vencido %}table-danger{% elif item.dias_restantes <= 30 %}table-warning{% elif item.dias_restantes <= 60 %}table-info{% endif %}">
+                        <td>{{ item.cliente.nombre }}</td>
+                        <td>{{ item.fecha_ultima|date:"d/m/Y" }}</td>
+                        <td>{{ item.proximo_servicio|date:"d/m/Y" }}</td>
+                        <td class="text-center fw-bold">
+                            {% if item.vencido %}-{{ item.dias_atraso }}{% else %}{{ item.dias_restantes }}{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.vencido %}
+                                <span class="badge bg-danger">Vencido</span>
+                            {% elif item.dias_restantes <= 30 %}
+                                <span class="badge bg-warning text-dark">≤ 30 d</span>
+                            {% elif item.dias_restantes <= 60 %}
+                                <span class="badge bg-info text-dark">≤ 60 d</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Futuro</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<hr class="my-4">
+{% endif %}
+
+{% if total_todos == 0 %}
+<div class="alert alert-success">
+    ✅ Ningún cliente vence ni entra en ventana de 60 días desde hoy.
+</div>
 {% else %}
-    <p>✅ No hay servicios próximos a vencer.</p>
+
+<!-- 1) Resumen: cuántos entrarían con cada ventana de anticipación -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-danger h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-danger">{{ total_vencidos }}</div>
+                <div class="small text-muted">Vencidos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-warning h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-warning">{{ resumen_30 }}</div>
+                <div class="small text-muted">Ventana 30 días</div>
+                <div class="small">(vencidos + 0 a 30)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-info h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-info">{{ resumen_45 }}</div>
+                <div class="small text-muted">Ventana 45 días</div>
+                <div class="small">(vencidos + 0 a 45)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-primary">{{ resumen_60 }}</div>
+                <div class="small text-muted">Ventana 60 días</div>
+                <div class="small">(vencidos + 0 a 60)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2) Tabla panorama: comparar las 3 ventanas de un vistazo -->
+<h5 class="mb-2"><i class="bi bi-table"></i> Panorama comparativo (formato tabla)</h5>
+<div class="table-responsive mb-4">
+    <table class="table table-sm table-striped table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Cliente</th>
+                <th>Último servicio</th>
+                <th>Próximo estimado</th>
+                <th class="text-center">Días</th>
+                <th class="text-center">30 d</th>
+                <th class="text-center">45 d</th>
+                <th class="text-center">60 d</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in todos %}
+            <tr class="{% if item.vencido %}table-danger{% elif item.dias_restantes <= 30 %}table-warning{% elif item.dias_restantes <= 45 %}table-info{% else %}table-primary{% endif %}">
+                <td>{{ item.cliente.nombre }}</td>
+                <td>{{ item.fecha_ultima|date:"d/m/Y" }}</td>
+                <td>{{ item.proximo_servicio|date:"d/m/Y" }}</td>
+                <td class="text-center fw-bold">
+                    {% if item.vencido %}-{{ item.dias_atraso }}{% else %}{{ item.dias_restantes }}{% endif %}
+                </td>
+                <td class="text-center">{% if item.alerta_30 %}<span class="badge bg-warning text-dark">Sí</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td class="text-center">{% if item.alerta_45 %}<span class="badge bg-info text-dark">Sí</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td class="text-center">{% if item.alerta_60 %}<span class="badge bg-primary">Sí</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td>
+                    {% if item.vencido %}
+                        Vencido hace {{ item.dias_atraso }} d
+                    {% elif item.hoy %}
+                        Vence hoy
+                    {% else %}
+                        Faltan {{ item.dias_restantes }} d
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 3) Vencidos: lista compacta -->
+<h5 class="mb-2 text-danger"><i class="bi bi-exclamation-octagon"></i> Vencidos ({{ total_vencidos }}) — formato lista</h5>
+{% if vencidos %}
+<ul class="list-group mb-4">
+    {% for item in vencidos %}
+    <li class="list-group-item list-group-item-danger d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <strong>{{ item.cliente.nombre }}</strong>
+            <span class="text-muted ms-2">venció {{ item.proximo_servicio|date:"d/m/Y" }}</span>
+        </div>
+        <span class="badge bg-danger">-{{ item.dias_atraso }} días</span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted mb-4">Sin vencidos en este momento.</p>
+{% endif %}
+
+<!-- 4) Tramos por anticipación en distintos formatos -->
+<div class="accordion mb-4" id="tramosAccordion">
+
+    <!-- 0 a 30 días: tarjetas -->
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tramo30">
+                <span class="badge bg-warning text-dark me-2">{{ total_tramo_30 }}</span>
+                Tramo 0 – 30 días (formato tarjetas)
+            </button>
+        </h2>
+        <div id="tramo30" class="accordion-collapse collapse show" data-bs-parent="#tramosAccordion">
+            <div class="accordion-body">
+                {% if tramo_30 %}
+                    {% for item in tramo_30 %}
+                    <div class="card mb-2 border-warning">
+                        <div class="card-body py-2">
+                            <strong>{{ item.cliente.nombre }}</strong>
+                            <span class="badge bg-warning text-dark ms-2">
+                                {% if item.hoy %}Hoy{% else %}{{ item.dias_restantes }} d{% endif %}
+                            </span>
+                            <div class="small text-muted mt-1">
+                                Próximo: {{ item.proximo_servicio|date:"d/m/Y" }}
+                                {% if item.cliente.telefono %} · {{ item.cliente.telefono }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">Nadie en este tramo (sin contar vencidos).</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 31 a 45 días: tabla simple -->
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tramo45">
+                <span class="badge bg-info text-dark me-2">{{ total_tramo_45 }}</span>
+                Tramo 31 – 45 días (formato tabla)
+            </button>
+        </h2>
+        <div id="tramo45" class="accordion-collapse collapse" data-bs-parent="#tramosAccordion">
+            <div class="accordion-body p-0">
+                {% if tramo_45 %}
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Próximo</th>
+                            <th>Días</th>
+                            <th>¿Entra con 45 d?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in tramo_45 %}
+                        <tr>
+                            <td>{{ item.cliente.nombre }}</td>
+                            <td>{{ item.proximo_servicio|date:"d/m/Y" }}</td>
+                            <td>{{ item.dias_restantes }}</td>
+                            <td><span class="badge bg-info text-dark">Sí</span> · <span class="badge bg-secondary">No en 30 d</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <p class="text-muted p-3 mb-0">Nadie en este tramo.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 46 a 60 días: chips / badges -->
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tramo60">
+                <span class="badge bg-primary me-2">{{ total_tramo_60 }}</span>
+                Tramo 46 – 60 días (formato chips)
+            </button>
+        </h2>
+        <div id="tramo60" class="accordion-collapse collapse" data-bs-parent="#tramosAccordion">
+            <div class="accordion-body">
+                {% if tramo_60 %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for item in tramo_60 %}
+                    <div class="border border-primary rounded px-3 py-2 bg-light">
+                        <strong>{{ item.cliente.nombre }}</strong><br>
+                        <span class="badge bg-primary">{{ item.dias_restantes }} d</span>
+                        <span class="small text-muted">{{ item.proximo_servicio|date:"d/m/Y" }}</span>
+                        <span class="badge bg-secondary ms-1">Solo ventana 60 d</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <p class="text-muted mb-0">Nadie en este tramo.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="small text-muted mb-0">
+    <strong>Lectura rápida:</strong> un cliente en tramo 46–60 solo aparecería si eliges anticipación de 60 días.
+    Los de 31–45 aparecen con 45 y 60, pero no con 30. Los vencidos y 0–30 entran en las tres ventanas.
+</p>
+
 {% endif %}
 {% endblock %}

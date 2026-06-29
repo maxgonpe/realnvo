@@ -1,4 +1,5 @@
 # === IMPORTS GENERALES ===
+import re
 from datetime import timedelta
 from decimal import Decimal
 from collections import Counter
@@ -10,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q, F, Sum, Count
+from django.db.models import Q, F, Sum, Count, OuterRef, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import inlineformset_factory, modelformset_factory
@@ -603,21 +604,127 @@ def odt_excel(request, pk):
 
 # === VISTAS INTERVENCIÓN ===
 
+def _intervencion_fecha_busqueda_q(query):
+    """
+    Filtro por fecha en formato dd/mm/aaaa (o mm/aaaa, dd/mm).
+    Usa ? como comodín: ??/05/??? (mayo), ??/??/2026 (año), 16/03/2026 (día exacto).
+    Retorna 'incomplete' si el usuario aún está escribiendo (no vaciar la lista).
+    """
+    query = query.strip()
+    if '/' not in query:
+        return None
+
+    parts = [p.strip() for p in query.split('/')]
+
+    if any(part == '' for part in parts):
+        return 'incomplete'
+
+    segment_re = re.compile(r'^[\d?]+$')
+
+    def parse_segment(segment):
+        if not segment_re.fullmatch(segment):
+            return 'invalid'
+        if all(ch == '?' for ch in segment):
+            return None
+        if '?' in segment:
+            return 'invalid'
+        return int(segment)
+
+    def build_q(day=None, month=None, year=None):
+        if day is None and month is None and year is None:
+            return None
+        if year is not None and year < 100:
+            year += 2000
+        fecha_q = Q()
+        if day is not None:
+            fecha_q &= Q(fecha__day=day)
+        if month is not None:
+            fecha_q &= Q(fecha__month=month)
+        if year is not None:
+            fecha_q &= Q(fecha__year=year)
+        return fecha_q
+
+    if len(parts) == 2:
+        if parts[1].isdigit() and len(parts[1]) < 2:
+            return 'incomplete'
+
+        left = parse_segment(parts[0])
+        right = parse_segment(parts[1])
+        if 'invalid' in (left, right):
+            return None
+
+        right_raw = parts[1]
+        left_raw = parts[0]
+
+        if right_raw.isdigit() and len(right_raw) == 3:
+            return 'incomplete'
+
+        is_year_part = False
+        if all(ch == '?' for ch in right_raw) and len(right_raw) >= 2:
+            is_year_part = True
+        elif right_raw.isdigit():
+            right_num = int(right_raw)
+            if len(right_raw) >= 4 or right_num > 31:
+                is_year_part = True
+            elif (
+                len(right_raw) == 2
+                and left_raw.isdigit()
+                and int(left_raw) <= 12
+            ):
+                is_year_part = True
+
+        if is_year_part:
+            return build_q(month=left, year=right)
+        return build_q(day=left, month=right)
+
+    if len(parts) != 3:
+        return None
+
+    if not all(segment_re.fullmatch(part) for part in parts):
+        return None
+
+    day = parse_segment(parts[0])
+    month = parse_segment(parts[1])
+    year = parse_segment(parts[2])
+
+    if 'invalid' in (day, month, year):
+        return None
+
+    if parts[2].isdigit() and len(parts[2]) == 3:
+        return 'incomplete'
+
+    return build_q(day=day, month=month, year=year)
+
+
+def _intervencion_busqueda_q(query):
+    query = query.strip()
+    if not query:
+        return None
+
+    fecha_q = _intervencion_fecha_busqueda_q(query)
+    if fecha_q == 'incomplete':
+        return None
+    if fecha_q is not None:
+        return fecha_q
+
+    return (
+        Q(cliente__nombre__icontains=query) |
+        Q(alias__icontains=query) |
+        Q(tecnico__first_name__icontains=query) |
+        Q(tecnico__last_name__icontains=query) |
+        Q(tipo__icontains=query)
+    )
+
+
 class IntervencionListView(LoginRequiredMixin, ListView):
     model = Intervencion
     template_name = 'intervenciones/lista.html'
     context_object_name = 'intervenciones'
     def get_queryset(self):
         queryset = Intervencion.objects.all().order_by('-id')
-        query = self.request.GET.get("q", "").strip()
-        if query:
-            queryset = queryset.filter(
-                Q(cliente__nombre__icontains=query) |
-                Q(alias__icontains=query) |
-                Q(tecnico__first_name__icontains=query) |
-                Q(tecnico__last_name__icontains=query) |
-                Q(tipo__icontains=query)
-            )
+        busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
+        if busqueda is not None:
+            queryset = queryset.filter(busqueda)
         return queryset
 
 
@@ -626,17 +733,10 @@ class IntervencionAjaxListView(LoginRequiredMixin, ListView):
     context_object_name = 'intervenciones'
 
     def get_queryset(self):
-        query = self.request.GET.get("q", "").strip()
         queryset = Intervencion.objects.all().order_by('-id')
-        if query:
-            queryset = queryset.filter(
-                Q(cliente__nombre__icontains=query) |
-                Q(alias__icontains=query) |
-                Q(tecnico__first_name__icontains=query) |
-                Q(tecnico__last_name__icontains=query) |
-                Q(tipo__icontains=query)
-                # No se puede buscar por fecha con icontains si es un campo Date
-            )
+        busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
+        if busqueda is not None:
+            queryset = queryset.filter(busqueda)
         return queryset
 
     def get(self, request, *args, **kwargs):
@@ -2169,14 +2269,149 @@ def ver_estadisticas_view(request, mes=None):
     })
 
 
+def _queryset_clientes_ultimo_servicio():
+    """Último servicio real por cliente desde Intervencion (no solo el campo cacheado)."""
+    ultima_intervencion = Intervencion.objects.filter(
+        cliente_id=OuterRef('pk')
+    ).order_by('-fecha', '-id')
+    return Cliente.objects.annotate(
+        ultima_fecha_real=Subquery(ultima_intervencion.values('fecha')[:1]),
+        ultima_intervencion_id_real=Subquery(ultima_intervencion.values('id')[:1]),
+    ).exclude(ultima_fecha_real__isnull=True)
+
+
+def _alerta_servicio_item(cliente, ultima_intervencion, hoy, ciclo_dias=365):
+    fecha_ultima = cliente.ultima_fecha_real
+    proximo_servicio = fecha_ultima + timedelta(days=ciclo_dias)
+    dias_restantes = (proximo_servicio - hoy).days
+    return {
+        'cliente': cliente,
+        'fecha_ultima': fecha_ultima,
+        'proximo_servicio': proximo_servicio,
+        'dias_restantes': dias_restantes,
+        'dias_atraso': abs(dias_restantes) if dias_restantes < 0 else 0,
+        'ultima_intervencion': ultima_intervencion,
+        'vencido': dias_restantes < 0,
+        'hoy': dias_restantes == 0,
+        'alerta_30': dias_restantes <= 30,
+        'alerta_45': dias_restantes <= 45,
+        'alerta_60': dias_restantes <= 60,
+    }
+
+
+MESES_ES = (
+    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+)
+
+
+def _build_timeline_ciclo_2025(items):
+    """Agrupa por mes del último servicio en 2025 → repetición estimada en 2026."""
+    from collections import defaultdict
+
+    por_mes = defaultdict(list)
+    for item in items:
+        if item['fecha_ultima'].year != 2025:
+            continue
+        clave = item['fecha_ultima'].strftime('%Y-%m')
+        por_mes[clave].append(item)
+
+    timeline = []
+    for clave in sorted(por_mes.keys()):
+        grupo = sorted(por_mes[clave], key=lambda registro: registro['fecha_ultima'])
+        fecha_ref = grupo[0]['fecha_ultima']
+        prox_ref = grupo[0]['proximo_servicio']
+        en_ventana = sum(1 for registro in grupo if registro['dias_restantes'] <= 60)
+        timeline.append({
+            'clave': clave,
+            'mes_servicio': f"{MESES_ES[fecha_ref.month]} {fecha_ref.year}",
+            'mes_repeticion': f"{MESES_ES[prox_ref.month]} {prox_ref.year}",
+            'items': grupo,
+            'total': len(grupo),
+            'en_ventana_60': en_ventana,
+        })
+    return timeline
+
+
 def alertas_view(request):
+    """
+    Ciclo anual (365 días). Usa la última intervención real de cada cliente.
+    Muestra vencidos, tramos 0-30 / 31-45 / 46-60 y línea de tiempo 2025→2026.
+    """
+    CICLO_SERVICIO_DIAS = 365
+    VENTANAS_PRUEBA = (30, 45, 60)
     hoy = timezone.now().date()
-    # Aquí calculamos "fecha + 365 días" al vuelo
-    proximas = [
-        intervencion for intervencion in Intervencion.objects.all()
-        if intervencion.fecha + timedelta(days=365) <= hoy - timedelta(days=30)
+
+    clientes_qs = _queryset_clientes_ultimo_servicio().order_by('nombre')
+    intervencion_ids = [
+        c.ultima_intervencion_id_real for c in clientes_qs
+        if c.ultima_intervencion_id_real
     ]
-    return render(request, 'cliente/alertas.html', {'proximas': proximas})    
+    intervenciones_map = {
+        i.pk: i for i in Intervencion.objects.filter(pk__in=intervencion_ids)
+    }
+
+    todos_los_ciclos = []
+    for cliente in clientes_qs:
+        ultima_int = intervenciones_map.get(cliente.ultima_intervencion_id_real)
+        todos_los_ciclos.append(
+            _alerta_servicio_item(cliente, ultima_int, hoy, CICLO_SERVICIO_DIAS)
+        )
+
+    todos_los_ciclos.sort(key=lambda registro: registro['dias_restantes'])
+
+    todos = []
+    vencidos = []
+    tramo_30 = []
+    tramo_45 = []
+    tramo_60 = []
+
+    for item in todos_los_ciclos:
+        if item['dias_restantes'] > 60:
+            continue
+        todos.append(item)
+        if item['vencido']:
+            vencidos.append(item)
+        elif item['dias_restantes'] <= 30:
+            tramo_30.append(item)
+        elif item['dias_restantes'] <= 45:
+            tramo_45.append(item)
+        else:
+            tramo_60.append(item)
+
+    timeline_2025 = _build_timeline_ciclo_2025(todos_los_ciclos)
+    total_ciclo_2025 = sum(bloque['total'] for bloque in timeline_2025)
+    clientes_sin_cache = Cliente.objects.filter(
+        fecha_ultima_intervencion__isnull=True
+    ).filter(intervencion__isnull=False).distinct().count()
+
+    resumen_ventanas = {
+        30: sum(1 for item in todos if item['alerta_30']),
+        45: sum(1 for item in todos if item['alerta_45']),
+        60: len(todos),
+    }
+
+    return render(request, 'cliente/alertas.html', {
+        'hoy': hoy,
+        'todos': todos,
+        'vencidos': vencidos,
+        'tramo_30': tramo_30,
+        'tramo_45': tramo_45,
+        'tramo_60': tramo_60,
+        'timeline_2025': timeline_2025,
+        'total_ciclo_2025': total_ciclo_2025,
+        'clientes_sin_cache': clientes_sin_cache,
+        'ciclo_dias': CICLO_SERVICIO_DIAS,
+        'ventanas_prueba': VENTANAS_PRUEBA,
+        'resumen_30': resumen_ventanas[30],
+        'resumen_45': resumen_ventanas[45],
+        'resumen_60': resumen_ventanas[60],
+        'total_vencidos': len(vencidos),
+        'total_tramo_30': len(tramo_30),
+        'total_tramo_45': len(tramo_45),
+        'total_tramo_60': len(tramo_60),
+        'total_todos': len(todos),
+    })
 
 
 def editar_consumos_intervencion(request, pk):

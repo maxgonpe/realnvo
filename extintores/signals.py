@@ -32,8 +32,13 @@ def actualizar_cliente_despues_intervencion(sender, instance, created, **kwargs)
             alias=instance.alias
         )
 
-    # Siempre actualizamos los campos rápidos del cliente
-    cliente.fecha_ultima_intervencion = instance.fecha
-    cliente.ultima_intervencion = instance
-    cliente.ultimo_alias = instance.alias
-    cliente.save()
+    # Solo actualizar si este servicio es el más reciente (evita pisar al editar uno antiguo)
+    if (
+        created
+        or not cliente.fecha_ultima_intervencion
+        or instance.fecha >= cliente.fecha_ultima_intervencion
+    ):
+        cliente.fecha_ultima_intervencion = instance.fecha
+        cliente.ultima_intervencion = instance
+        cliente.ultimo_alias = instance.alias
+        cliente.save()
