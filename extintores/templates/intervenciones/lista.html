@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block template_label %}<label class="badge bg-secondary text-uppercase">INT-LISTA-27-05-26</label>{% endblock %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">INT-LISTA-15-07-26</label>{% endblock %}
 
 {% block content %}
 <h4 class="mb-3">Hola {{ user.username }} 👋</h4>
@@ -20,6 +20,11 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="gestion-tab" data-bs-toggle="tab" data-bs-target="#gestion" type="button" role="tab">
             <i class="bi bi-folder"></i> Gestión
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="administracion-tab" data-bs-toggle="tab" data-bs-target="#administracion" type="button" role="tab">
+            <i class="bi bi-cash-stack"></i> Administración
         </button>
     </li>
 </ul>
@@ -60,6 +65,51 @@
                 <i class="bi bi-person-gear"></i> Usuarios
             </a>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Pestaña Administración (referencias — sin URL aún) -->
+    <div class="tab-pane fade" id="administracion" role="tabpanel">
+        <p class="text-muted small mt-3 mb-2">
+            Módulo administración — enlaces de referencia (pendientes de implementar).
+        </p>
+
+        <h6 class="mt-3 mb-2">Rendiciones</h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="btn btn-outline-secondary btn-sm disabled">Rendiciones</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Responsables de rendición</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Entregas de fondo</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Detalles de rendición</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Aprobaciones de rendición</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Liquidaciones de rendición</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Pagos de liquidación</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Categorías de gasto</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Subcategorías de gasto</span>
+        </div>
+
+        <h6 class="mb-2">Banco y conciliación</h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="btn btn-outline-secondary btn-sm disabled">Bancos</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Cuentas bancarias</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Importaciones de cartola</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Movimientos bancarios</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Conciliaciones bancarias</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Exclusiones de movimiento</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Aplicaciones de movimiento</span>
+        </div>
+
+        <h6 class="mb-2">Facturación, cobranza y factoring</h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="btn btn-outline-secondary btn-sm disabled">Facturas de venta</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Gestiones de cobranza</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Pagos de clientes</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Aplicaciones de pago a factura</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Empresas de factoring</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Operaciones de factoring</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Eventos de factoring</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Flujos de factoring</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Devoluciones de pago</span>
+            <span class="btn btn-outline-secondary btn-sm disabled">Alertas de cobranza</span>
         </div>
     </div>
 </div>
