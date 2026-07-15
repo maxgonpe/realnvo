@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_summernote',
     'extintores.apps.ExtintoresConfig',
+    'administracion.apps.AdministracionConfig',
     'widget_tweaks',
     #'extintores',
 ]
