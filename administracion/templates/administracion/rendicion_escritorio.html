@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">ADM-REND-ESC-17-07-26</label>{% endblock %}
+{% block title %}Rendición {{ rendicion.numero }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-folder2-open"></i> {{ rendicion.numero }}</h4>
+        <div class="text-muted small">
+            {{ rendicion.responsable }} ·
+            {{ rendicion.periodo_desde|date:"d/m/Y" }} → {{ rendicion.periodo_hasta|date:"d/m/Y" }} ·
+            <span class="badge {% if carga_abierta %}bg-primary{% else %}bg-success{% endif %}">
+                {{ rendicion.get_estado_display }}
+            </span>
+        </div>
+        {% if rendicion.motivo %}<div class="mt-1">{{ rendicion.motivo }}</div>{% endif %}
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'adm_rendicion_lista' %}" class="btn btn-outline-secondary btn-sm">Listado</a>
+        <a href="{% url 'adm_rendicion_pdf' rendicion.pk %}" class="btn btn-danger btn-sm" target="_blank">
+            <i class="bi bi-file-earmark-pdf"></i> PDF
+        </a>
+        {% if carga_abierta %}
+        <a href="{% url 'adm_rendicion_agregar_comprobante' rendicion.pk %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-camera"></i> Agregar comprobante
+        </a>
+        {% if cantidad_soportes > 0 %}
+        <form method="post" action="{% url 'adm_rendicion_finalizar_carga' rendicion.pk %}" class="d-inline"
+              onsubmit="return confirm('¿Terminar la carga de comprobantes?');">
+            {% csrf_token %}
+            <button class="btn btn-success btn-sm" type="submit">
+                <i class="bi bi-flag-fill"></i> Terminar carga
+            </button>
+        </form>
+        {% endif %}
+        {% else %}
+        {% if puede_editar or rendicion.estado == 'PRESENTADA' %}
+        <form method="post" action="{% url 'adm_rendicion_reabrir_carga' rendicion.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn btn-outline-warning btn-sm" type="submit">Reabrir carga</button>
+        </form>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+<ul class="list-unstyled">
+    {% for message in messages %}
+    <li class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="border rounded p-3 h-100">
+            <div class="text-muted small">Soportes en BD</div>
+            <div class="fs-3 fw-semibold">{{ cantidad_soportes }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="border rounded p-3 h-100">
+            <div class="text-muted small">Suma de comprobantes</div>
+            <div class="fs-3 fw-semibold text-success">${{ suma_soportes|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="border rounded p-3 h-100">
+            <div class="text-muted small">Fondos entregados</div>
+            <div class="fs-3 fw-semibold">${{ rendicion.total_fondos|floatformat:0|intcomma }}</div>
+            {% if rendicion.total_fondos %}
+            <div class="small text-muted mt-1">
+                Fondos − gastos: <strong>${{ diferencia_fondos|floatformat:0|intcomma }}</strong>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if carga_abierta and not detalles %}
+<div class="alert alert-info">
+    Rendición iniciada. Aún no hay comprobantes.
+    <a href="{% url 'adm_rendicion_agregar_comprobante' rendicion.pk %}" class="alert-link">
+        Agregue el primero con una foto
+    </a>.
+</div>
+{% endif %}
+
+{% if detalles %}
+<div class="table-responsive mb-4">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Foto</th>
+                <th>Fecha</th>
+                <th>Documento</th>
+                <th>Proveedor</th>
+                <th>Descripción</th>
+                <th class="text-end">Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in detalles %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    {% if d.comprobante %}
+                    <a href="{{ d.comprobante.url }}" target="_blank">
+                        <img src="{{ d.comprobante.url }}" alt="" style="height:44px;width:44px;object-fit:cover;border-radius:4px;">
+                    </a>
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ d.fecha|date:"d/m/Y" }}</td>
+                <td class="small">
+                    {{ d.get_tipo_documento_display }}
+                    {% if d.numero_documento %}<br>{{ d.numero_documento }}{% endif %}
+                </td>
+                <td class="small">
+                    {{ d.proveedor|default:"—" }}
+                    {% if d.rut_proveedor %}<br class="text-muted">{{ d.rut_proveedor }}{% endif %}
+                </td>
+                <td>{{ d.descripcion }}</td>
+                <td class="text-end fw-semibold">${{ d.total|floatformat:0|intcomma }}</td>
+                <td class="text-nowrap text-end">
+                    {% if puede_editar %}
+                    <a href="{% url 'adm_detalle_editar' d.pk %}" class="btn btn-outline-primary btn-sm">Editar</a>
+                    {% endif %}
+                    {% if carga_abierta %}
+                    <form method="post" action="{% url 'adm_detalle_eliminar' d.pk %}" class="d-inline"
+                          onsubmit="return confirm('¿Eliminar este comprobante de la base de datos?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="6" class="text-end">Total rendido</th>
+                <th class="text-end">${{ suma_soportes|floatformat:0|intcomma }}</th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<h5 class="mb-3">Galería de comprobantes</h5>
+<div class="row g-3">
+    {% for d in detalles %}
+    <div class="col-6 col-md-4 col-lg-3">
+        <div class="border rounded p-2 h-100">
+            {% if d.comprobante %}
+            <a href="{{ d.comprobante.url }}" target="_blank">
+                <img src="{{ d.comprobante.url }}" class="img-fluid rounded mb-2" alt="" style="max-height:160px;width:100%;object-fit:cover;">
+            </a>
+            {% else %}
+            <div class="bg-light rounded mb-2 d-flex align-items-center justify-content-center" style="height:100px;">Sin imagen</div>
+            {% endif %}
+            <div class="small">
+                <strong>{{ d.fecha|date:"d/m/Y" }}</strong> — ${{ d.total|floatformat:0|intcomma }}<br>
+                {{ d.descripcion|truncatechars:45 }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

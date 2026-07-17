@@ -76,13 +76,14 @@
 
         <h6 class="mt-3 mb-2">Rendiciones</h6>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <a href="{% url 'adm_rendicion_desde_imagen' %}" class="btn btn-primary btn-sm">
-                <i class="bi bi-camera"></i> Ingreso desde imagen
+            <a href="{% url 'adm_rendicion_lista' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-journal-check"></i> Lista de rendiciones
             </a>
-            <span class="btn btn-outline-secondary btn-sm disabled">Lista de rendiciones</span>
+            <a href="{% url 'adm_rendicion_crear' %}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> Nueva rendición
+            </a>
             <span class="btn btn-outline-secondary btn-sm disabled">Responsables de rendición</span>
             <span class="btn btn-outline-secondary btn-sm disabled">Entregas de fondo</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Detalles de rendición</span>
             <span class="btn btn-outline-secondary btn-sm disabled">Aprobaciones de rendición</span>
             <span class="btn btn-outline-secondary btn-sm disabled">Liquidaciones de rendición</span>
             <span class="btn btn-outline-secondary btn-sm disabled">Pagos de liquidación</span>

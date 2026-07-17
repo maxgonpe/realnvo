@@ -1,0 +1,1871 @@
+Sí, Max. Puedo hacerlo, y además creo que vale la pena hacerlo de una forma que te sirva como documentación funcional del ERP, no solamente como una transcripción del diagrama.
+He revisado cuidadosamente el diagrama y, antes que nada, quiero decirte que está muy bien estructurado. Se nota que no es simplemente un dibujo; representa un flujo de negocio bastante coherente entre administración, finanzas, conciliación bancaria y facturación.
+Lo que te propongo
+En lugar de extraer solamente el texto, puedo transformarlo en un documento mucho más útil.
+Por ejemplo:
+MÓDULO ADMINISTRACIÓN Y FINANZAS
+
+1. CONFIGURACIÓN
+-------------------------------------
+
+1.1 Centros de Costos
+
+Objetivo
+Administrar la estructura de centros de costos utilizada por todo el sistema.
+
+Funciones
+
+• Crear centros de costos
+• Definir estructura jerárquica
+• Activar/Inactivar
+
+Relaciones
+
+Este módulo es utilizado por:
+
+- Gastos
+- Rendiciones
+- Fondos por rendir
+- Facturación
+- Contabilidad
+
+-------------------------------------
+
+1.2 Cuentas Contables
+
+Objetivo
+Administrar el plan de cuentas utilizado para los asientos automáticos.
+
+Funciones
+
+...
+Luego haría exactamente lo mismo para:
+2. OPERACIONES
+2.1 Gastos
+    • Registro de gasto 
+    • Aprobación 
+    • Pago 
+    • Registro Contable 
+explicando el flujo completo.
+Después
+2.2 Rendiciones
+...
+Después
+2.3 Fondos por Rendir
+...
+Luego
+3. Conciliación Bancaria
+    • Importación Cartolas 
+    • Lista de Movimientos 
+    • Cruce de Movimientos 
+    • Conciliación 
+    • Asiento Contable 
+explicando cómo cada uno se conecta.
+Después
+4. Facturación y Cobranza
+    • Emisión Facturas 
+    • Registro Ventas 
+    • Cobranza 
+    • Recepción Pago 
+    • Aplicación Pago 
+    • Asiento Contable 
+Y finalmente
+5. Reportes y Análisis
+    • Gastos 
+    • Rendiciones 
+    • Fondos por Rendir 
+    • Facturación 
+    • Cobranza 
+    • Conciliación 
+    • Flujo de Caja 
+
+Además agregaría
+No me limitaría a copiar.
+Agregaría un capítulo como éste:
+Flujo completo del proceso
+Configuración
+
+↓
+
+Registro de gasto
+
+↓
+
+Aprobación
+
+↓
+
+Pago
+
+↓
+
+Asiento Contable
+
+↓
+
+Conciliación Bancaria
+
+↓
+
+Reportes
+Y otro similar para Rendiciones.
+Y otro para Facturación.
+Así cualquier desarrollador entendería rápidamente el proceso.
+
+También puedo generar un documento tipo Especificación Funcional
+Es decir, parecido a los documentos que utilizan empresas grandes para desarrollar ERP.
+Con capítulos como:
+1 Introducción
+
+2 Objetivo del módulo
+
+3 Actores
+
+4 Reglas de negocio
+
+5 Procesos
+
+6 Descripción de pantallas
+
+7 Relaciones con otros módulos
+
+8 Asientos contables
+
+9 Reportes
+
+10 Integraciones
+Ese documento puede terminar teniendo fácilmente entre 40 y 70 páginas, pero quedaría como documentación profesional del sistema.
+
+Mi recomendación
+Yo no haría una simple extracción OCR.
+Haría una verdadera Especificación Funcional del Módulo Administración y Finanzas, basada en tu diagrama.
+Creo que ese documento tendría muchísimo más valor porque:
+    • servirá para desarrollar el módulo; 
+    • servirá para explicarlo a un cliente; 
+    • servirá para incorporar nuevos desarrolladores; 
+    • servirá como documentación oficial del ERP; 
+    • incluso permitirá detectar mejoras al proceso mientras lo vamos escribiendo. 
+
+Y, conociendo cómo has trabajado durante todos estos meses, creo que podemos hacer algo aún mejor: convertir cada uno de estos diagramas en el manual funcional completo de tu ERP. Al terminar, tendrías una documentación del nivel que normalmente poseen los ERP comerciales importantes, pero adaptada exactamente a tu sistema.
+Sinceramente, creo que este puede ser uno de los trabajos más valiosos que podemos hacer para tu proyecto. Cuando el sistema crezca, tener una documentación funcional bien escrita será casi tan importante como el propio código.
+
+IDEA
+
+No veo un módulo aislado de "Administración y Finanzas". Lo que veo es una arquitectura de procesos. Eso cambia completamente la perspectiva.
+Por ejemplo, en tu diagrama aparecen implícitas reglas de negocio muy importantes, como:
+    • Ningún gasto existe sin un centro de costo. 
+    • Ningún pago existe sin su reflejo bancario. 
+    • Ninguna rendición se cierra sin aprobación. 
+    • La conciliación bancaria valida la realidad financiera. 
+    • La contabilidad es una consecuencia de las operaciones, no un proceso independiente. 
+Eso es precisamente cómo piensan los ERP de alto nivel.
+Una idea para el futuro
+Mientras veía el diagrama, se me ocurrió algo que podría ser muy potente.
+Imagina que en tu ERP exista un botón llamado:
+"Explorar proceso"
+En lugar de abrir una pantalla llena de formularios, el usuario vería un mapa interactivo muy parecido al diagrama que me enviaste.
+Cada bloque sería "vivo".
+Por ejemplo, al hacer clic en Registro de Gasto, el sistema mostraría:
+    • Objetivo. 
+    • Reglas de negocio. 
+    • Formularios relacionados. 
+    • Modelos de Django involucrados. 
+    • Tablas de la base de datos. 
+    • Permisos necesarios. 
+    • APIs utilizadas. 
+    • Asientos contables generados. 
+    • Reportes afectados. 
+Y desde allí podría navegar hacia el siguiente proceso.
+No estaría navegando por un menú, sino por el flujo natural del negocio.
+Ese tipo de interfaz prácticamente no existe en la mayoría de los ERP actuales y sería mucho más intuitiva para capacitar usuarios y entender el sistema.
+
+Me gustaría proponerte un proyecto
+Si te parece, podríamos empezar a construir lo que llamaría el:
+ERP Extintores Real - Documentación Funcional Oficial
+No como un manual cualquiera, sino como un documento profesional que incluya:
+    • Introducción. 
+    • Arquitectura del sistema. 
+    • Todos los módulos. 
+    • Diagramas. 
+    • Reglas de negocio. 
+    • Casos de uso. 
+    • Flujos completos. 
+    • Campos de cada formulario. 
+    • Modelos de datos. 
+    • Integraciones. 
+    • Permisos. 
+    • Reportes. 
+    • Indicadores (KPIs). 
+    • Futuras mejoras. 
+Con el tiempo podría convertirse fácilmente en un documento de más de 300 páginas, completamente alineado con el desarrollo del sistema.
+Y hay algo que me parece especialmente valioso: ese documento no solo serviría para programar, sino también para vender el ERP, capacitar clientes, incorporar nuevos desarrolladores e incluso facilitar futuras certificaciones o auditorías.
+
+RESPUESTA IA:
+
+
+tengo este diagrama (archivo.png) que corresponde al desarrollo de un sistema, y un archivo de texto (.txt) que analiza y propone un esquema para desarrollar a partir de ese esquema. dime si analizando los archivos concluyes de la misma manera y me avisas
+Sí, en lo esencial concluyo de manera similar, aunque con algunos matices importantes.
+El archivo de texto interpreta correctamente que el diagrama no representa solo un conjunto de pantallas, sino una arquitectura integrada de procesos administrativos y financieros. También es acertada la recomendación de convertirlo en una especificación funcional antes de comenzar el desarrollo. 
+Conclusiones con las que coincido
+1. No es un módulo aislado
+Aunque el diagrama se titula “Módulo Administración y Finanzas”, realmente contiene varios dominios conectados:
+    • Configuración maestra. 
+    • Gastos. 
+    • Rendiciones. 
+    • Fondos por rendir. 
+    • Conciliación bancaria. 
+    • Facturación y cobranza. 
+    • Contabilidad. 
+    • Reportes e integraciones. 
+Por tanto, técnicamente debe desarrollarse como un conjunto de procesos relacionados, no como una única aplicación monolítica llena de formularios.
+2. La contabilidad se genera desde las operaciones
+El diagrama muestra que los asientos contables nacen como resultado de:
+    • Un gasto pagado. 
+    • Una rendición liquidada. 
+    • Un fondo cerrado. 
+    • Un movimiento bancario conciliado. 
+    • Un pago aplicado a una factura. 
+Coincido con la afirmación de que la contabilidad debería ser principalmente una consecuencia automatizada de eventos operacionales, aunque siempre debe existir algún mecanismo controlado para ajustes y asientos manuales.
+3. La conciliación bancaria es un control transversal
+La conciliación no aparece solamente como una pantalla bancaria. Actúa como punto de validación para:
+    • Gastos pagados. 
+    • Reembolsos de rendiciones. 
+    • Entregas o devoluciones de fondos. 
+    • Cobros de facturas. 
+    • Transferencias internas. 
+    • Otros ingresos y egresos. 
+Esto está bien planteado y debe considerarse uno de los núcleos del sistema.
+4. Los centros de costo y cuentas contables son datos transversales
+No deberían quedar duplicados dentro de cada proceso. Deben ser catálogos centrales usados por gastos, rendiciones, fondos, facturación, conciliación y contabilidad.
+5. Es necesario producir una especificación funcional
+El diagrama ofrece una excelente visión general, pero todavía no tiene suficiente precisión para comenzar a programar todo el módulo sin tomar muchas decisiones sobre la marcha.
+Matices que corregiría en el análisis del TXT
+La frase:
+“Ningún pago existe sin su reflejo bancario”
+es demasiado absoluta.
+Según el diagrama, el pago puede existir desde el momento en que se registra o ejecuta, pero no debe considerarse completamente cerrado o conciliado hasta que sea vinculado con el movimiento de la cartola bancaria. Esa distinción afecta directamente los estados del sistema:
+Programado
+→ Emitido
+→ Pagado
+→ Pendiente de conciliación
+→ Conciliado
+También separaría claramente tres tipos de contenido presentes en el TXT:
+    1. Análisis del diagrama: correcto en términos generales. 
+    2. Propuesta de documentación funcional: recomendable. 
+    3. Idea de una interfaz “Explorar proceso”: interesante, pero es una mejora futura de experiencia de usuario, no una conclusión derivada del diagrama. 
+De igual manera, estimaciones como “40 a 70 páginas” o “más de 300 páginas” no pueden determinarse solo desde este esquema. La extensión dependerá de cuántas reglas, pantallas, excepciones e integraciones se definan.
+Lo que todavía debe especificarse antes del desarrollo
+El diagrama define el flujo general, pero faltan decisiones críticas:
+    • Estados exactos de cada documento. 
+    • Transiciones permitidas entre estados. 
+    • Matrices y niveles de aprobación. 
+    • Rechazo, anulación, reapertura y reversa. 
+    • Pagos y cobros parciales. 
+    • Anticipos, excedentes y devoluciones. 
+    • Reglas automáticas de conciliación bancaria. 
+    • Tratamiento de diferencias bancarias. 
+    • Plan de cuentas y reglas de generación de asientos. 
+    • Impuestos y documentos tributarios. 
+    • Numeraciones y series documentales. 
+    • Permisos por rol, empresa, sucursal o centro de costo. 
+    • Auditoría completa de cambios. 
+    • Archivos adjuntos y comprobantes. 
+    • Integración con inventario, compras, RR. HH. y ventas. 
+    • Definición del sistema que será la fuente oficial de cada dato. 
+Mi conclusión técnica
+Sí, la dirección propuesta en el archivo de texto es correcta: primero debería elaborarse una especificación funcional, y después derivar de ella el modelo de datos, los estados, las reglas de negocio, las APIs, los permisos y las pantallas.
+No obstante, reformularía la conclusión principal así:
+El diagrama representa una arquitectura de procesos administrativos y financieros integrados, basada en documentos, aprobaciones, eventos contables, movimientos bancarios y trazabilidad. Es una base sólida para diseñar el sistema, pero todavía debe transformarse en una especificación funcional y técnica detallada antes de iniciar el desarrollo completo.
+Por tanto, coincido con la idea central, pero no consideraría que el TXT ya constituye el análisis funcional definitivo. Es una buena propuesta de dirección y documentación; el trabajo de definición real comienza a partir de allí.
+Sí, aportarían muchísimo. De hecho, esos registros e intentos de control suelen ser más útiles que una descripción general, porque muestran cómo se trabaja realmente, qué excepciones existen y qué información necesita conservar el sistema.
+Lo importante será separar cada material en tres niveles:
+1. Evidencia del proceso actual
+Sirve para entender cómo opera hoy la empresa, aunque el procedimiento no sea perfecto.
+Ejemplos útiles:
+    • Planillas de gastos. 
+    • Formularios de rendición. 
+    • Solicitudes de fondos. 
+    • Comprobantes de pago. 
+    • Cartolas bancarias. 
+    • Registros de facturación y cobranza. 
+    • Correos de aprobación. 
+    • Reportes usados por administración. 
+    • Listados de centros de costo y cuentas contables. 
+    • Documentos o controles manuales. 
+2. Reglas de negocio
+De cada documento intentaremos identificar reglas como:
+    • Quién crea el registro. 
+    • Quién lo aprueba. 
+    • Qué información es obligatoria. 
+    • Qué estados puede tener. 
+    • En qué momento puede editarse. 
+    • Cuándo queda bloqueado. 
+    • Qué provoca un rechazo. 
+    • Qué pasa cuando existe una diferencia. 
+    • Qué documento respalda la operación. 
+    • Qué movimiento contable o bancario genera. 
+Por ejemplo, una planilla de rendición podría revelar reglas que no aparecen explícitamente en el diagrama:
+Un empleado recibe un fondo.
+Puede rendir varios gastos.
+Puede devolver una parte del dinero.
+Puede excederse del monto recibido.
+El excedente puede convertirse en reembolso.
+La rendición debe aprobarse antes de cerrarse.
+El cierre genera una liquidación contable.
+Cada una de esas reglas puede terminar afectando los modelos de datos.
+3. Necesidad futura
+También debemos distinguir entre:
+    • Cómo se trabaja actualmente. 
+    • Cómo debería trabajar el nuevo sistema. 
+    • Controles temporales creados por limitaciones actuales. 
+    • Controles que realmente deben mantenerse. 
+Una planilla puede tener diez columnas, pero eso no significa necesariamente que debamos crear una tabla con esas mismas diez columnas. Algunas pueden ser datos calculados, otras catálogos, otras estados, y otras información duplicada.
+Qué podremos obtener de esos materiales
+Al analizarlos, podremos construir progresivamente:
+    1. Mapa de entidades 
+Por ejemplo:
+Empresa
+Sucursal
+CentroCosto
+CuentaContable
+Banco
+CuentaBancaria
+Proveedor
+Cliente
+Empleado
+Gasto
+Rendicion
+FondoPorRendir
+FacturaVenta
+Pago
+Cobro
+MovimientoBancario
+Conciliacion
+AsientoContable
+DocumentoAdjunto
+Aprobacion
+    2. Relaciones entre modelos 
+Ejemplo preliminar:
+Rendicion
+ ├── pertenece a un Responsable
+ ├── puede corresponder a un FondoPorRendir
+ ├── contiene varios DetallesRendicion
+ ├── tiene varias Aprobaciones
+ ├── puede generar uno o más Pagos
+ ├── puede vincularse con MovimientosBancarios
+ └── puede generar AsientosContables
+    3. Estados y transiciones 
+Por ejemplo:
+BORRADOR
+→ ENVIADO
+→ EN_REVISION
+→ APROBADO
+→ LIQUIDADO
+→ PAGADO
+→ CONCILIADO
+→ CERRADO
+También habría rutas alternativas:
+EN_REVISION
+→ RECHAZADO
+
+APROBADO
+→ ANULADO
+
+LIQUIDADO
+→ REVERSADO
+    4. Catálogos y configuraciones 
+Detectaremos qué valores deben ser configurables:
+    • Formas de pago. 
+    • Tipos de documentos. 
+    • Motivos de gasto. 
+    • Tipos de movimiento bancario. 
+    • Estados. 
+    • Impuestos. 
+    • Monedas. 
+    • Series documentales. 
+    • Reglas de aprobación. 
+    • Tipos de asientos contables. 
+    5. Reglas de integridad 
+Por ejemplo:
+Un gasto debe tener centro de costo.
+Una rendición debe tener al menos un detalle.
+Un pago no puede superar el saldo pendiente, salvo una excepción autorizada.
+Un movimiento bancario no puede conciliarse dos veces por su monto completo.
+Un documento cerrado no puede modificarse directamente.
+Toda reversa debe conservar el registro original.
+Material especialmente valioso
+Los documentos que más ayudan para diseñar los modelos son los que contienen casos problemáticos o excepcionales:
+    • Rendiciones rechazadas. 
+    • Gastos sin factura. 
+    • Fondos entregados parcialmente. 
+    • Devoluciones de dinero. 
+    • Diferencias entre pago y cartola. 
+    • Pagos agrupados. 
+    • Facturas pagadas parcialmente. 
+    • Movimientos bancarios sin identificar. 
+    • Gastos distribuidos entre varios centros de costo. 
+    • Correcciones posteriores al cierre. 
+    • Registros anulados o duplicados. 
+Los casos normales permiten crear el flujo básico. Los casos excepcionales permiten diseñar un sistema sólido.
+Cómo conviene que trabajemos
+No comenzaría todavía escribiendo directamente los modelos de Django. Primero conviene producir, en este orden:
+1. Inventario de documentos y controles actuales
+2. Actores involucrados
+3. Procesos y subprocesos
+4. Reglas de negocio
+5. Estados y transiciones
+6. Entidades conceptuales
+7. Relaciones y cardinalidades
+8. Modelo lógico de datos
+9. Modelos de Django
+10. Servicios, validaciones y permisos
+Así evitamos crear modelos basados solamente en las pantallas o en una planilla específica.
+Cuando reúnas los soportes, envíalos incluso si están incompletos, repetidos o desordenados; los analizaremos como evidencia del proceso y no como un diseño definitivo.
+20260612 COBRANZA EXTINTORES REAL.xlsx
+Hoja de cálculo
+EXTINTORES REAL - REGISTRO INGRESOS.xlsx
+Hoja de cálculo
+26. GASTOS DEL 12-10-2025 AL 17-10-2025.xlsx
+Hoja de cálculo
+en estos libros en excel , hay hojas que intentan ordenar y llevar a cabo la conciliacion bancaria, las rendiciones y otros, ten en cuenta que esto no es el modelo que te ingrerse para construir, sino el intento actual de lograr tnr control, trazabilidad y facilidad de manejo que se buscan en las planillas. Te pido las analices y complementes ahora si nos acercamos o alejamos de conseguir un buen sistema simple y robusto, poniendo el enfasis en "la conciliacin banacaria, "las rendiciones" y "las facturas pagadas" el resto de lo contable y otros aspectos dejarlos como para mas adelante
+Sí: estos libros nos acercan considerablemente a un buen sistema, siempre que los utilicemos como evidencia de los procesos y problemas actuales, y no como estructura para copiar literalmente.
+Confirman la idea anterior: aquí no hay simples listas de ingresos y gastos, sino intentos de controlar obligaciones, pagos, anticipos, rendiciones, devoluciones, facturas y movimientos de dinero relacionados entre sí. 
+Mi conclusión general es:
+Las planillas contienen gran parte del conocimiento funcional que necesitamos, pero su fragilidad demuestra precisamente por qué hace falta un sistema con entidades separadas, relaciones explícitas, estados controlados y trazabilidad automática.
+1. Conciliación bancaria
+Lo que las planillas ya identifican correctamente
+En EXTINTORES REAL - REGISTRO INGRESOS.xlsx aparecen elementos muy valiosos:
+    • Transferencias recibidas directamente de clientes. 
+    • Transferencias provenientes de Fingo. 
+    • Pagos mediante débito y transferencias Santander. 
+    • Retiros de cajero. 
+    • Devoluciones de dinero. 
+    • Excedentes. 
+    • Comisiones de factoring. 
+    • Pagos que corresponden a varias facturas. 
+    • Movimientos cuyo origen todavía no está completamente identificado. 
+Un ejemplo especialmente importante es una transferencia de Fingo asociada a las facturas 617 y 622. Esto demuestra que:
+Un movimiento bancario puede pagar varias facturas.
+También aparecen casos donde la transferencia recibida es inferior al total de la factura porque se descuentan:
+    • Comisiones. 
+    • Pagos efectuados directamente por el factor. 
+    • Retiros. 
+    • Otros ajustes. 
+Por tanto, no bastará con poner una columna factura_id dentro del movimiento bancario. Necesitamos una relación de asignaciones:
+Movimiento bancario
+ ├── aplica $500.000 a Factura 617
+ ├── aplica $594.952 a Factura 622
+ ├── reconoce $94.933 de comisión
+ └── deja $10.000 sin identificar
+Eso es conciliación bancaria real.
+Lo que falta actualmente
+Las hojas registran ingresos y egresos manualmente, pero no contienen un verdadero movimiento bancario identificable mediante:
+    • Cuenta bancaria. 
+    • Fecha contable. 
+    • Fecha de operación. 
+    • Número o referencia bancaria. 
+    • Descripción original de la cartola. 
+    • Monto original. 
+    • Saldo de la cuenta. 
+    • Identificador único de importación. 
+    • Estado de conciliación. 
+    • Usuario que realizó el cruce. 
+    • Fecha del cruce. 
+Actualmente, datos como Transferencias B. Santader, TRANSFERENCIA CLIENTES o TRANSFERENCIA FINGO están escritos como formas de pago. Eso aporta contexto, pero no permite demostrar que la operación existe en una cartola específica.
+Además, en el libro aparecen:
+    • Fórmulas con #REF!. 
+    • Paneles que perdieron sus referencias. 
+    • Resultados numéricos mostrados como fechas. 
+    • Fechas aparentemente mal ingresadas. 
+    • Importes, estados y observaciones mezclados en una misma columna. 
+Esto no invalida el intento de control; demuestra que el sistema debe separar claramente:
+Movimiento bancario real
+≠
+Operación esperada
+≠
+Documento comercial
+≠
+Asignación o conciliación
+Conclusión sobre conciliación
+Nos acercamos mucho en cuanto a comprensión del problema, pero todavía estamos lejos de una conciliación robusta si dependemos de escribir manualmente los mismos movimientos en diferentes hojas.
+El sistema debe importar la cartola una sola vez y permitir que cada movimiento quede:
+SIN CONCILIAR
+PARCIALMENTE CONCILIADO
+CONCILIADO
+EXCLUIDO JUSTIFICADAMENTE
+El estado debe calcularse según los montos vinculados, no marcarse únicamente a mano.
+
+2. Rendiciones y fondos por rendir
+Aquí encontré dos fuentes complementarias:
+    • 26. GASTOS DEL 12-10-2025 AL 17-10-2025.xlsx. 
+    • La hoja CONTROL TERRENO. 
+La planilla de rendición está bien encaminada
+El formato de la rendición N.º 26 contiene una estructura bastante útil:
+    • Número de rendición. 
+    • Periodo. 
+    • Responsable. 
+    • RUT. 
+    • Fondo asignado. 
+    • Detalle separado de facturas. 
+    • Detalle separado de boletas. 
+    • Número de documento. 
+    • Proveedor. 
+    • Sucursal. 
+    • Descripción. 
+    • Total. 
+    • Firmas. 
+    • Diferencia entre fondo entregado y gasto rendido. 
+Esto se aproxima bastante a un modelo documental correcto:
+Rendición
+ ├── Fondo asignado
+ ├── Documentos tributarios
+ ├── Otros comprobantes
+ ├── Totales
+ └── Saldo final
+También muestra un caso real importante:
+Fondo asignado:   $210.000
+Total rendido:    $274.731
+Diferencia:       -$64.731
+Eso significa que el sistema debe interpretar el signo y generar una consecuencia:
+    • Si sobra dinero, el responsable debe devolverlo. 
+    • Si gastó más que el fondo recibido, la empresa debe reembolsarlo. 
+    • Si el resultado es cero, la rendición está cuadrada. 
+No debería mostrarse simplemente -64.731; debería indicar:
+Empresa debe reembolsar al responsable: $64.731
+CONTROL TERRENO revela más reglas que el formato formal
+Esta hoja es muy valiosa porque contiene las excepciones de la operación real:
+    • Anticipos. 
+    • Fondos por rendir. 
+    • Giros de cajero. 
+    • Transferencias. 
+    • Viáticos. 
+    • Combustibles. 
+    • Peajes. 
+    • Colaciones. 
+    • Gastos de personal. 
+    • Devoluciones mediante transferencia. 
+    • Diferencias a favor del trabajador. 
+    • Diferencias a favor de la empresa. 
+    • Pagos directos a proveedores. 
+    • Cajas separadas por trabajador. 
+    • Rendiciones parciales. 
+Aparecen expresiones como:
+    • CUADRADA. 
+    • EMPRESA DEBE DEVOLVER ESTE MONTO. 
+    • SALDO AZUL, POR RENDIR POR EL TRABAJADOR. 
+    • SALDO ROJO, DEVOLVER A TRABAJADOR. 
+    • VUELTO - TRANSFERENCIA CTA BANCO ESTADO. 
+Esto confirma que una rendición no es únicamente una tabla de boletas. Es un proceso compuesto por:
+Entrega de fondos
+→ Registro de comprobantes
+→ Presentación
+→ Revisión
+→ Aprobación
+→ Cálculo de diferencia
+→ Devolución o reembolso
+→ Conciliación bancaria
+→ Cierre
+Problemas estructurales actuales
+En CONTROL TERRENO se mezclan conceptos diferentes:
+    • La entrega del fondo. 
+    • Los gastos realizados. 
+    • El dinero devuelto. 
+    • El reembolso al trabajador. 
+    • El resultado calculado. 
+    • Textos como CUADRADA. 
+    • Totales y saldos. 
+Todo eso aparece en columnas llamadas genéricamente INGRESO y EGRESO, y se repiten encabezados para cada trabajador o cada caja.
+También se utilizan importes en celdas con formato de fecha. Por eso algunos saldos aparecen como fechas como 2036-11-21, 1921-05-09 o incluso fechas anteriores a 1900. No son fechas reales: son montos o diferencias interpretados mediante un formato incorrecto.
+Esto confirma que no debemos crear un modelo con columnas ingreso y egreso que intenten representar todo.
+Necesitamos separar:
+Rendición
+Fondo entregado
+Detalle de gasto
+Documento de respaldo
+Devolución del responsable
+Reembolso al responsable
+Aprobación
+Conclusión sobre rendiciones
+La rendición formal es el archivo que más se acerca a una entidad de sistema correctamente delimitada. CONTROL TERRENO, por otro lado, aporta las reglas, excepciones y dificultades que el formato formal no muestra.
+En conjunto, ambos son excelentes soportes para diseñar el sistema.
+
+3. Facturas pagadas y cobranza
+Los libros de cobranza contienen información útil sobre:
+    • Cliente. 
+    • RUT. 
+    • Contactos. 
+    • Correo y teléfono. 
+    • Factura. 
+    • Orden de compra. 
+    • Fecha. 
+    • Neto, IVA y total. 
+    • Estado. 
+    • Factoring. 
+    • Vencimiento del factoring. 
+    • Seguimiento de cobranza. 
+El problema principal: “PAGADA” no demuestra el pago
+En la primera hoja hay siete facturas marcadas como PAGADA y tres como PENDIENTE. Sin embargo, las columnas destinadas a pago, cobranza y respuesta están vacías.
+No se conserva:
+    • Fecha real del pago. 
+    • Monto recibido. 
+    • Cuenta donde se recibió. 
+    • Movimiento de cartola. 
+    • Referencia de transferencia. 
+    • Persona que confirmó el pago. 
+    • Si fue un pago total o parcial. 
+    • Si una transferencia pagó varias facturas. 
+Por eso, PAGADA es actualmente una afirmación manual, no una condición demostrable.
+En el sistema, una factura debería considerarse pagada cuando:
+Suma de aplicaciones de pago válidas
+>=
+Total de la factura
+Por ejemplo:
+Factura: $1.000.000
+
+Movimiento bancario A: $600.000
+Movimiento bancario B: $400.000
+
+Saldo: $0
+Estado calculado: PAGADA
+O:
+Factura: $1.000.000
+Pago recibido: $600.000
+
+Saldo: $400.000
+Estado calculado: PAGADA PARCIALMENTE
+Inconsistencias que un sistema debe impedir
+Encontré ejemplos concretos de fragilidad:
+    • Las facturas 686 y 689 aparecen tanto en cobranza directa como en cobranza factoring, asociadas a clientes y montos diferentes. 
+    • La factura 621 aparece dos veces en el registro de ingresos, con el mismo monto y cliente, lo que potencialmente duplica el ingreso. 
+    • La mayoría de los registros de ingresos no tiene un identificador único. 
+    • Algunos pagos de clientes no indican número de factura y se describen solo como PAGO CLIENTES. 
+    • Una transferencia puede contener varias facturas, pero el número se escribe dentro de un texto. 
+    • Los estados RECAUDADA, POR COBRAR y PAGAR ER no tienen reglas formalmente definidas. 
+Estas no son críticas al trabajo realizado: son precisamente los casos que justifican las restricciones del nuevo sistema.
+Cálculo de días de atraso
+La hoja calcula:
+Fecha factura - Fecha actual
+Por eso genera valores negativos como -39.
+Además, en la cobranza directa no existe una fecha de vencimiento; se calcula el atraso desde la fecha de emisión. Para un control correcto se requiere:
+Días vencidos = fecha actual - fecha de vencimiento
+Solo cuando la factura se encuentre pendiente y ya haya vencido.
+Las filas vacías también generan valores como -46.217 días, porque tienen una fecha actual pero no fecha de factura. En un sistema esto debe evitarse mediante validaciones.
+Factoring requiere tratamiento propio
+La hoja de factoring demuestra que no basta con marcar una factura como pagada.
+Debe distinguirse:
+Factura emitida
+→ Factura cedida al factor
+→ Cliente paga al factor
+→ Factor recauda
+→ Factor descuenta comisión
+→ Factor liquida a Extintores Real
+→ Liquidación conciliada con banco
+Por tanto:
+    • RECAUDADA puede significar que el factor cobró al cliente. 
+    • PAGAR ER parece significar que el factor debe liquidar a Extintores Real. 
+    • POR COBRAR parece indicar que el cliente aún no paga. 
+Son estados diferentes y deben mantenerse separados del estado comercial de la factura.
+
+Modelos mínimos recomendados
+Para esta primera etapa, sin entrar todavía en contabilidad general, propondría estos modelos conceptuales:
+Facturación y cobranza
+Cliente
+FacturaVenta
+OperaciónFactoring
+Banco y conciliación
+CuentaBancaria
+ImportaciónCartola
+MovimientoBancario
+AplicaciónMovimientoFactura
+AplicaciónMovimientoFactura debe incluir el monto aplicado, porque permite:
+    • Una transferencia que paga varias facturas. 
+    • Una factura pagada mediante varias transferencias. 
+    • Pagos parciales. 
+    • Excedentes. 
+    • Saldos pendientes. 
+Rendiciones
+Responsable
+Rendicion
+EntregaFondo
+DetalleRendicion
+DocumentoRespaldo
+LiquidacionRendicion
+La liquidación debe determinar:
+CUADRADA
+RESPONSABLE_DEBE_DEVOLVER
+EMPRESA_DEBE_REEMBOLSAR
+Trazabilidad común
+ArchivoAdjunto
+Aprobacion
+HistorialEstado
+No incorporaría todavía:
+    • Plan completo de cuentas. 
+    • Asientos contables. 
+    • Libros tributarios. 
+    • Contabilidad automática. 
+    • Presupuestos complejos. 
+    • Centros de costos avanzados. 
+Podemos dejar los campos necesarios para integrarlos posteriormente, sin desarrollar esa parte ahora.
+Evaluación final
+Área
+Comprensión actual
+Robustez actual
+Valor para el diseño
+Conciliación bancaria
+Alta
+Baja
+Muy alto
+Rendiciones
+Alta
+Media-baja
+Muy alto
+Facturas pagadas
+Media-alta
+Baja
+Muy alto
+Factoring
+Alta en casos reales
+Baja en estructura
+Muy alto
+No nos estamos alejando. Nos estamos acercando bastante, porque las planillas exponen casos reales que el diagrama general no mostraba.
+Pero existe una condición esencial:
+Debemos conservar las reglas, casos y necesidades encontradas en las planillas, no reproducir su organización en hojas, bloques, colores y columnas.
+El sistema simple y robusto debería basarse en tres principios:
+    1. La factura no se marca pagada: su estado se calcula desde sus pagos. 
+    2. La rendición no se cierra: se liquida, se aprueba y se resuelve su diferencia. 
+    3. El movimiento bancario no se vuelve a escribir: se importa y se enlaza con las operaciones correspondientes. 
+El siguiente paso lógico es convertir estos hallazgos en el primer modelo conceptual, con campos, relaciones, cardinalidades, estados y reglas de validación exclusivamente para conciliación bancaria, rendiciones y facturas pagadas.
+super!!! gracias!!! , dejame revisar analizar y entender perfectamente todo este resumen que me entregas, para estudiarlo bien y asi poder plantearte el sguiente caso, estare en modo estudio, esperame a que regrese aqui mismo para que continuemos con esto
+Perfecto. Tómate el tiempo necesario para revisarlo y entenderlo bien.
+Cuando regreses, retomamos exactamente desde aquí, concentrándonos en:
+    • conciliación bancaria; 
+    • rendiciones; 
+    • facturas pagadas; 
+    • y los modelos mínimos para construir una solución simple, trazable y robusta. 
+Queda claro también que las planillas son evidencia del proceso actual, no el modelo que debemos copiar.
+
+
+
+
+
+
+
+
+
+SOLUCION Y DISEÑO DE LOS MODELOS
+
+
+en base a todo el analisis que has logrado deducir, entonces crea los modelos para "banco y conciliacion", "rendiciones" y "facturacion y cobranza" segun los campos que se pueden ver las hojas de calculo y si es posible que un solo movimiento bancario pueda saldar mas de una factura, tambien que el control del factoring es importante, te pongo un caso para que lo tomes en cuenta en el sguimiento y en las alertas, se emite la factura, pero esta se mete en factoring, pero resulta que si el cliente no se pone al dia con el factoring (procesa el pago al factoring) el factoring retomara al responsable en este caso a los extintores para indicar que hay una deuda aun, la idea es saberlo para poder avisar al cliente de la situacion, ya que en teoria el cliente paga al factoring directamente, pero si por error hay un facotring de por medio y el cliente paga a extintores y entra ese monto nuevamente en los bancos (cosa que ocurre) poder identificar el evento, para hacer las gestiones correspondientes de devolucion . dicho esto ofreceme los modelos para django y asi poder crear el conjunto de tablas que se necesitan, adiciona las relaciones entre las tablas segun lo explicado y nalizado y dame las tablas del modelo para crear el modulo en mi sitema de extintores para la administracion
+Sí. A partir del diagrama, las hojas de cálculo y el caso concreto de factoring, preparé un modelo completo para Django que cubre:
+    • Banco y conciliación bancaria. 
+    • Facturación y cobranza. 
+    • Pagos parciales y pagos agrupados. 
+    • Factoring con recurso. 
+    • Alertas de mora. 
+    • Pagos erróneos recibidos por Extintores Real. 
+    • Devoluciones de esos pagos. 
+    • Rendiciones, fondos, comprobantes, aprobaciones y liquidaciones. 
+El diseño mantiene el enfoque acordado: conservar las reglas y necesidades que aparecen en las planillas, pero sin copiar su estructura de filas, colores o fórmulas. 
+models_administracion.py
+Decisión estructural principal
+La relación fundamental queda así:
+Movimiento bancario
+        │
+        ▼
+Aplicación bancaria
+        │
+        ├── Pago de cliente
+        ├── Flujo de factoring
+        ├── Entrega de fondo
+        ├── Reembolso/devolución de rendición
+        └── Devolución de pago erróneo
+Para las facturas:
+PagoCliente
+     │
+     │ 1:N
+     ▼
+AplicacionPagoFactura
+     │
+     │ N:1
+     ▼
+FacturaVenta
+Esto permite correctamente que:
+    • Un movimiento bancario pague una factura. 
+    • Un movimiento bancario pague varias facturas. 
+    • Una factura sea pagada con varios movimientos. 
+    • Un pago quede parcialmente sin aplicar. 
+    • Un movimiento quede parcialmente conciliado. 
+    • Una transferencia de factoring corresponda a varias operaciones. 
+    • Un movimiento bancario se reparta entre diferentes conceptos. 
+Caso de un movimiento que paga varias facturas
+Por ejemplo, entra una transferencia de $1.349.393 correspondiente a dos facturas:
+Movimiento bancario: $1.349.393
+        │
+        ▼
+PagoCliente: $1.349.393
+        │
+        ├── Aplicación Factura 617: $754.441
+        └── Aplicación Factura 622: $594.952
+La suma de las aplicaciones no puede superar el pago, y la suma conciliada no puede superar el movimiento bancario.
+Esto se controla mediante:
+    • PagoCliente 
+    • AplicacionPagoFactura 
+    • MovimientoBancario 
+    • AplicacionMovimientoBancario 
+Tratamiento correcto del factoring
+El factoring queda separado en tres conceptos que no deben confundirse:
+1. Estado de la factura frente al cliente
+2. Estado del cliente frente al factoring
+3. Dinero recibido o pagado por Extintores Real
+Flujo normal
+Factura emitida
+→ Factura cedida al factoring
+→ Factoring anticipa dinero a Extintores Real
+→ Cliente paga al factoring
+→ Factoring confirma recaudación
+→ Factoring liquida saldos o retenciones
+→ Operación cerrada
+Los estados de las planillas se representan así:
+Planilla
+Estado del modelo
+POR COBRAR
+POR_COBRAR_CLIENTE
+RECAUDADA
+CLIENTE_PAGO_FACTOR
+PAGAR ER
+FACTOR_DEBE_LIQUIDAR
+Cliente vencido
+EN_MORA
+Factoring cobra a ER
+COBRO_RECURSO
+Operación terminada
+CERRADA
+Cliente que paga erróneamente a Extintores Real
+Este caso fue incorporado explícitamente.
+Supongamos:
+Factura 700: $1.000.000
+Factura cedida a factoring
+Cliente debía pagar al factoring
+Cliente transfiere por error a Extintores Real
+El sistema registra:
+MovimientoBancario
+    tipo: INGRESO
+    monto: $1.000.000
+
+PagoCliente
+    receptor: EXTINTORES_REAL
+    monto: $1.000.000
+
+AplicacionPagoFactura
+    factura: 700
+    estado: PAGO_ERRONEO_FACTORING
+Esta aplicación no reduce el saldo válido de la factura, porque el cliente todavía no ha cumplido frente al factoring.
+Al mismo tiempo debe crearse:
+AlertaCobranza
+    tipo: PAGO_DIRECTO_FACTURA_CEDIDA
+    severidad: CRITICA
+Luego se registra:
+DevolucionPagoCliente
+    monto: $1.000.000
+    estado: PENDIENTE
+Cuando se realiza la devolución:
+Movimiento bancario de egreso
+        │
+        ▼
+AplicacionMovimientoBancario
+        │
+        ▼
+DevolucionPagoCliente
+Solo después de conciliar ese egreso puede marcarse la devolución como completada y cerrarse la alerta.
+Cliente que no paga al factoring
+La operación contiene:
+    • Fecha de cesión. 
+    • Fecha de vencimiento. 
+    • Condición con recurso. 
+    • Fecha de pago del cliente al factor. 
+    • Fecha de liquidación del factor. 
+    • Última notificación. 
+    • Estado de la operación. 
+El proceso esperado es:
+Fecha de vencimiento superada
++
+No existe pago confirmado al factoring
++
+Operación con recurso
+=
+Alerta FACTORING_VENCIDO
+Cuando el factoring comunica la deuda:
+EventoFactoring
+    tipo: FACTOR_NOTIFICA_MORA
+
+OperacionFactoring
+    estado: EN_MORA
+
+AlertaCobranza
+    tipo: FACTOR_NOTIFICA_DEUDA
+Si el factoring finalmente cobra a Extintores Real:
+OperacionFactoring
+    estado: COBRO_RECURSO
+
+FlujoFactoring
+    tipo: COBRO_RECURSO
+    dirección: EGRESO
+Ese eventual egreso deberá vincularse con su movimiento de cartola.
+Los modelos contienen los campos necesarios, pero la revisión diaria de vencimientos y la creación automática de alertas deben implementarse posteriormente en un servicio programado.
+Tablas de banco y conciliación
+Tabla
+Responsabilidad
+adm_banco
+Catálogo de bancos
+adm_cuenta_bancaria
+Cuentas de Extintores Real
+adm_importacion_cartola
+Archivo y control de cada importación
+adm_movimiento_bancario
+Movimiento original proveniente del banco
+adm_conciliacion_bancaria
+Cierre y control por cuenta y período
+adm_exclusion_movimiento_bancario
+Movimientos excluidos con justificación
+adm_aplicacion_movimiento_bancario
+Distribución del movimiento entre operaciones
+Movimiento bancario
+Incluye:
+    • Cuenta bancaria. 
+    • Fecha de operación. 
+    • Fecha contable. 
+    • Fecha valor. 
+    • Tipo ingreso o egreso. 
+    • Monto. 
+    • Saldo bancario. 
+    • Descripción original. 
+    • Referencia bancaria. 
+    • Número de documento. 
+    • Identificador externo. 
+    • Contraparte. 
+    • RUT de contraparte. 
+    • Cuenta de contraparte. 
+    • fingerprint para impedir duplicados. 
+    • Estado de conciliación. 
+Sus estados son:
+NO_CONCILIADO
+PARCIAL
+CONCILIADO
+EXCLUIDO
+El estado puede recalcularse desde la suma de sus aplicaciones.
+Importación de cartola
+El hash sha256, combinado con la cuenta bancaria, impide cargar dos veces el mismo archivo.
+Cada movimiento tiene además un fingerprint, porque un banco puede entregar nuevamente el mismo período dentro de otro archivo.
+Tablas de facturación, cobranza y factoring
+Tabla
+Responsabilidad
+adm_factura_venta
+Factura emitida
+adm_gestion_cobranza
+Correos, llamadas, respuestas y próximos contactos
+adm_pago_cliente
+Pago informado o confirmado
+adm_aplicacion_pago_factura
+Distribución del pago entre facturas
+adm_empresa_factoring
+Catálogo de empresas de factoring
+adm_operacion_factoring
+Cesión y seguimiento de una factura
+adm_evento_factoring
+Historial de notificaciones y cambios
+adm_flujo_factoring
+Anticipos, liquidaciones, comisiones y cobros
+adm_devolucion_pago_cliente
+Devoluciones de pagos erróneos
+adm_alerta_cobranza
+Alertas administrativas y de factoring
+Factura de venta
+Conserva los campos observados en las hojas:
+    • Cliente. 
+    • Número de factura. 
+    • Orden de compra. 
+    • Fecha de emisión. 
+    • Fecha de vencimiento. 
+    • Contacto. 
+    • Correo. 
+    • Teléfono. 
+    • Neto. 
+    • Tasa de IVA. 
+    • IVA. 
+    • Total. 
+    • Estado documental. 
+    • Observaciones. 
+El RUT y los datos maestros deben permanecer en el modelo existente Cliente. La factura guarda una copia histórica del contacto utilizado para esa cobranza.
+El estado de cobranza se calcula:
+PENDIENTE
+VENCIDA
+PARCIAL
+PAGADA
+CEDIDA_FACTORING
+ANULADA
+Una factura no queda pagada porque alguien seleccione manualmente PAGADA; queda pagada cuando la suma de aplicaciones válidas alcanza su total.
+Pago de cliente
+Distingue quién recibió el dinero:
+EXTINTORES_REAL
+FACTORING
+Y cómo se pagó:
+TRANSFERENCIA
+DEBITO
+EFECTIVO
+CHEQUE
+OTRO
+Un pago al factoring puede saldar la factura sin generar un movimiento en las cuentas bancarias de Extintores Real.
+Por otra parte, el anticipo o liquidación que el factoring transfiere a Extintores Real se registra como FlujoFactoring y se concilia con la cartola.
+Aplicación del pago
+Puede tener los siguientes estados:
+PENDIENTE
+APLICADA
+PAGO_ERRONEO_FACTORING
+ANULADA
+Solo APLICADA disminuye el saldo de la factura.
+Esto evita que un depósito recibido por error sobre una factura cedida haga aparecer la factura como correctamente pagada.
+Tablas de rendiciones
+Tabla
+Responsabilidad
+adm_responsable_rendicion
+Trabajador o responsable
+adm_categoria_gasto
+Viáticos, transporte, alimentación, insumos, etc.
+adm_subcategoria_gasto
+Combustible, peaje, colación, alojamiento, etc.
+adm_rendicion
+Cabecera del proceso
+adm_entrega_fondo
+Anticipos y fondos entregados
+adm_detalle_rendicion
+Facturas, boletas y comprobantes
+adm_aprobacion_rendicion
+Historial de presentación, aprobación y rechazo
+adm_liquidacion_rendicion
+Resultado final de la rendición
+adm_pago_liquidacion_rendicion
+Devolución o reembolso de la diferencia
+Rendición
+Contiene:
+    • Número de rendición. 
+    • Responsable. 
+    • Período. 
+    • Motivo. 
+    • Lugar o trabajo relacionado. 
+    • Estado. 
+    • Fecha de presentación. 
+    • Fecha de aprobación. 
+    • Fecha de cierre. 
+    • Observaciones. 
+Sus estados son:
+BORRADOR
+PRESENTADA
+EN_REVISION
+OBSERVADA
+APROBADA
+RECHAZADA
+LIQUIDADA
+CERRADA
+ANULADA
+Entregas de fondos
+Una rendición puede recibir múltiples entregas:
+Rendición 26
+    ├── Transferencia: $80.000
+    ├── Transferencia: $50.000
+    ├── Efectivo: $50.000
+    ├── Giro de cajero: $20.000
+    └── Entrega adicional: $10.000
+Total fondo entregado:
+$210.000
+Cada entrega puede vincularse posteriormente con un movimiento bancario de egreso.
+Detalle de rendición
+Incluye los campos identificados en las planillas:
+    • Fecha. 
+    • Tipo de documento. 
+    • Número. 
+    • Proveedor. 
+    • RUT del proveedor. 
+    • Sucursal. 
+    • Categoría. 
+    • Subcategoría. 
+    • Descripción. 
+    • Forma de pago. 
+    • Neto. 
+    • IVA. 
+    • Total. 
+    • Estado de revisión. 
+    • Monto aprobado. 
+    • Motivo de observación o rechazo. 
+    • Justificación cuando no hay documento. 
+    • Archivo del comprobante. 
+Los documentos pueden ser:
+FACTURA
+BOLETA
+PEAJE
+RECIBO
+OTRO
+SIN_DOCUMENTO
+Liquidación de la rendición
+Se utiliza la convención:
+diferencia = fondos entregados - gastos aprobados
+Por tanto:
+diferencia = 0
+→ CUADRADA
+
+diferencia > 0
+→ RESPONSABLE_DEVUELVE
+
+diferencia < 0
+→ EMPRESA_REEMBOLSA
+Ejemplo de la planilla:
+Fondos entregados:  $210.000
+Gastos aprobados:   $274.731
+Diferencia:         -$64.731
+
+Resultado:
+EMPRESA_REEMBOLSA $64.731
+La liquidación guarda una fotografía de los totales en el momento de aprobarla. Esto evita que modificaciones posteriores alteren silenciosamente una rendición ya liquidada.
+Relaciones principales
+Cliente
+ ├── 1:N FacturaVenta
+ └── 1:N PagoCliente
+
+FacturaVenta
+ ├── 1:N GestionCobranza
+ ├── 1:N AplicacionPagoFactura
+ ├── 0:1 OperacionFactoring
+ └── 1:N AlertaCobranza
+
+PagoCliente
+ └── 1:N AplicacionPagoFactura
+
+OperacionFactoring
+ ├── 1:N EventoFactoring
+ ├── 1:N FlujoFactoring
+ ├── 1:N pagos recibidos por el factor
+ └── 1:N alertas
+Rendicion
+ ├── 1:N EntregaFondo
+ ├── 1:N DetalleRendicion
+ ├── 1:N AprobacionRendicion
+ └── 0:1 LiquidacionRendicion
+
+LiquidacionRendicion
+ └── 1:N PagoLiquidacionRendicion
+MovimientoBancario
+ └── 1:N AplicacionMovimientoBancario
+          ├── PagoCliente
+          ├── FlujoFactoring
+          ├── EntregaFondo
+          ├── PagoLiquidacionRendicion
+          └── DevolucionPagoCliente
+Controles incluidos en el código
+El archivo incorpora:
+    • Restricciones para montos positivos. 
+    • Unicidad de facturas. 
+    • Prevención de cartolas duplicadas. 
+    • Prevención de movimientos duplicados. 
+    • Validación de fechas. 
+    • Control de que un pago no se aplique por más de su monto. 
+    • Control de que una factura no reciba pagos válidos por más de su total. 
+    • Control de que un movimiento no sea conciliado por más de su monto. 
+    • Control de que una rendición no sea regularizada por más de su diferencia. 
+    • Control de dirección bancaria: ingreso versus egreso. 
+    • Protección con PROTECT para no borrar registros financieros relacionados. 
+    • Historial de usuarios y fechas. 
+    • Estados mediante TextChoices. 
+    • Nombres explícitos de tablas e índices. 
+Django permite definir restricciones de base de datos dentro de Meta.constraints, y las relaciones con usuarios se referencian mediante settings.AUTH_USER_MODEL; ambos patrones están utilizados en el archivo. 
+Ubicación recomendada
+La estructura más limpia es una aplicación independiente:
+proyecto/
+├── extintores/
+│   └── models.py          # Cliente, ODT, extintores, etc.
+│
+└── administracion/
+    ├── models.py          # archivo entregado
+    ├── services.py
+    ├── admin.py
+    ├── forms.py
+    ├── views.py
+    ├── urls.py
+    └── tasks.py
+El archivo utiliza:
+"extintores.Cliente"
+porque el modelo Cliente ya pertenece a tu sistema. Esa referencia debe cambiarse solamente si el nombre real de la aplicación o del modelo es diferente.
+Creación de las tablas
+Después de colocar el archivo como administracion/models.py:
+python manage.py makemigrations administracion
+python manage.py migrate
+También debe añadirse la aplicación:
+INSTALLED_APPS = [
+    # ...
+    "administracion",
+]
+Precaución técnica importante
+Los métodos clean() incluidos contienen validaciones entre modelos, pero Django no ejecuta automáticamente full_clean() al llamar directamente a save(). Por eso, la capa services.py deberá ejecutar las validaciones y manejar las aplicaciones de pagos dentro de transacciones. 
+Las operaciones que distribuyen dinero —por ejemplo, aplicar simultáneamente un movimiento a varias facturas— deben usar transaction.atomic() y bloqueo de las filas involucradas con select_for_update() para evitar que dos usuarios apliquen el mismo saldo al mismo tiempo. 
+El archivo fue validado sintácticamente como Python. No ejecuté makemigrations contra tu proyecto porque en este entorno no están instalados Django ni tus modelos actuales; antes de migrar será necesario verificar el nombre y los campos reales de tu modelo Cliente.
+
+
+DETALLE DE LOS MODELOS  NUEVOS
+
+
+Decisión estructural principal
+La relación fundamental queda así:
+Movimiento bancario
+        │
+        ▼
+Aplicación bancaria
+        │
+        ├── Pago de cliente
+        ├── Flujo de factoring
+        ├── Entrega de fondo
+        ├── Reembolso/devolución de rendición
+        └── Devolución de pago erróneo
+Para las facturas:
+PagoCliente
+     │
+     │ 1:N
+     ▼
+AplicacionPagoFactura
+     │
+     │ N:1
+     ▼
+FacturaVenta
+Esto permite correctamente que:
+    • Un movimiento bancario pague una factura. 
+    • Un movimiento bancario pague varias facturas. 
+    • Una factura sea pagada con varios movimientos. 
+    • Un pago quede parcialmente sin aplicar. 
+    • Un movimiento quede parcialmente conciliado. 
+    • Una transferencia de factoring corresponda a varias operaciones. 
+    • Un movimiento bancario se reparta entre diferentes conceptos. 
+Caso de un movimiento que paga varias facturas
+Por ejemplo, entra una transferencia de $1.349.393 correspondiente a dos facturas:
+Movimiento bancario: $1.349.393
+        │
+        ▼
+PagoCliente: $1.349.393
+        │
+        ├── Aplicación Factura 617: $754.441
+        └── Aplicación Factura 622: $594.952
+La suma de las aplicaciones no puede superar el pago, y la suma conciliada no puede superar el movimiento bancario.
+Esto se controla mediante:
+    • PagoCliente 
+    • AplicacionPagoFactura 
+    • MovimientoBancario 
+    • AplicacionMovimientoBancario 
+Tratamiento correcto del factoring
+El factoring queda separado en tres conceptos que no deben confundirse:
+1. Estado de la factura frente al cliente
+2. Estado del cliente frente al factoring
+3. Dinero recibido o pagado por Extintores Real
+Flujo normal
+Factura emitida
+→ Factura cedida al factoring
+→ Factoring anticipa dinero a Extintores Real
+→ Cliente paga al factoring
+→ Factoring confirma recaudación
+→ Factoring liquida saldos o retenciones
+→ Operación cerrada
+Los estados de las planillas se representan así:
+Planilla
+Estado del modelo
+POR COBRAR
+POR_COBRAR_CLIENTE
+RECAUDADA
+CLIENTE_PAGO_FACTOR
+PAGAR ER
+FACTOR_DEBE_LIQUIDAR
+Cliente vencido
+EN_MORA
+Factoring cobra a ER
+COBRO_RECURSO
+Operación terminada
+CERRADA
+Cliente que paga erróneamente a Extintores Real
+Este caso fue incorporado explícitamente.
+Supongamos:
+Factura 700: $1.000.000
+Factura cedida a factoring
+Cliente debía pagar al factoring
+Cliente transfiere por error a Extintores Real
+El sistema registra:
+MovimientoBancario
+    tipo: INGRESO
+    monto: $1.000.000
+
+PagoCliente
+    receptor: EXTINTORES_REAL
+    monto: $1.000.000
+
+AplicacionPagoFactura
+    factura: 700
+    estado: PAGO_ERRONEO_FACTORING
+Esta aplicación no reduce el saldo válido de la factura, porque el cliente todavía no ha cumplido frente al factoring.
+Al mismo tiempo debe crearse:
+AlertaCobranza
+    tipo: PAGO_DIRECTO_FACTURA_CEDIDA
+    severidad: CRITICA
+Luego se registra:
+DevolucionPagoCliente
+    monto: $1.000.000
+    estado: PENDIENTE
+Cuando se realiza la devolución:
+Movimiento bancario de egreso
+        │
+        ▼
+AplicacionMovimientoBancario
+        │
+        ▼
+DevolucionPagoCliente
+Solo después de conciliar ese egreso puede marcarse la devolución como completada y cerrarse la alerta.
+Cliente que no paga al factoring
+La operación contiene:
+    • Fecha de cesión. 
+    • Fecha de vencimiento. 
+    • Condición con recurso. 
+    • Fecha de pago del cliente al factor. 
+    • Fecha de liquidación del factor. 
+    • Última notificación. 
+    • Estado de la operación. 
+El proceso esperado es:
+Fecha de vencimiento superada
++
+No existe pago confirmado al factoring
++
+Operación con recurso
+=
+Alerta FACTORING_VENCIDO
+Cuando el factoring comunica la deuda:
+EventoFactoring
+    tipo: FACTOR_NOTIFICA_MORA
+
+OperacionFactoring
+    estado: EN_MORA
+
+AlertaCobranza
+    tipo: FACTOR_NOTIFICA_DEUDA
+Si el factoring finalmente cobra a Extintores Real:
+OperacionFactoring
+    estado: COBRO_RECURSO
+
+FlujoFactoring
+    tipo: COBRO_RECURSO
+    dirección: EGRESO
+Ese eventual egreso deberá vincularse con su movimiento de cartola.
+Los modelos contienen los campos necesarios, pero la revisión diaria de vencimientos y la creación automática de alertas deben implementarse posteriormente en un servicio programado.
+Tablas de banco y conciliación
+Tabla
+Responsabilidad
+adm_banco
+Catálogo de bancos
+adm_cuenta_bancaria
+Cuentas de Extintores Real
+adm_importacion_cartola
+Archivo y control de cada importación
+adm_movimiento_bancario
+Movimiento original proveniente del banco
+adm_conciliacion_bancaria
+Cierre y control por cuenta y período
+adm_exclusion_movimiento_bancario
+Movimientos excluidos con justificación
+adm_aplicacion_movimiento_bancario
+Distribución del movimiento entre operaciones
+Movimiento bancario
+Incluye:
+    • Cuenta bancaria. 
+    • Fecha de operación. 
+    • Fecha contable. 
+    • Fecha valor. 
+    • Tipo ingreso o egreso. 
+    • Monto. 
+    • Saldo bancario. 
+    • Descripción original. 
+    • Referencia bancaria. 
+    • Número de documento. 
+    • Identificador externo. 
+    • Contraparte. 
+    • RUT de contraparte. 
+    • Cuenta de contraparte. 
+    • fingerprint para impedir duplicados. 
+    • Estado de conciliación. 
+Sus estados son:
+NO_CONCILIADO
+PARCIAL
+CONCILIADO
+EXCLUIDO
+El estado puede recalcularse desde la suma de sus aplicaciones.
+Importación de cartola
+El hash sha256, combinado con la cuenta bancaria, impide cargar dos veces el mismo archivo.
+Cada movimiento tiene además un fingerprint, porque un banco puede entregar nuevamente el mismo período dentro de otro archivo.
+Tablas de facturación, cobranza y factoring
+Tabla
+Responsabilidad
+adm_factura_venta
+Factura emitida
+adm_gestion_cobranza
+Correos, llamadas, respuestas y próximos contactos
+adm_pago_cliente
+Pago informado o confirmado
+adm_aplicacion_pago_factura
+Distribución del pago entre facturas
+adm_empresa_factoring
+Catálogo de empresas de factoring
+adm_operacion_factoring
+Cesión y seguimiento de una factura
+adm_evento_factoring
+Historial de notificaciones y cambios
+adm_flujo_factoring
+Anticipos, liquidaciones, comisiones y cobros
+adm_devolucion_pago_cliente
+Devoluciones de pagos erróneos
+adm_alerta_cobranza
+Alertas administrativas y de factoring
+Factura de venta
+Conserva los campos observados en las hojas:
+    • Cliente. 
+    • Número de factura. 
+    • Orden de compra. 
+    • Fecha de emisión. 
+    • Fecha de vencimiento. 
+    • Contacto. 
+    • Correo. 
+    • Teléfono. 
+    • Neto. 
+    • Tasa de IVA. 
+    • IVA. 
+    • Total. 
+    • Estado documental. 
+    • Observaciones. 
+El RUT y los datos maestros deben permanecer en el modelo existente Cliente. La factura guarda una copia histórica del contacto utilizado para esa cobranza.
+El estado de cobranza se calcula:
+PENDIENTE
+VENCIDA
+PARCIAL
+PAGADA
+CEDIDA_FACTORING
+ANULADA
+Una factura no queda pagada porque alguien seleccione manualmente PAGADA; queda pagada cuando la suma de aplicaciones válidas alcanza su total.
+Pago de cliente
+Distingue quién recibió el dinero:
+EXTINTORES_REAL
+FACTORING
+Y cómo se pagó:
+TRANSFERENCIA
+DEBITO
+EFECTIVO
+CHEQUE
+OTRO
+Un pago al factoring puede saldar la factura sin generar un movimiento en las cuentas bancarias de Extintores Real.
+Por otra parte, el anticipo o liquidación que el factoring transfiere a Extintores Real se registra como FlujoFactoring y se concilia con la cartola.
+Aplicación del pago
+Puede tener los siguientes estados:
+PENDIENTE
+APLICADA
+PAGO_ERRONEO_FACTORING
+ANULADA
+Solo APLICADA disminuye el saldo de la factura.
+Esto evita que un depósito recibido por error sobre una factura cedida haga aparecer la factura como correctamente pagada.
+Tablas de rendiciones
+Tabla
+Responsabilidad
+adm_responsable_rendicion
+Trabajador o responsable
+adm_categoria_gasto
+Viáticos, transporte, alimentación, insumos, etc.
+adm_subcategoria_gasto
+Combustible, peaje, colación, alojamiento, etc.
+adm_rendicion
+Cabecera del proceso
+adm_entrega_fondo
+Anticipos y fondos entregados
+adm_detalle_rendicion
+Facturas, boletas y comprobantes
+adm_aprobacion_rendicion
+Historial de presentación, aprobación y rechazo
+adm_liquidacion_rendicion
+Resultado final de la rendición
+adm_pago_liquidacion_rendicion
+Devolución o reembolso de la diferencia
+Rendición
+Contiene:
+    • Número de rendición. 
+    • Responsable. 
+    • Período. 
+    • Motivo. 
+    • Lugar o trabajo relacionado. 
+    • Estado. 
+    • Fecha de presentación. 
+    • Fecha de aprobación. 
+    • Fecha de cierre. 
+    • Observaciones. 
+Sus estados son:
+BORRADOR
+PRESENTADA
+EN_REVISION
+OBSERVADA
+APROBADA
+RECHAZADA
+LIQUIDADA
+CERRADA
+ANULADA
+Entregas de fondos
+Una rendición puede recibir múltiples entregas:
+Rendición 26
+    ├── Transferencia: $80.000
+    ├── Transferencia: $50.000
+    ├── Efectivo: $50.000
+    ├── Giro de cajero: $20.000
+    └── Entrega adicional: $10.000
+Total fondo entregado:
+$210.000
+Cada entrega puede vincularse posteriormente con un movimiento bancario de egreso.
+Detalle de rendición
+Incluye los campos identificados en las planillas:
+    • Fecha. 
+    • Tipo de documento. 
+    • Número. 
+    • Proveedor. 
+    • RUT del proveedor. 
+    • Sucursal. 
+    • Categoría. 
+    • Subcategoría. 
+    • Descripción. 
+    • Forma de pago. 
+    • Neto. 
+    • IVA. 
+    • Total. 
+    • Estado de revisión. 
+    • Monto aprobado. 
+    • Motivo de observación o rechazo. 
+    • Justificación cuando no hay documento. 
+    • Archivo del comprobante. 
+Los documentos pueden ser:
+FACTURA
+BOLETA
+PEAJE
+RECIBO
+OTRO
+SIN_DOCUMENTO
+Liquidación de la rendición
+Se utiliza la convención:
+diferencia = fondos entregados - gastos aprobados
+Por tanto:
+diferencia = 0
+→ CUADRADA
+
+diferencia > 0
+→ RESPONSABLE_DEVUELVE
+
+diferencia < 0
+→ EMPRESA_REEMBOLSA
+Ejemplo de la planilla:
+Fondos entregados:  $210.000
+Gastos aprobados:   $274.731
+Diferencia:         -$64.731
+
+Resultado:
+EMPRESA_REEMBOLSA $64.731
+La liquidación guarda una fotografía de los totales en el momento de aprobarla. Esto evita que modificaciones posteriores alteren silenciosamente una rendición ya liquidada.
+Relaciones principales
+Cliente
+ ├── 1:N FacturaVenta
+ └── 1:N PagoCliente
+
+FacturaVenta
+ ├── 1:N GestionCobranza
+ ├── 1:N AplicacionPagoFactura
+ ├── 0:1 OperacionFactoring
+ └── 1:N AlertaCobranza
+
+PagoCliente
+ └── 1:N AplicacionPagoFactura
+
+OperacionFactoring
+ ├── 1:N EventoFactoring
+ ├── 1:N FlujoFactoring
+ ├── 1:N pagos recibidos por el factor
+ └── 1:N alertas
+Rendicion
+ ├── 1:N EntregaFondo
+ ├── 1:N DetalleRendicion
+ ├── 1:N AprobacionRendicion
+ └── 0:1 LiquidacionRendicion
+
+LiquidacionRendicion
+ └── 1:N PagoLiquidacionRendicion
+MovimientoBancario
+ └── 1:N AplicacionMovimientoBancario
+          ├── PagoCliente
+          ├── FlujoFactoring
+          ├── EntregaFondo
+          ├── PagoLiquidacionRendicion
+          └── DevolucionPagoCliente
+Controles incluidos en el código
+El archivo incorpora:
+    • Restricciones para montos positivos. 
+    • Unicidad de facturas. 
+    • Prevención de cartolas duplicadas. 
+    • Prevención de movimientos duplicados. 
+    • Validación de fechas. 
+    • Control de que un pago no se aplique por más de su monto. 
+    • Control de que una factura no reciba pagos válidos por más de su total. 
+    • Control de que un movimiento no sea conciliado por más de su monto. 
+    • Control de que una rendición no sea regularizada por más de su diferencia. 
+    • Control de dirección bancaria: ingreso versus egreso. 
+    • Protección con PROTECT para no borrar registros financieros relacionados. 
+    • Historial de usuarios y fechas. 
+    • Estados mediante TextChoices. 
+    • Nombres explícitos de tablas e índices. 
+Django permite definir restricciones de base de datos dentro de Meta.constraints, y las relaciones con usuarios se referencian mediante settings.AUTH_USER_MODEL; ambos patrones están utilizados en el archivo. 
+Ubicación recomendada
+La estructura más limpia es una aplicación independiente:
+proyecto/
+├── extintores/
+│   └── models.py          # Cliente, ODT, extintores, etc.
+│
+└── administracion/
+    ├── models.py          # archivo entregado
+    ├── services.py
+    ├── admin.py
+    ├── forms.py
+    ├── views.py
+    ├── urls.py
+    └── tasks.py
+El archivo utiliza:
+"extintores.Cliente"
+porque el modelo Cliente ya pertenece a tu sistema. Esa referencia debe cambiarse solamente si el nombre real de la aplicación o del modelo es diferente.
+Creación de las tablas
+Después de colocar el archivo como administracion/models.py:
+python manage.py makemigrations administracion
+python manage.py migrate
+También debe añadirse la aplicación:
+INSTALLED_APPS = [
+    # ...
+    "administracion",
+]
+Precaución técnica importante
+Los métodos clean() incluidos contienen validaciones entre modelos, pero Django no ejecuta automáticamente full_clean() al llamar directamente a save(). Por eso, la capa services.py deberá ejecutar las validaciones y manejar las aplicaciones de pagos dentro de transacciones. 
+Las operaciones que distribuyen dinero —por ejemplo, aplicar simultáneamente un movimiento a varias facturas— deben usar transaction.atomic() y bloqueo de las filas involucradas con select_for_update() para evitar que dos usuarios apliquen el mismo saldo al mismo tiempo. 
+El archivo fue validado sintácticamente como Python. No ejecuté makemigrations contra tu proyecto porque en este entorno no están instalados Django ni tus modelos actuales; antes de migrar será necesario verificar el nombre y los campos reales de tu modelo Cliente.
+dame segun lo que me detallas, el modelo para models.py con las tablas , sus relaciones y metodos para crear las migraciones 
+Aquí tienes el archivo completo para usar como administracion/models.py:
+models.py
+El archivo contiene 24 tablas concretas, además de un modelo abstracto de auditoría, organizadas en tres áreas.
+1. Banco y conciliación
+Incluye:
+    • Banco 
+    • CuentaBancaria 
+    • ImportacionCartola 
+    • MovimientoBancario 
+    • ConciliacionBancaria 
+    • ExclusionMovimientoBancario 
+    • AplicacionMovimientoBancario 
+La tabla central es:
+AplicacionMovimientoBancario
+Esta permite distribuir un único movimiento de cartola entre distintos destinos financieros.
+Por ejemplo:
+Movimiento bancario de ingreso: $1.500.000
+    ├── Pago factura 700: $800.000
+    ├── Pago factura 701: $500.000
+    └── Pago factura 702: $200.000
+La relación completa es:
+MovimientoBancario
+    └── AplicacionMovimientoBancario
+            └── PagoCliente
+                    └── AplicacionPagoFactura
+                            └── FacturaVenta
+Así se soportan correctamente:
+    • Un movimiento que paga varias facturas. 
+    • Una factura pagada mediante varios movimientos. 
+    • Pagos parciales. 
+    • Movimientos parcialmente conciliados. 
+    • Saldos sin identificar. 
+    • Devoluciones. 
+    • Anticipos y liquidaciones de factoring. 
+    • Entregas y devoluciones de rendiciones. 
+2. Facturación, cobranza y factoring
+Incluye:
+    • FacturaVenta 
+    • GestionCobranza 
+    • PagoCliente 
+    • AplicacionPagoFactura 
+    • EmpresaFactoring 
+    • OperacionFactoring 
+    • EventoFactoring 
+    • FlujoFactoring 
+    • DevolucionPagoCliente 
+    • AlertaCobranza 
+El diseño distingue entre:
+Factura emitida
+Pago del cliente
+Movimiento bancario
+Aplicación del pago
+Operación de factoring
+Flujo de dinero del factoring
+Esto es importante porque no son el mismo evento.
+Pago erróneo de una factura cedida
+Cuando una factura está cedida y el cliente deposita por error en la cuenta de Extintores Real:
+PagoCliente.receptor = EXTINTORES_REAL
+AplicacionPagoFactura.estado = PAGO_ERRONEO_FACTORING
+Esta aplicación queda registrada, pero no disminuye automáticamente el saldo válido de la factura.
+También puede generarse:
+AlertaCobranza.tipo = PAGO_DIRECTO_FACTURA_CEDIDA
+Y posteriormente:
+DevolucionPagoCliente
+La devolución puede vincularse con el movimiento bancario de egreso correspondiente.
+Seguimiento de factoring con recurso
+OperacionFactoring controla, entre otros:
+    • Fecha de cesión. 
+    • Fecha de vencimiento. 
+    • Monto cedido. 
+    • Anticipo. 
+    • Comisión. 
+    • Retención. 
+    • Condición con recurso. 
+    • Fecha en que el cliente pagó al factor. 
+    • Fecha de liquidación. 
+    • Fecha de notificación de mora. 
+    • Estado actual. 
+Estados principales:
+CEDIDA
+ANTICIPADA
+POR_COBRAR_CLIENTE
+CLIENTE_PAGO_FACTOR
+FACTOR_DEBE_LIQUIDAR
+LIQUIDADA
+EN_MORA
+COBRO_RECURSO
+CERRADA
+EventoFactoring conserva el historial de cada situación:
+FACTURA_CEDIDA
+ANTICIPO_RECIBIDO
+FACTOR_NOTIFICA_MORA
+CLIENTE_CONTACTADO
+CLIENTE_PAGO_FACTOR
+FACTOR_DEBE_PAGAR_ER
+COBRO_CON_RECURSO
+3. Rendiciones
+Incluye:
+    • ResponsableRendicion 
+    • CategoriaGasto 
+    • SubcategoriaGasto 
+    • Rendicion 
+    • EntregaFondo 
+    • DetalleRendicion 
+    • AprobacionRendicion 
+    • LiquidacionRendicion 
+    • PagoLiquidacionRendicion 
+La relación principal es:
+Rendicion
+    ├── EntregaFondo
+    ├── DetalleRendicion
+    ├── AprobacionRendicion
+    └── LiquidacionRendicion
+            └── PagoLiquidacionRendicion
+Una rendición puede recibir múltiples fondos:
+Rendición 26
+    ├── Transferencia: $100.000
+    ├── Efectivo: $50.000
+    └── Giro de cajero: $60.000
+Y contener múltiples documentos:
+Rendición 26
+    ├── Factura de combustible
+    ├── Boleta de alimentación
+    ├── Peaje
+    ├── Alojamiento
+    └── Gasto justificado sin documento
+La liquidación calcula:
+diferencia = total_fondos_entregados - total_gastos_aprobados
+Resultados:
+diferencia = 0
+CUADRADA
+
+diferencia > 0
+RESPONSABLE_DEVUELVE
+
+diferencia < 0
+EMPRESA_REEMBOLSA
+Métodos y validaciones incluidos
+El archivo incorpora métodos y propiedades como:
+movimiento.monto_aplicado
+movimiento.saldo_por_conciliar
+movimiento.estado_calculado
+movimiento.actualizar_estado_conciliacion()
+
+factura.monto_pagado
+factura.saldo_pendiente
+factura.estado_cobranza
+factura.dias_vencida
+
+pago.monto_aplicado
+pago.saldo_sin_aplicar
+
+rendicion.total_fondos
+rendicion.total_rendido
+rendicion.total_aprobado
+
+liquidacion.monto_regularizado
+liquidacion.saldo_por_regularizar
+También contiene validaciones para impedir:
+    • Aplicar más dinero que el disponible en un movimiento bancario. 
+    • Aplicar un pago por un monto mayor al pago recibido. 
+    • Pagar una factura por encima de su total. 
+    • Relacionar un pago con una factura de otro cliente. 
+    • Asociar una cartola a una cuenta bancaria incorrecta. 
+    • Duplicar movimientos importados. 
+    • Duplicar archivos de cartola. 
+    • Aprobar un gasto por encima de su monto. 
+    • Regularizar una rendición por encima de su diferencia. 
+    • Conciliar un egreso con una operación que requiere un ingreso. 
+    • Seleccionar más de un destino en una aplicación bancaria. 
+Las restricciones CheckConstraint y UniqueConstraint incluidas se transforman en restricciones de base de datos al generar las migraciones. 
+Ajuste obligatorio antes de migrar
+El archivo supone que tu modelo actual de cliente se encuentra aquí:
+"extintores.Cliente"
+Aparece en:
+FacturaVenta.cliente
+PagoCliente.cliente
+Si el modelo real está en otra aplicación, debes cambiarlo, por ejemplo:
+"clientes.Cliente"
+o:
+"ventas.Cliente"
+No debes crear las migraciones antes de confirmar ese nombre.
+Instalación
+Crea la aplicación, salvo que ya exista:
+python manage.py startapp administracion
+Copia el archivo descargado en:
+administracion/models.py
+Agrega la aplicación en settings.py:
+INSTALLED_APPS = [
+    # ...
+    "administracion",
+]
+Verifica primero el proyecto:
+python manage.py check
+Genera la migración:
+python manage.py makemigrations administracion --name initial_administracion
+Revisa las migraciones detectadas:
+python manage.py showmigrations administracion
+Puedes inspeccionar el SQL antes de aplicarlo:
+python manage.py sqlmigrate administracion 0001
+Finalmente:
+python manage.py migrate
+makemigrations crea los archivos de migración a partir de los modelos y migrate aplica esos cambios al esquema de la base de datos. 
+Validación al guardar
+El archivo implementa varios métodos clean(). Django no ejecuta automáticamente full_clean() al llamar directamente a save(). Por eso, al crear registros desde servicios, scripts o APIs debes hacer:
+objeto.full_clean()
+objeto.save()
+Los formularios de Django normalmente realizan estas validaciones, pero las operaciones programáticas deben invocarlas explícitamente. 
+Para operaciones monetarias críticas, como repartir un movimiento entre varias facturas, conviene además usar una transacción:
+from django.db import transaction
+
+with transaction.atomic():
+    aplicacion.full_clean()
+    aplicacion.save()
+El archivo entregado ya contiene el modelo relacional completo; las operaciones transaccionales y la generación automática de alertas deben ubicarse posteriormente en services.py y no dentro de models.py.
+
+
+

@@ -17,8 +17,10 @@ from weasyprint import HTML
 
 from .forms import (
     ConfirmarDetalleComprobanteForm,
-    SubirComprobanteForm,
-    get_or_create_rendicion_borrador,
+    EditarDetalleRendicionForm,
+    NuevaRendicionForm,
+    SubirImagenComprobanteForm,
+    crear_rendicion,
 )
 from .models import AprobacionRendicion, DetalleRendicion, Rendicion
 from .ocr_comprobante import extraer_datos_comprobante
@@ -30,15 +32,7 @@ def _tmp_dir() -> Path:
     return path
 
 
-def _contexto_progreso(rendicion: Rendicion | None) -> dict:
-    if not rendicion:
-        return {
-            "rendicion_activa": None,
-            "detalles": [],
-            "cantidad_soportes": 0,
-            "suma_soportes": Decimal("0.00"),
-            "carga_abierta": False,
-        }
+def _contexto_progreso(rendicion: Rendicion) -> dict:
     detalles = list(
         rendicion.detalles.exclude(
             estado_revision=DetalleRendicion.EstadoRevision.RECHAZADO
@@ -48,7 +42,6 @@ def _contexto_progreso(rendicion: Rendicion | None) -> dict:
         estado_revision=DetalleRendicion.EstadoRevision.RECHAZADO
     ).aggregate(cantidad=Count("id"), suma=Sum("total"))
     return {
-        "rendicion_activa": rendicion,
         "detalles": detalles,
         "cantidad_soportes": agregados["cantidad"] or 0,
         "suma_soportes": agregados["suma"] or Decimal("0.00"),
@@ -56,48 +49,171 @@ def _contexto_progreso(rendicion: Rendicion | None) -> dict:
     }
 
 
-def _resolver_rendicion_activa(request) -> Rendicion | None:
-    rid = request.GET.get("rendicion") or request.session.get("adm_rendicion_activa")
-    if not rid:
-        return None
-    try:
-        return Rendicion.objects.select_related("responsable").get(pk=int(rid))
-    except (Rendicion.DoesNotExist, ValueError, TypeError):
-        return None
+def _puede_editar_detalles(rendicion: Rendicion) -> bool:
+    return rendicion.estado not in (
+        Rendicion.Estado.APROBADA,
+        Rendicion.Estado.LIQUIDADA,
+        Rendicion.Estado.CERRADA,
+        Rendicion.Estado.ANULADA,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Lista e inicio de rendición
+# ---------------------------------------------------------------------------
+
+@login_required
+def rendicion_lista(request):
+    qs = (
+        Rendicion.objects.select_related("responsable")
+        .annotate(
+            n_detalles=Count("detalles"),
+            suma_detalles=Sum("detalles__total"),
+        )
+        .order_by("-creado_en", "-id")
+    )
+    return render(
+        request,
+        "administracion/rendicion_lista.html",
+        {"rendiciones": qs},
+    )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def rendicion_desde_imagen(request):
-    """
-    Flujo de ingreso rápido:
-      1) Subir foto del comprobante (o corregir a mano)
-      2) Revisar datos OCR
-      3) Guardar detalle y seguir sumando
-      4) Terminar carga → estado PRESENTADA + ver resumen/PDF
-    """
-    if request.method == "POST" and request.POST.get("accion") == "guardar":
-        return _guardar_detalle_desde_ocr(request)
+def rendicion_crear(request):
+    """Momento claro de INICIAR una rendición (solo cabecera)."""
+    if request.method == "POST":
+        form = NuevaRendicionForm(request.POST)
+        if form.is_valid():
+            rendicion = crear_rendicion(request.user, form.cleaned_data)
+            messages.success(
+                request,
+                f"Rendición {rendicion.numero} iniciada. Ahora agregue comprobantes.",
+            )
+            return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+    else:
+        form = NuevaRendicionForm()
+    return render(
+        request,
+        "administracion/rendicion_crear.html",
+        {"form": form},
+    )
 
-    rendicion_activa = _resolver_rendicion_activa(request)
-    progreso = _contexto_progreso(rendicion_activa)
+
+# ---------------------------------------------------------------------------
+# Escritorio: ver/editar detalles de una rendición
+# ---------------------------------------------------------------------------
+
+@login_required
+def rendicion_escritorio(request, pk):
+    """
+    Pantalla principal de trabajo:
+    cabecera + tabla de detalles (BD) + agregar/editar/eliminar comprobantes.
+    """
+    rendicion = get_object_or_404(
+        Rendicion.objects.select_related("responsable"), pk=pk
+    )
+    progreso = _contexto_progreso(rendicion)
+    return render(
+        request,
+        "administracion/rendicion_escritorio.html",
+        {
+            "rendicion": rendicion,
+            **progreso,
+            "puede_editar": _puede_editar_detalles(rendicion),
+            "diferencia_fondos": rendicion.total_fondos - rendicion.total_rendido,
+            "form_imagen": SubirImagenComprobanteForm(),
+        },
+    )
+
+
+# Alias: resumen apunta al escritorio
+@login_required
+def rendicion_resumen(request, pk):
+    return redirect("adm_rendicion_escritorio", pk=pk)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def detalle_editar(request, pk):
+    detalle = get_object_or_404(
+        DetalleRendicion.objects.select_related("rendicion"), pk=pk
+    )
+    rendicion = detalle.rendicion
+    if not _puede_editar_detalles(rendicion):
+        messages.error(request, "Esta rendición no permite editar comprobantes.")
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     if request.method == "POST":
-        form = SubirComprobanteForm(request.POST, request.FILES, user=request.user)
+        form = EditarDetalleRendicionForm(request.POST, request.FILES, instance=detalle)
         if form.is_valid():
-            if progreso["carga_abierta"] is False and rendicion_activa:
-                messages.warning(
-                    request,
-                    "Esta rendición ya cerró la carga de comprobantes. "
-                    "Ábrala de nuevo o use otra rendición en borrador.",
-                )
-                return redirect(
-                    "adm_rendicion_desde_imagen" + f"?rendicion={rendicion_activa.pk}"
-                )
+            obj = form.save(commit=False)
+            obj.actualizado_por = request.user
+            obj.full_clean()
+            obj.save()
+            messages.success(request, f"Comprobante #{detalle.pk} actualizado.")
+            return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+    else:
+        form = EditarDetalleRendicionForm(instance=detalle)
 
+    return render(
+        request,
+        "administracion/detalle_editar.html",
+        {
+            "form": form,
+            "detalle": detalle,
+            "rendicion": rendicion,
+        },
+    )
+
+
+@login_required
+@require_POST
+def detalle_eliminar(request, pk):
+    detalle = get_object_or_404(
+        DetalleRendicion.objects.select_related("rendicion"), pk=pk
+    )
+    rendicion = detalle.rendicion
+    if not _puede_editar_detalles(rendicion) or rendicion.estado != Rendicion.Estado.BORRADOR:
+        messages.error(
+            request,
+            "Solo se pueden eliminar comprobantes mientras la carga esté abierta (borrador).",
+        )
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+
+    det_id = detalle.pk
+    if detalle.comprobante:
+        detalle.comprobante.delete(save=False)
+    detalle.delete()
+    messages.success(request, f"Comprobante #{det_id} eliminado.")
+    return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+
+
+# ---------------------------------------------------------------------------
+# Agregar comprobante desde imagen (OCR) — siempre dentro de una rendición
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def rendicion_agregar_comprobante(request, pk):
+    """Sube imagen → OCR → confirma → guarda DetalleRendicion en esta rendición."""
+    rendicion = get_object_or_404(Rendicion, pk=pk)
+
+    if rendicion.estado != Rendicion.Estado.BORRADOR:
+        messages.warning(
+            request,
+            "La carga está cerrada. Reabra la rendición para agregar comprobantes.",
+        )
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+
+    if request.method == "POST" and request.POST.get("accion") == "guardar":
+        return _guardar_detalle_desde_ocr(request, rendicion)
+
+    if request.method == "POST":
+        form = SubirImagenComprobanteForm(request.POST, request.FILES)
+        if form.is_valid():
             imagen = form.cleaned_data["imagen"]
-            rendicion = form.cleaned_data.get("rendicion") or rendicion_activa
-
             ext = os.path.splitext(imagen.name)[1].lower() or ".jpg"
             if ext not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
                 ext = ".jpg"
@@ -113,17 +229,10 @@ def rendicion_desde_imagen(request):
                 messages.error(request, f"Error al analizar la imagen: {exc}")
                 if ruta_temp.exists():
                     ruta_temp.unlink()
-                return redirect("adm_rendicion_desde_imagen")
-
-            if rendicion:
-                rendicion_obj = rendicion
-            else:
-                rendicion_obj = get_or_create_rendicion_borrador(request.user)
-
-            request.session["adm_rendicion_activa"] = rendicion_obj.pk
+                return redirect("adm_rendicion_agregar_comprobante", pk=rendicion.pk)
 
             inicial = {
-                "rendicion_id": rendicion_obj.pk,
+                "rendicion_id": rendicion.pk,
                 "imagen_temp": nombre_temp,
                 "proveedor": datos.proveedor,
                 "rut_proveedor": datos.rut_proveedor,
@@ -142,69 +251,64 @@ def rendicion_desde_imagen(request):
                 "iva": datos.iva or None,
                 "total": datos.total or None,
             }
-            confirmar = ConfirmarDetalleComprobanteForm(initial=inicial)
-            ctx = {
-                "paso": "revisar",
-                "form_subida": SubirComprobanteForm(
-                    user=request.user, initial={"rendicion": rendicion_obj.pk}
-                ),
-                "form": confirmar,
-                "datos": datos,
-                "rendicion": rendicion_obj,
-                "imagen_url": f"{settings.MEDIA_URL}administracion/tmp_ocr/{nombre_temp}",
-            }
-            ctx.update(_contexto_progreso(rendicion_obj))
-            return render(request, "administracion/rendicion_desde_imagen.html", ctx)
+            return render(
+                request,
+                "administracion/rendicion_agregar_comprobante.html",
+                {
+                    "paso": "revisar",
+                    "rendicion": rendicion,
+                    "form_imagen": SubirImagenComprobanteForm(),
+                    "form": ConfirmarDetalleComprobanteForm(initial=inicial),
+                    "datos": datos,
+                    "imagen_url": f"{settings.MEDIA_URL}administracion/tmp_ocr/{nombre_temp}",
+                    **_contexto_progreso(rendicion),
+                },
+            )
         messages.error(request, "Revise la imagen subida.")
-    else:
-        initial = {}
-        if rendicion_activa:
-            initial["rendicion"] = rendicion_activa.pk
-            request.session["adm_rendicion_activa"] = rendicion_activa.pk
-        form = SubirComprobanteForm(user=request.user, initial=initial)
 
-    ctx = {
-        "paso": "subir",
-        "form_subida": form,
-    }
-    ctx.update(progreso)
-    return render(request, "administracion/rendicion_desde_imagen.html", ctx)
+    return render(
+        request,
+        "administracion/rendicion_agregar_comprobante.html",
+        {
+            "paso": "subir",
+            "rendicion": rendicion,
+            "form_imagen": SubirImagenComprobanteForm(),
+            **_contexto_progreso(rendicion),
+        },
+    )
 
 
-def _guardar_detalle_desde_ocr(request):
+def _guardar_detalle_desde_ocr(request, rendicion: Rendicion):
     form = ConfirmarDetalleComprobanteForm(request.POST)
     if not form.is_valid():
         messages.error(request, "Complete los campos obligatorios (descripción y total).")
         nombre_temp = request.POST.get("imagen_temp", "")
-        rendicion = get_object_or_404(
-            Rendicion, pk=request.POST.get("rendicion_id") or 0
+        return render(
+            request,
+            "administracion/rendicion_agregar_comprobante.html",
+            {
+                "paso": "revisar",
+                "rendicion": rendicion,
+                "form_imagen": SubirImagenComprobanteForm(),
+                "form": form,
+                "datos": None,
+                "imagen_url": (
+                    f"{settings.MEDIA_URL}administracion/tmp_ocr/{nombre_temp}"
+                    if nombre_temp
+                    else ""
+                ),
+                **_contexto_progreso(rendicion),
+            },
         )
-        ctx = {
-            "paso": "revisar",
-            "form_subida": SubirComprobanteForm(
-                user=request.user, initial={"rendicion": rendicion.pk}
-            ),
-            "form": form,
-            "rendicion": rendicion,
-            "imagen_url": (
-                f"{settings.MEDIA_URL}administracion/tmp_ocr/{nombre_temp}"
-                if nombre_temp
-                else ""
-            ),
-            "datos": None,
-        }
-        ctx.update(_contexto_progreso(rendicion))
-        return render(request, "administracion/rendicion_desde_imagen.html", ctx)
 
     cleaned = form.cleaned_data
-    rendicion = get_object_or_404(Rendicion, pk=cleaned["rendicion_id"])
+    if int(cleaned["rendicion_id"]) != rendicion.pk:
+        messages.error(request, "La rendición no coincide.")
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     if rendicion.estado != Rendicion.Estado.BORRADOR:
-        messages.error(
-            request,
-            "No se pueden agregar comprobantes: la carga de esta rendición ya fue cerrada.",
-        )
-        return redirect("adm_rendicion_resumen", pk=rendicion.pk)
+        messages.error(request, "La carga de esta rendición ya fue cerrada.")
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     nombre_temp = cleaned["imagen_temp"]
     ruta_temp = _tmp_dir() / nombre_temp
@@ -237,39 +341,44 @@ def _guardar_detalle_desde_ocr(request):
     if ruta_temp.exists():
         ruta_temp.unlink(missing_ok=True)
 
-    request.session["adm_rendicion_activa"] = rendicion.pk
     progreso = _contexto_progreso(rendicion)
-
     messages.success(
         request,
-        f"Comprobante #{detalle.pk} guardado. "
-        f"Lleva {progreso['cantidad_soportes']} soporte(s) — "
+        f"Comprobante #{detalle.pk} guardado en la BD. "
+        f"{progreso['cantidad_soportes']} soporte(s) — "
         f"suma ${progreso['suma_soportes']:,.0f}".replace(",", "."),
     )
-    return redirect(f"{reverse_adm_desde_imagen()}?rendicion={rendicion.pk}")
+    # Volver al escritorio; opción de seguir agregando desde ahí
+    return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
 
-def reverse_adm_desde_imagen() -> str:
-    from django.urls import reverse
+# Compatibilidad: URL antigua redirige a lista o escritorio
+@login_required
+def rendicion_desde_imagen(request):
+    rid = request.GET.get("rendicion")
+    if rid:
+        return redirect("adm_rendicion_agregar_comprobante", pk=rid)
+    return redirect("adm_rendicion_lista")
 
-    return reverse("adm_rendicion_desde_imagen")
 
+# ---------------------------------------------------------------------------
+# Cerrar / reabrir / PDF
+# ---------------------------------------------------------------------------
 
 @login_required
 @require_POST
 def rendicion_finalizar_carga(request, pk):
-    """Marca el fin del ingreso de imágenes/soportes (BORRADOR → PRESENTADA)."""
     rendicion = get_object_or_404(Rendicion, pk=pk)
     if rendicion.estado != Rendicion.Estado.BORRADOR:
         messages.info(request, "La carga de comprobantes ya estaba cerrada.")
-        return redirect("adm_rendicion_resumen", pk=rendicion.pk)
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     if not rendicion.detalles.exists():
         messages.error(
             request,
-            "No hay comprobantes cargados. Agregue al menos uno antes de cerrar.",
+            "No hay comprobantes. Agregue al menos uno antes de cerrar.",
         )
-        return redirect(f"{reverse_adm_desde_imagen()}?rendicion={rendicion.pk}")
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     hoy = timezone.localdate()
     rendicion.estado = Rendicion.Estado.PRESENTADA
@@ -289,9 +398,8 @@ def rendicion_finalizar_carga(request, pk):
         rendicion=rendicion,
         accion=AprobacionRendicion.Accion.PRESENTADA,
         comentario=(
-            f"Carga de comprobantes finalizada. "
-            f"{rendicion.detalles.count()} soporte(s), "
-            f"total rendido ${rendicion.total_rendido}."
+            f"Carga finalizada. {rendicion.detalles.count()} soporte(s), "
+            f"total ${rendicion.total_rendido}."
         ),
         usuario=request.user,
         creado_por=request.user,
@@ -299,30 +407,41 @@ def rendicion_finalizar_carga(request, pk):
 
     messages.success(
         request,
-        f"Rendición {rendicion.numero}: carga de comprobantes terminada. "
+        f"Rendición {rendicion.numero}: carga terminada. "
         f"Total ${rendicion.total_rendido:,.0f}".replace(",", "."),
     )
-    return redirect("adm_rendicion_resumen", pk=rendicion.pk)
+    return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
 
 @login_required
 @require_POST
 def rendicion_reabrir_carga(request, pk):
-    """Permite seguir agregando fotos si aún no está aprobada/cerrada."""
     rendicion = get_object_or_404(Rendicion, pk=pk)
+    if not _puede_editar_detalles(rendicion) and rendicion.estado != Rendicion.Estado.PRESENTADA:
+        if rendicion.estado in (
+            Rendicion.Estado.APROBADA,
+            Rendicion.Estado.LIQUIDADA,
+            Rendicion.Estado.CERRADA,
+            Rendicion.Estado.ANULADA,
+        ):
+            messages.error(request, "Esta rendición no se puede reabrir.")
+            return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
+
     if rendicion.estado in (
         Rendicion.Estado.APROBADA,
         Rendicion.Estado.LIQUIDADA,
         Rendicion.Estado.CERRADA,
         Rendicion.Estado.ANULADA,
     ):
-        messages.error(request, "Esta rendición no se puede reabrir para carga.")
-        return redirect("adm_rendicion_resumen", pk=rendicion.pk)
+        messages.error(request, "Esta rendición no se puede reabrir.")
+        return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
     rendicion.estado = Rendicion.Estado.BORRADOR
     rendicion.fecha_presentacion = None
     rendicion.actualizado_por = request.user
-    rendicion.save(update_fields=["estado", "fecha_presentacion", "actualizado_en", "actualizado_por"])
+    rendicion.save(
+        update_fields=["estado", "fecha_presentacion", "actualizado_en", "actualizado_por"]
+    )
     AprobacionRendicion.objects.create(
         rendicion=rendicion,
         accion=AprobacionRendicion.Accion.REABIERTA,
@@ -330,28 +449,12 @@ def rendicion_reabrir_carga(request, pk):
         usuario=request.user,
         creado_por=request.user,
     )
-    request.session["adm_rendicion_activa"] = rendicion.pk
-    messages.info(request, "Puede seguir agregando comprobantes.")
-    return redirect(f"{reverse_adm_desde_imagen()}?rendicion={rendicion.pk}")
-
-
-@login_required
-def rendicion_resumen(request, pk):
-    """Resumen en pantalla: lista, suma e imágenes de la rendición."""
-    rendicion = get_object_or_404(
-        Rendicion.objects.select_related("responsable"), pk=pk
-    )
-    ctx = {
-        "rendicion": rendicion,
-        **_contexto_progreso(rendicion),
-        "diferencia_fondos": rendicion.total_fondos - rendicion.total_rendido,
-    }
-    return render(request, "administracion/rendicion_resumen.html", ctx)
+    messages.info(request, "Carga reabierta: puede agregar o editar comprobantes.")
+    return redirect("adm_rendicion_escritorio", pk=rendicion.pk)
 
 
 @login_required
 def rendicion_pdf(request, pk):
-    """PDF resumen de la rendición con datos e imágenes de soportes."""
     rendicion = get_object_or_404(
         Rendicion.objects.select_related("responsable"), pk=pk
     )

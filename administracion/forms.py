@@ -4,25 +4,36 @@ from django.utils import timezone
 from .models import DetalleRendicion, Rendicion, ResponsableRendicion
 
 
-class SubirComprobanteForm(forms.Form):
+class NuevaRendicionForm(forms.ModelForm):
+    class Meta:
+        model = Rendicion
+        fields = ["motivo", "lugar_trabajo", "periodo_desde", "periodo_hasta", "observaciones"]
+        widgets = {
+            "motivo": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Viáticos zona sur"}),
+            "lugar_trabajo": forms.TextInput(attrs={"class": "form-control"}),
+            "periodo_desde": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "periodo_hasta": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        hoy = timezone.localdate()
+        self.fields["periodo_desde"].initial = hoy
+        self.fields["periodo_hasta"].initial = hoy
+        self.fields["motivo"].required = True
+
+
+class SubirImagenComprobanteForm(forms.Form):
+    """Solo imagen: la rendición ya está definida en la URL."""
+
     imagen = forms.ImageField(
         label="Foto del comprobante",
-        help_text="Foto clara de la boleta, ticket o voucher (JPG/PNG).",
-    )
-    rendicion = forms.ModelChoiceField(
-        label="Rendición destino",
-        queryset=Rendicion.objects.none(),
-        required=False,
-        empty_label="— Crear borrador automático —",
-        help_text="Si no elige una, se crea una rendición en borrador para hoy.",
+        help_text="Boleta, ticket o voucher (JPG/PNG).",
     )
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        qs = Rendicion.objects.exclude(
-            estado__in=[Rendicion.Estado.CERRADA, Rendicion.Estado.ANULADA]
-        ).order_by("-periodo_hasta", "-id")[:50]
-        self.fields["rendicion"].queryset = qs
         self.fields["imagen"].widget.attrs.update(
             {
                 "class": "form-control",
@@ -30,7 +41,6 @@ class SubirComprobanteForm(forms.Form):
                 "capture": "environment",
             }
         )
-        self.fields["rendicion"].widget.attrs.update({"class": "form-select"})
 
 
 class ConfirmarDetalleComprobanteForm(forms.Form):
@@ -56,11 +66,65 @@ class ConfirmarDetalleComprobanteForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, field in self.fields.items():
+        for _name, field in self.fields.items():
             if isinstance(field.widget, forms.HiddenInput):
                 continue
-            css = field.widget.attrs.get("class", "")
-            field.widget.attrs["class"] = f"{css} form-control".strip()
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs["class"] = "form-select"
+            else:
+                css = field.widget.attrs.get("class", "")
+                field.widget.attrs["class"] = f"{css} form-control".strip()
+
+
+class EditarDetalleRendicionForm(forms.ModelForm):
+    class Meta:
+        model = DetalleRendicion
+        fields = [
+            "fecha",
+            "tipo_documento",
+            "numero_documento",
+            "proveedor",
+            "rut_proveedor",
+            "sucursal",
+            "descripcion",
+            "forma_pago",
+            "neto",
+            "iva",
+            "total",
+            "justificacion_sin_documento",
+            "comprobante",
+        ]
+        widgets = {
+            "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "tipo_documento": forms.Select(attrs={"class": "form-select"}),
+            "numero_documento": forms.TextInput(attrs={"class": "form-control"}),
+            "proveedor": forms.TextInput(attrs={"class": "form-control"}),
+            "rut_proveedor": forms.TextInput(attrs={"class": "form-control"}),
+            "sucursal": forms.TextInput(attrs={"class": "form-control"}),
+            "descripcion": forms.TextInput(attrs={"class": "form-control"}),
+            "forma_pago": forms.Select(attrs={"class": "form-select"}),
+            "neto": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "iva": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "total": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "justificacion_sin_documento": forms.Textarea(
+                attrs={"class": "form-control", "rows": 2}
+            ),
+            "comprobante": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["fecha"].widget = forms.DateInput(
+            format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
+        )
+        self.fields["fecha"].input_formats = ["%Y-%m-%d"]
+
+
+# Compatibilidad con código anterior
+class SubirComprobanteForm(SubirImagenComprobanteForm):
+    pass
 
 
 def get_or_create_responsable(user) -> ResponsableRendicion:
@@ -75,22 +139,51 @@ def get_or_create_responsable(user) -> ResponsableRendicion:
     )
 
 
+def generar_numero_rendicion() -> str:
+    hoy = timezone.localdate()
+    prefijo = f"REND-{hoy.strftime('%Y%m%d')}-"
+    ultimo = (
+        Rendicion.objects.filter(numero__startswith=prefijo)
+        .order_by("-numero")
+        .values_list("numero", flat=True)
+        .first()
+    )
+    if ultimo:
+        try:
+            seq = int(ultimo.rsplit("-", 1)[-1]) + 1
+        except ValueError:
+            seq = Rendicion.objects.filter(numero__startswith=prefijo).count() + 1
+    else:
+        seq = 1
+    return f"{prefijo}{seq:03d}"
+
+
+def crear_rendicion(user, cleaned_data) -> Rendicion:
+    responsable = get_or_create_responsable(user)
+    return Rendicion.objects.create(
+        numero=generar_numero_rendicion(),
+        responsable=responsable,
+        periodo_desde=cleaned_data["periodo_desde"],
+        periodo_hasta=cleaned_data["periodo_hasta"],
+        motivo=cleaned_data.get("motivo") or "",
+        lugar_trabajo=cleaned_data.get("lugar_trabajo") or "",
+        observaciones=cleaned_data.get("observaciones") or "",
+        estado=Rendicion.Estado.BORRADOR,
+        creado_por=user,
+    )
+
+
 def get_or_create_rendicion_borrador(user, rendicion_id=None) -> Rendicion:
+    """Legacy: preferir crear_rendicion / NuevaRendicionForm."""
     if rendicion_id:
         return Rendicion.objects.get(pk=rendicion_id)
-
-    responsable = get_or_create_responsable(user)
-    hoy = timezone.localdate()
-    numero = f"TMP-{hoy.strftime('%Y%m%d')}-{user.pk}"
-    rendicion, _created = Rendicion.objects.get_or_create(
-        numero=numero,
-        defaults={
-            "responsable": responsable,
-            "periodo_desde": hoy,
-            "periodo_hasta": hoy,
-            "motivo": "Borrador desde fotos de comprobantes",
-            "estado": Rendicion.Estado.BORRADOR,
-            "creado_por": user,
+    return crear_rendicion(
+        user,
+        {
+            "periodo_desde": timezone.localdate(),
+            "periodo_hasta": timezone.localdate(),
+            "motivo": "Borrador automático",
+            "lugar_trabajo": "",
+            "observaciones": "",
         },
     )
-    return rendicion

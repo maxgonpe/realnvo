@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">ADM-REND-LISTA-17-07-26</label>{% endblock %}
+{% block title %}Rendiciones{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-journal-check"></i> Rendiciones</h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'adm_rendicion_crear' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle"></i> Nueva rendición
+        </a>
+        <a href="{% url 'intervencion_lista' %}" class="btn btn-outline-secondary btn-sm">Panel</a>
+    </div>
+</div>
+
+{% if messages %}
+<ul class="list-unstyled">
+    {% for message in messages %}
+    <li class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<p class="text-muted small">
+    Flujo: <strong>iniciar</strong> la rendición → agregar comprobantes (foto/OCR) →
+    corregir o eliminar detalles → <strong>terminar carga</strong>.
+</p>
+
+{% if not rendiciones %}
+<div class="alert alert-light border">
+    Aún no hay rendiciones.
+    <a href="{% url 'adm_rendicion_crear' %}">Inicie la primera</a>.
+</div>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-hover table-sm align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Número</th>
+                <th>Responsable</th>
+                <th>Periodo</th>
+                <th>Estado</th>
+                <th class="text-center">Soportes</th>
+                <th class="text-end">Suma</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rendiciones %}
+            <tr>
+                <td>
+                    <a href="{% url 'adm_rendicion_escritorio' r.pk %}" class="fw-semibold text-decoration-none">
+                        {{ r.numero }}
+                    </a>
+                    {% if r.motivo %}<div class="small text-muted">{{ r.motivo|truncatechars:40 }}</div>{% endif %}
+                </td>
+                <td>{{ r.responsable }}</td>
+                <td class="small">{{ r.periodo_desde|date:"d/m/Y" }} → {{ r.periodo_hasta|date:"d/m/Y" }}</td>
+                <td>
+                    <span class="badge
+                        {% if r.estado == 'BORRADOR' %}bg-primary
+                        {% elif r.estado == 'PRESENTADA' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ r.get_estado_display }}
+                    </span>
+                </td>
+                <td class="text-center">{{ r.n_detalles }}</td>
+                <td class="text-end fw-semibold">${{ r.suma_detalles|default:0|floatformat:0|intcomma }}</td>
+                <td class="text-end text-nowrap">
+                    <a href="{% url 'adm_rendicion_escritorio' r.pk %}" class="btn btn-outline-primary btn-sm">Abrir</a>
+                    <a href="{% url 'adm_rendicion_pdf' r.pk %}" class="btn btn-outline-danger btn-sm" target="_blank">PDF</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
