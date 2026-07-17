@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block template_label %}<label class="badge bg-secondary text-uppercase">ADM-REND-IMG-15-07-26</label>{% endblock %}
+{% block title %}Rendición desde imagen{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-camera"></i> Ingreso de gasto desde foto</h4>
+    <a href="{% url 'intervencion_lista' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver al panel
+    </a>
+</div>
+
+{% if messages %}
+<ul class="list-unstyled">
+    {% for message in messages %}
+    <li class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        {% if paso == 'subir' %}
+        <p class="text-muted">
+            Suba una foto del comprobante. El sistema leerá lo que pueda; usted completa o corrige a mano.
+            Puede agregar varios soportes a la misma rendición y luego <strong>terminar la carga</strong>.
+        </p>
+        <form method="post" enctype="multipart/form-data" class="mt-2">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="id_imagen">{{ form_subida.imagen.label }}</label>
+                {{ form_subida.imagen }}
+                {% if form_subida.imagen.help_text %}
+                <div class="form-text">{{ form_subida.imagen.help_text }}</div>
+                {% endif %}
+                {% for e in form_subida.imagen.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="id_rendicion">{{ form_subida.rendicion.label }}</label>
+                {{ form_subida.rendicion }}
+                <div class="form-text">{{ form_subida.rendicion.help_text }}</div>
+            </div>
+            <button type="submit" class="btn btn-primary" {% if rendicion_activa and not carga_abierta %}disabled{% endif %}>
+                <i class="bi bi-search"></i> Analizar comprobante
+            </button>
+        </form>
+
+        {% elif paso == 'revisar' %}
+        <div class="row g-3">
+            <div class="col-md-5">
+                {% if imagen_url %}
+                <img src="{{ imagen_url }}" alt="Comprobante" class="img-fluid border rounded shadow-sm">
+                {% endif %}
+                {% if datos %}
+                <div class="mt-2 small">
+                    <span class="badge bg-{% if datos.confianza == 'alta' %}success{% elif datos.confianza == 'media' %}warning text-dark{% else %}danger{% endif %}">
+                        Confianza OCR: {{ datos.confianza }}
+                    </span>
+                    {% for aviso in datos.avisos %}
+                    <div class="text-warning mt-1">{{ aviso }}</div>
+                    {% endfor %}
+                    <details class="mt-2">
+                        <summary>Texto OCR crudo</summary>
+                        <pre class="small bg-light p-2 border rounded" style="max-height:180px;overflow:auto;">{{ datos.texto_ocr }}</pre>
+                    </details>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-7">
+                <p class="mb-2">
+                    Destino: <strong>{{ rendicion.numero }}</strong>
+                    <span class="badge bg-secondary">{{ rendicion.get_estado_display }}</span>
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="guardar">
+                    {{ form.rendicion_id }}
+                    {{ form.imagen_temp }}
+                    <div class="row g-2">
+                        <div class="col-md-8">
+                            <label class="form-label">Proveedor</label>
+                            {{ form.proveedor }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">RUT</label>
+                            {{ form.rut_proveedor }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo doc.</label>
+                            {{ form.tipo_documento }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">N° documento</label>
+                            {{ form.numero_documento }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha</label>
+                            {{ form.fecha }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Sucursal / dirección</label>
+                            {{ form.sucursal }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Forma de pago</label>
+                            {{ form.forma_pago }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Neto</label>
+                            {{ form.neto }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">IVA</label>
+                            {{ form.iva }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Total *</label>
+                            {{ form.total }}
+                            {% for e in form.total.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Justificación sin documento</label>
+                            {{ form.justificacion_sin_documento }}
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check2-circle"></i> Guardar soporte
+                        </button>
+                        <a href="{% url 'adm_rendicion_desde_imagen' %}?rendicion={{ rendicion.pk }}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title mb-3"><i class="bi bi-list-check"></i> Progreso de la rendición</h6>
+                {% if rendicion_activa %}
+                <p class="mb-1">
+                    <strong>{{ rendicion_activa.numero }}</strong><br>
+                    <span class="badge {% if carga_abierta %}bg-primary{% else %}bg-success{% endif %}">
+                        {% if carga_abierta %}Carga abierta (borrador){% else %}Carga terminada{% endif %}
+                    </span>
+                    <span class="text-muted small">{{ rendicion_activa.get_estado_display }}</span>
+                </p>
+                <div class="d-flex justify-content-between align-items-end my-3 p-2 rounded bg-light">
+                    <div>
+                        <div class="text-muted small">Soportes</div>
+                        <div class="fs-4 fw-semibold">{{ cantidad_soportes }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">Suma</div>
+                        <div class="fs-4 fw-semibold text-success">
+                            ${{ suma_soportes|floatformat:0|intcomma }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if detalles %}
+                <ul class="list-group list-group-flush mb-3" style="max-height:260px;overflow:auto;">
+                    {% for d in detalles %}
+                    <li class="list-group-item px-0 py-2 small d-flex gap-2 align-items-start">
+                        {% if d.comprobante %}
+                        <img src="{{ d.comprobante.url }}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:4px;">
+                        {% else %}
+                        <span class="bg-secondary-subtle rounded d-inline-block" style="width:42px;height:42px;"></span>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ d.descripcion|truncatechars:40 }}</div>
+                            <div class="text-muted">{{ d.fecha }} · {{ d.proveedor|default:"—" }}</div>
+                        </div>
+                        <div class="text-nowrap fw-semibold">${{ d.total|floatformat:0|intcomma }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small">Aún no hay soportes en esta rendición.</p>
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'adm_rendicion_resumen' rendicion_activa.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver resumen
+                    </a>
+                    <a href="{% url 'adm_rendicion_pdf' rendicion_activa.pk %}" class="btn btn-outline-danger btn-sm" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> Ver / imprimir PDF
+                    </a>
+                    {% if carga_abierta and cantidad_soportes > 0 %}
+                    <form method="post" action="{% url 'adm_rendicion_finalizar_carga' rendicion_activa.pk %}"
+                          onsubmit="return confirm('¿Confirma que terminó de subir todos los comprobantes?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-flag-fill"></i> Terminé de subir comprobantes
+                        </button>
+                    </form>
+                    {% elif not carga_abierta %}
+                    <form method="post" action="{% url 'adm_rendicion_reabrir_carga' rendicion_activa.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reabrir carga
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">
+                    Suba el primer comprobante para crear o asociar una rendición.
+                    Aquí verá la suma y podrá marcar el fin de la carga.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="border rounded p-3 bg-light mt-3 small">
+            <strong>Flujo sugerido</strong>
+            <ol class="mb-0 ps-3 mt-1">
+                <li>Foto → corregir → guardar</li>
+                <li>Repetir con el resto de boletas</li>
+                <li>Revisar suma en este panel</li>
+                <li>Terminar carga → ver resumen / PDF</li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}

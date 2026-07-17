@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+{% load humanize %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Rendición {{ rendicion.numero }}</title>
+    <style>
+        @page { size: A4; margin: 16mm 14mm; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #222; }
+        h1 { font-size: 18px; margin: 0 0 4px 0; }
+        h2 { font-size: 13px; margin: 18px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+        .meta { color: #555; margin-bottom: 12px; }
+        .meta span { margin-right: 14px; }
+        .totales { width: 100%; margin: 10px 0 16px; border-collapse: collapse; }
+        .totales td { border: 1px solid #ddd; padding: 8px 10px; width: 33%; }
+        .totales .lbl { color: #666; font-size: 10px; }
+        .totales .val { font-size: 16px; font-weight: bold; }
+        table.detalle { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        table.detalle th, table.detalle td {
+            border: 1px solid #ccc; padding: 5px 6px; vertical-align: top;
+        }
+        table.detalle th { background: #f3f3f3; text-align: left; }
+        .num { text-align: right; white-space: nowrap; }
+        .galeria { width: 100%; }
+        .galeria td { width: 50%; vertical-align: top; padding: 6px; border: none; }
+        .comp { border: 1px solid #ddd; padding: 6px; page-break-inside: avoid; }
+        .comp img { max-width: 100%; max-height: 220px; display: block; margin: 0 auto 6px; }
+        .foot { margin-top: 20px; font-size: 9px; color: #777; }
+    </style>
+</head>
+<body>
+    <h1>Rendición {{ rendicion.numero }}</h1>
+    <div class="meta">
+        <span><strong>Responsable:</strong> {{ rendicion.responsable }}</span>
+        <span><strong>Periodo:</strong> {{ rendicion.periodo_desde|date:"d/m/Y" }} — {{ rendicion.periodo_hasta|date:"d/m/Y" }}</span>
+        <span><strong>Estado:</strong> {{ rendicion.get_estado_display }}</span>
+        {% if rendicion.fecha_presentacion %}
+        <span><strong>Presentada:</strong> {{ rendicion.fecha_presentacion|date:"d/m/Y" }}</span>
+        {% endif %}
+    </div>
+    {% if rendicion.motivo %}
+    <p><strong>Motivo:</strong> {{ rendicion.motivo }}</p>
+    {% endif %}
+
+    <table class="totales">
+        <tr>
+            <td>
+                <div class="lbl">Soportes</div>
+                <div class="val">{{ cantidad_soportes }}</div>
+            </td>
+            <td>
+                <div class="lbl">Suma comprobantes</div>
+                <div class="val">${{ suma_soportes|floatformat:0|intcomma }}</div>
+            </td>
+            <td>
+                <div class="lbl">Fondos entregados</div>
+                <div class="val">${{ rendicion.total_fondos|floatformat:0|intcomma }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <h2>Detalle de gastos</h2>
+    <table class="detalle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Documento</th>
+                <th>Proveedor</th>
+                <th>Descripción</th>
+                <th class="num">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in detalles %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ d.fecha|date:"d/m/Y" }}</td>
+                <td>
+                    {{ d.get_tipo_documento_display }}
+                    {% if d.numero_documento %}<br>{{ d.numero_documento }}{% endif %}
+                </td>
+                <td>
+                    {{ d.proveedor|default:"—" }}
+                    {% if d.rut_proveedor %}<br>{{ d.rut_proveedor }}{% endif %}
+                </td>
+                <td>{{ d.descripcion }}</td>
+                <td class="num">${{ d.total|floatformat:0|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">Sin detalles</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="5" style="text-align:right;">Total rendido</th>
+                <th class="num">${{ suma_soportes|floatformat:0|intcomma }}</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h2>Comprobantes (imágenes)</h2>
+    <table class="galeria">
+        <tr>
+        {% for item in detalles_pdf %}
+            <td>
+                <div class="comp">
+                    {% if item.imagen_abs %}
+                    <img src="{{ item.imagen_abs }}" alt="Comprobante {{ item.obj.pk }}">
+                    {% else %}
+                    <div style="height:80px;background:#f5f5f5;text-align:center;line-height:80px;">Sin imagen</div>
+                    {% endif %}
+                    <div>
+                        <strong>{{ item.obj.fecha|date:"d/m/Y" }}</strong>
+                        — ${{ item.obj.total|floatformat:0|intcomma }}<br>
+                        {{ item.obj.descripcion }}
+                    </div>
+                </div>
+            </td>
+            {% if forloop.counter|divisibleby:2 %}</tr><tr>{% endif %}
+        {% empty %}
+            <td>Sin comprobantes</td>
+        {% endfor %}
+        </tr>
+    </table>
+
+    <div class="foot">
+        Generado el {{ generado_en|date:"d/m/Y H:i" }} por {{ usuario.get_username }}.
+        Documento de trabajo — Extintores Real.
+    </div>
+</body>
+</html>
