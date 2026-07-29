@@ -1,0 +1,49 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Movimientos bancarios{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B006</p>
+  <h1>Movimientos bancarios</h1>
+  <p>
+    <a class="btn-vivo" href="{% url 'adm_cartola_importar' %}">↑ Importar cartola</a>
+  </p>
+
+  <form method="get" style="display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Descripción, documento…" class="form-control" style="max-width:260px;">
+    <select name="cuenta" class="form-select" style="max-width:280px;">
+      <option value="">Todas las cuentas</option>
+      {% for c in cuentas %}
+      <option value="{{ c.pk }}" {% if cuenta_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  <table style="width:100%; border-collapse:collapse; background:#fff; font-size:.92rem;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.4rem;">Fecha</th>
+        <th style="padding:.4rem;">Banco / cuenta</th>
+        <th style="padding:.4rem;">Descripción</th>
+        <th style="padding:.4rem;">Cargo</th>
+        <th style="padding:.4rem;">Abono</th>
+        <th style="padding:.4rem;">Saldo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movimientos %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.35rem;"><a href="{% url 'adm_movimiento_detalle' m.pk %}">{{ m.fecha_operacion }}</a></td>
+        <td style="padding:.35rem;">{{ m.cuenta_bancaria.banco.nombre }} · {{ m.cuenta_bancaria.numero_enmascarado }}</td>
+        <td style="padding:.35rem;">{{ m.descripcion_movimiento|default:m.descripcion_original|truncatechars:50 }}</td>
+        <td style="padding:.35rem; text-align:right;">{% if m.monto_cargo %}{{ m.monto_cargo }}{% else %}—{% endif %}</td>
+        <td style="padding:.35rem; text-align:right;">{% if m.monto_abono %}{{ m.monto_abono }}{% else %}—{% endif %}</td>
+        <td style="padding:.35rem; text-align:right;">{{ m.saldo_bancario|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:1rem;">No hay movimientos. Importe una cartola PDF.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Movimiento {{ movimiento.pk }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B007</p>
+  <h1>Movimiento #{{ movimiento.pk }}</h1>
+  <p>
+    <a href="{% url 'adm_movimiento_lista' %}">← Lista</a>
+    · <a href="{% url 'adm_movimiento_clasificar' movimiento.pk %}">Clasificar (B008)</a>
+    · <a href="{% url 'adm_movimiento_historial_clasificaciones' movimiento.pk %}">Historial clasificaciones</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <ul>
+      <li><strong>Fecha:</strong> {{ movimiento.fecha_operacion }}</li>
+      <li><strong>Cuenta:</strong> {{ movimiento.cuenta_bancaria }}</li>
+      <li><strong>Tipo (cartola):</strong> {{ movimiento.get_tipo_display }}</li>
+      <li><strong>Cargo:</strong> {{ movimiento.monto_cargo }}</li>
+      <li><strong>Abono:</strong> {{ movimiento.monto_abono }}</li>
+      <li><strong>Monto:</strong> {{ movimiento.monto }}</li>
+      <li><strong>Saldo:</strong> {{ movimiento.saldo_bancario|default:"—" }}</li>
+      <li><strong>Documento:</strong> {{ movimiento.numero_documento|default:"—" }}</li>
+      <li><strong>Referencia:</strong> {{ movimiento.referencia_bancaria|default:"—" }}</li>
+      <li><strong>Sucursal:</strong> {{ movimiento.sucursal_movimiento|default:"—" }}
+        {{ movimiento.codigo_sucursal_movimiento }}</li>
+      <li><strong>Descripción:</strong> {{ movimiento.descripcion_movimiento }}</li>
+      <li><strong>Contraparte original:</strong> {{ movimiento.contraparte|default:"—" }}</li>
+      <li><strong>RUT original:</strong> {{ movimiento.rut_contraparte|default:"—" }}</li>
+      <li><strong>Conciliación:</strong> {{ movimiento.get_estado_conciliacion_display }}
+        (aplicado {{ movimiento.monto_aplicado }} / pendiente {{ movimiento.saldo_por_conciliar }})</li>
+    </ul>
+  </div>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2 style="font-size:1.05rem; margin:0 0 .5rem;">Clasificación administrativa</h2>
+    {% if clasificacion %}
+      <ul>
+        <li><strong>Categoría:</strong> {{ clasificacion.get_categoria_display }}</li>
+        <li><strong>Contraparte normalizada:</strong> {{ clasificacion.contraparte_normalizada|default:"—" }}</li>
+        <li><strong>RUT normalizado:</strong> {{ clasificacion.rut_contraparte_normalizado|default:"—" }}</li>
+        <li><strong>Observación:</strong> {{ clasificacion.observacion|default:"—" }}</li>
+        <li><strong>Por:</strong> {{ clasificacion.clasificado_por|default:"—" }}
+          el {{ clasificacion.clasificado_en }}</li>
+      </ul>
+      <p style="margin-top:.75rem;">
+        <a href="{% url 'adm_movimiento_clasificar' movimiento.pk %}">Reclasificar</a>
+      </p>
+    {% else %}
+      <p style="color:#5c6b7a;">Sin clasificación. La clasificación no consume monto ni concilia.</p>
+      <p><a href="{% url 'adm_movimiento_clasificar' movimiento.pk %}">Clasificar ahora</a></p>
+    {% endif %}
+  </div>
+
+  {% if aplicaciones %}
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2 style="font-size:1.05rem; margin:0 0 .5rem;">Aplicaciones activas</h2>
+    <ul>
+      {% for a in aplicaciones %}
+        <li>{{ a.get_destino_display }} — ${{ a.monto }} ({{ a.fecha_aplicacion }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

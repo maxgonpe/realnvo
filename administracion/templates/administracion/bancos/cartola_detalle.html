@@ -1,0 +1,71 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Cartola #{{ importacion.pk }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B003</p>
+  <h1>Importación #{{ importacion.pk }}</h1>
+  <p>
+    <a href="{% url 'adm_cartola_importar' %}">← Importar otra</a>
+    ·
+    <a href="{% url 'adm_movimiento_lista' %}?cuenta={{ importacion.cuenta_bancaria_id }}">Ver movimientos</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <ul>
+      <li><strong>Cuenta:</strong> {{ importacion.cuenta_bancaria }}</li>
+      <li><strong>Archivo:</strong> {{ importacion.nombre_archivo }}</li>
+      <li><strong>Período:</strong> {{ importacion.fecha_desde }} → {{ importacion.fecha_hasta }}</li>
+      <li><strong>Estado:</strong> {{ importacion.get_estado_display }}</li>
+      <li><strong>Importados:</strong> {{ importacion.total_importadas }}
+        · duplicados {{ importacion.total_duplicadas }}
+        · errores {{ importacion.total_errores }}</li>
+      {% if importacion.observaciones %}
+      <li><strong>B005:</strong> {{ importacion.observaciones }}</li>
+      {% endif %}
+      {% if importacion.plantilla %}
+      <li><strong>Plantilla:</strong> {{ importacion.plantilla }}</li>
+      {% endif %}
+    </ul>
+    {% if cartola %}
+    <h2>Cabecera de cartola</h2>
+    <ul>
+      <li>Titular: {{ cartola.nombre_titular|default:"—" }}</li>
+      <li>Nº cartola: {{ cartola.numero_cartola|default:"—" }}</li>
+      <li>Saldo inicial: {{ cartola.saldo_inicial|default:"—" }}</li>
+      <li>Saldo final: {{ cartola.saldo_final|default:"—" }}</li>
+    </ul>
+    {% endif %}
+    {% if importacion.error_importacion %}
+    <p style="color:#a33;"><strong>Errores:</strong><br>{{ importacion.error_importacion|linebreaksbr }}</p>
+    {% endif %}
+  </div>
+
+  <h2>Movimientos ({{ movimientos|length }})</h2>
+  <table style="width:100%; border-collapse:collapse; background:#fff; font-size:.92rem;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.35rem;">Fecha</th>
+        <th style="padding:.35rem;">Descripción</th>
+        <th style="padding:.35rem;">Cargo</th>
+        <th style="padding:.35rem;">Abono</th>
+        <th style="padding:.35rem;">Saldo</th>
+        <th style="padding:.35rem;">Tipo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movimientos %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.35rem;"><a href="{% url 'adm_movimiento_detalle' m.pk %}">{{ m.fecha_operacion }}</a></td>
+        <td style="padding:.35rem;">{{ m.descripcion_movimiento|truncatechars:60 }}</td>
+        <td style="padding:.35rem; text-align:right;">{% if m.monto_cargo %}{{ m.monto_cargo }}{% else %}—{% endif %}</td>
+        <td style="padding:.35rem; text-align:right;">{% if m.monto_abono %}{{ m.monto_abono }}{% else %}—{% endif %}</td>
+        <td style="padding:.35rem; text-align:right;">{{ m.saldo_bancario|default:"—" }}</td>
+        <td style="padding:.35rem;">{{ m.get_tipo_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:.5rem;">Sin movimientos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

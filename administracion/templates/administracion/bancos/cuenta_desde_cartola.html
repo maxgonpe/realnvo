@@ -1,0 +1,39 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Cargar cuenta desde cartola{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B002</p>
+  <h1>Cargar cuenta desde cartola PDF</h1>
+  <p>
+    <a href="{% url 'adm_cuenta_lista' %}">← Lista de cuentas</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem; max-width:640px;">
+    <p style="color:#5c6b7a;">
+      Elige el banco (con clave configurada) y sube la cartola PDF.
+      El sistema abre el archivo con la clave cifrada, lee titular / número / tipo
+      y crea o actualiza la cuenta. <strong>No crea movimientos</strong> (eso es B003).
+    </p>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem;">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+      {% endif %}
+      {% for field in form %}
+        <div style="margin-bottom:.85rem;">
+          <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+          {% for error in field.errors %}
+            <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn-vivo">Leer PDF y guardar cuenta</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

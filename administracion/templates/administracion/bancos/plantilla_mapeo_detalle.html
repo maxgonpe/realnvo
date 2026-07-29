@@ -1,0 +1,97 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ plantilla.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B004</p>
+  <h1>{{ plantilla.nombre }} <small style="color:#5c6b7a; font-weight:400;">v{{ plantilla.version }}</small></h1>
+  <p>
+    <a href="{% url 'adm_plantilla_mapeo_lista' %}">← Lista</a>
+    ·
+    <a href="{% url 'adm_plantilla_mapeo_editar' plantilla.pk %}">Editar</a>
+    ·
+    <a href="{% url 'adm_plantilla_mapeo_probar' plantilla.pk %}">Probar</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2>Identificación</h2>
+    <ul>
+      <li><strong>Banco:</strong> {{ plantilla.banco.nombre }}</li>
+      <li><strong>Alcance:</strong>
+        {% if plantilla.cuenta_bancaria %}
+          Cuenta {{ plantilla.cuenta_bancaria.numero_cuenta }}
+        {% else %}
+          Todas las cuentas del banco
+        {% endif %}
+      </li>
+      <li><strong>Formato:</strong> {{ plantilla.get_formato_archivo_display }}</li>
+      <li><strong>Estado:</strong> {% if plantilla.activa %}Activa{% else %}Inactiva{% endif %}</li>
+    </ul>
+
+    <h2>Estructura</h2>
+    <ul>
+      <li><strong>Fila encabezado:</strong> {{ plantilla.fila_encabezado }}</li>
+      <li><strong>Fila inicio datos:</strong> {{ plantilla.fila_inicio_datos }}</li>
+      {% if plantilla.formato_archivo == "CSV" %}
+      <li><strong>Separador CSV:</strong> «{{ plantilla.separador_csv }}»</li>
+      <li><strong>Codificación:</strong> {{ plantilla.codificacion }}</li>
+      {% else %}
+      <li><strong>Hoja:</strong> {{ plantilla.nombre_hoja|default:"(activa)" }}</li>
+      {% endif %}
+      <li><strong>Formato fecha:</strong> {{ plantilla.formato_fecha }}</li>
+      <li><strong>Decimal / miles:</strong> «{{ plantilla.separador_decimal }}» / «{{ plantilla.separador_miles }}»</li>
+    </ul>
+    {% if plantilla.observaciones %}
+    <p><strong>Observaciones:</strong> {{ plantilla.observaciones }}</p>
+    {% endif %}
+
+    <h2>Mapeo de columnas</h2>
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+          <th style="padding:.4rem;">Columna cartola</th>
+          <th style="padding:.4rem;">Campo sistema</th>
+          <th style="padding:.4rem;">Obligatorio</th>
+          <th style="padding:.4rem;">Default</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in plantilla.campos.all %}
+        <tr style="border-bottom:1px solid #eef2f6;">
+          <td style="padding:.4rem;">{{ c.columna_origen }}</td>
+          <td style="padding:.4rem;">{{ c.get_campo_destino_display }}</td>
+          <td style="padding:.4rem;">{% if c.obligatorio %}Sí{% else %}No{% endif %}</td>
+          <td style="padding:.4rem;">{{ c.valor_defecto|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="padding:.5rem;">Sin campos configurados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Validación</h2>
+    <ul>
+      <li>Campos: {{ resumen.total_campos }}</li>
+      <li>Esquema monetario:
+        {% if resumen.valida %}
+          {{ resumen.esquema }} ✓
+        {% else %}
+          Inválida — {{ resumen.error_validacion }}
+        {% endif %}
+      </li>
+      <li>Importaciones: {{ resumen.importaciones }} ({{ resumen.importaciones_procesadas }} procesadas)</li>
+    </ul>
+
+    {% if plantilla.activa %}
+    <form method="post" action="{% url 'adm_plantilla_mapeo_desactivar' plantilla.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Desactivar</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'adm_plantilla_mapeo_activar' plantilla.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Activar</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

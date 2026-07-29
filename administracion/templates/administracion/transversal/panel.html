@@ -1,0 +1,51 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Administración{% endblock %}
+{% block content %}
+<section>
+  <h1>Módulo Administración</h1>
+  <p class="badge">A007 — Navegación</p>
+  <div class="leyenda-mods">
+    <span><i class="dot dot-vivo"></i> Verde = módulo operativo</span>
+    <span><i class="dot dot-parcial"></i> Ámbar = parcial</span>
+    <span><i class="dot dot-esqueleto"></i> Gris = esqueleto (aún sin lógica)</span>
+  </div>
+
+  <h2>Rendiciones</h2>
+  <ul>
+    <li><a class="mod-parcial" href="{% url 'adm_rendicion_lista' %}">R001 — Lista</a></li>
+    <li><a class="mod-parcial" href="{% url 'adm_rendicion_crear' %}">R002 — Nueva</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_responsable_lista' %}">R003 — Responsables ✓</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_categoria_lista' %}">R004 — Categorías</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_rendicion_dashboard' %}">R020 — Dashboard</a></li>
+    <li><a class="mod-parcial" href="{% url 'adm_rendicion_desde_imagen' %}">OCR — Ingreso desde imagen</a></li>
+  </ul>
+
+  <h2>Banco y conciliación</h2>
+  <ul>
+    <li><a class="mod-vivo" href="{% url 'adm_banco_lista' %}">B001 — Bancos ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_cuenta_lista' %}">B002 — Cuentas ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_cartola_importar' %}">B003 — Importar cartola ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_plantilla_mapeo_lista' %}">B004 — Plantillas de mapeo ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_cartola_importar' %}">B005 — Duplicados ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_movimiento_lista' %}">B006 — Movimientos ✓</a></li>
+    <li><a class="mod-vivo" href="{% url 'adm_movimiento_lista' %}">B008 — Clasificación ✓</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_conciliacion_dashboard' %}">B018 — Dashboard conciliación</a></li>
+  </ul>
+
+  <h2>Facturación y cobranza</h2>
+  <ul>
+    <li><a class="mod-esqueleto" href="{% url 'adm_factura_lista' %}">F003 — Facturas</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_factura_crear' %}">F002 — Registrar factura</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_pago_crear' %}">F005 — Registrar pago</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_cobranza_lista' %}">F010 — Cobranza</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_antiguedad_saldos' %}">F012 — Antigüedad de saldos</a></li>
+  </ul>
+
+  <h2>Factoring</h2>
+  <ul>
+    <li><a class="mod-esqueleto" href="{% url 'adm_empresa_factoring_lista' %}">X001 — Empresas</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_operacion_factoring_lista' %}">X002 — Operaciones</a></li>
+    <li><a class="mod-esqueleto" href="{% url 'adm_factoring_reportes' %}">X012 — Reportes</a></li>
+  </ul>
+</section>
+{% endblock %}

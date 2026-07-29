@@ -1,0 +1,1489 @@
+Bloque 13 — Calidad, aceptación y cierre final
+Q001–Q002
+
+1. Propósito del bloque
+Este bloque valida el funcionamiento completo del sistema administrativo y establece el proceso formal
+de aceptación por parte de los usuarios.
+Incluye:
+• Pruebas end-to-end.
+• Pruebas entre módulos.
+• Validación de cálculos financieros.
+• Pruebas de permisos y segregación de funciones.
+• Pruebas de concurrencia.
+• Verificación de auditoría.
+• Pruebas de recuperación y reversas.
+• Ejecución de casos reales controlados.
+• Aceptación de usuarios.
+• Registro y priorización de observaciones.
+• Corrección y regresión.
+• Preparación de despliegue.
+• Plan de respaldo y reversión.
+• Entrega documental.
+• Acta de aceptación.
+• Cierre formal del proyecto.
+El objetivo final es demostrar que el sistema puede procesar, sin perder consistencia:
+```text id="lkoq9h" Facturas → pagos → cartolas → conciliaciones → rendiciones → factoring →
+devoluciones → cierres → reportes → auditoría
+
+--# 2. Resumen del bloque
+| Código | Actividad | Horas | Recurso | Resultado esperado |
+|---|---|---:|---|---|
+| Q001 | Pruebas end-to-end | 20 h | QA / Tester | Flujos completos entre
+rendición, banco, factura y factoring |
+| Q002 | Aceptación de usuario y ajustes | 20 h | QA / Tester | Casos reales
+ejecutados y observaciones resueltas |
+El bloque suma **40 horas**.
+
+1
+
+La Carta Gantt asigna 20 horas a Q001 y establece como resultado la
+validación de flujos completos entre rendición, banco, factura y factoring.
+Para Q002 asigna otras 20 horas y exige ejecutar casos reales y resolver las
+observaciones detectadas.
+--# 3. Diferencia entre Q001 y Q002
+## Q001 — Validación técnica y funcional integral
+Responde:
+```text id="awuj1n"
+¿El sistema funciona correctamente de extremo a extremo?
+
+Es ejecutada principalmente por:
+• QA.
+• Desarrolladores.
+• Especialistas funcionales.
+• Administradores técnicos.
+• Usuarios clave cuando se requiere validación de negocio.
+
+Q002 — Aceptación de usuarios
+Responde:
+```text id="sm3ee3" ¿El sistema resuelve correctamente el trabajo real y puede ser autorizado para uso
+productivo?
+
+Es ejecutada y aprobada por:
+- Finanzas.
+- Cobranza.
+- Responsables de rendición.
+- Revisores y aprobadores.
+- Conciliadores bancarios.
+- Administradores funcionales.
+- Propietario del proceso.
+- Patrocinador o responsable de aceptación.
+--# 4. Condiciones de entrada al bloque
+Q001 no debe comenzar formalmente hasta que:
+
+2
+
+1. Las funcionalidades A001–A007 estén disponibles.
+2. Banco B001–B021 esté implementado.
+3. Facturación F001–F014 esté implementada.
+4. Rendiciones R001–R022 estén implementadas.
+5. Factoring X001–X013 esté implementado.
+6. Las migraciones estén aplicadas en el ambiente de pruebas.
+7. Las pruebas unitarias principales estén aprobadas.
+8. No existan errores de importación de base de datos.
+9. Los permisos estén configurados.
+10. Los datos de prueba estén disponibles.
+11. Los procesos automáticos puedan ejecutarse.
+12. Las integraciones necesarias estén habilitadas o simuladas.
+13. Exista un inventario de funcionalidades entregadas.
+14. Exista una versión identificable del software.
+La ausencia de una condición debe quedar registrada como riesgo o
+impedimento.
+--# 5. Ambientes requeridos
+## 5.1 Desarrollo
+Utilizado para:
+- Correcciones.
+- Pruebas unitarias.
+- Depuración.
+- Migraciones preliminares.
+--## 5.2 Integración o QA
+Utilizado para:
+- Pruebas end-to-end.
+- Pruebas de integraciones.
+- Pruebas de concurrencia.
+- Automatización.
+- Pruebas destructivas.
+- Restauración de respaldos.
+Debe ser técnicamente similar a producción.
+--## 5.3 UAT o aceptación
+Utilizado para:
+
+3
+
+- Casos reales controlados.
+- Validación por usuarios.
+- Capacitación.
+- Aprobación funcional.
+No debe utilizar datos personales o financieros reales sin autorización y
+protección.
+--## 5.4 Producción
+Solo se habilita después de:
+- Q001 aprobado.
+- Q002 aprobado.
+- Respaldo verificado.
+- Plan de despliegue aprobado.
+- Plan de rollback aprobado.
+- Autorización de puesta en producción.
+--# 6. Datos de prueba
+Se prepararán conjuntos de datos consistentes para:
+- Clientes.
+- Facturas.
+- Pagos.
+- Empresas de factoring.
+- Cartolas.
+- Movimientos.
+- Responsables de rendición.
+- Gastos.
+- Fondos entregados.
+- Documentos.
+- Alertas.
+- Períodos bancarios.
+Los datos deberán incluir:
+```text id="gs4xf7"
+Casos normales
+Casos parciales
+Casos vencidos
+Casos duplicados
+Casos anulados
+Casos con errores
+Casos concurrentes
+
+4
+
+6.1 Protección de datos
+Los datos provenientes de producción deberán:
+• Anonimizar nombres.
+• Enmascarar RUT.
+• Enmascarar cuentas bancarias.
+• Reemplazar correos.
+• Eliminar documentos personales.
+• Remover credenciales y secretos.
+• Mantener únicamente la estructura necesaria.
+
+6.2 Datos monetarios
+Los conjuntos de prueba deben incluir:
+• Montos pequeños.
+• Montos altos.
+• Montos parciales.
+• Diferencias de redondeo.
+• Múltiples aplicaciones.
+• Saldos exactos.
+• Saldos pendientes.
+• Operaciones en CLP.
+• Otras monedas, cuando el proyecto las admita.
+Todos los cálculos monetarios deben utilizar Decimal .
+
+Q001 — Pruebas end-to-end
+1. Objetivo
+Validar que los módulos funcionen correctamente como un único sistema, no solo como componentes
+aislados.
+La prueba end-to-end debe comprobar:
+```text id="g3h7xx" Entrada → procesamiento → reglas → estados → movimientos financieros →
+auditoría → reportes
+
+--# 2. Estrategia de pruebas
+Q001 combinará:
+
+5
+
+## Pruebas automatizadas
+Adecuadas para:
+- Repetición.
+- Regresión.
+- Cálculos.
+- Estados.
+- Permisos.
+- APIs.
+- Servicios.
+- Concurrencia.
+## Pruebas manuales guiadas
+Adecuadas para:
+- Usabilidad.
+- Comprensión de mensajes.
+- Navegación.
+- Revisión documental.
+- Visualización de reportes.
+- Flujos con decisiones humanas.
+## Pruebas exploratorias
+Adecuadas para:
+- Combinaciones imprevistas.
+- Secuencias no lineales.
+- Comportamientos de interfaz.
+- Casos de usuarios reales.
+--# 3. Matriz de cobertura
+| Área | Unitarias | Integración | E2E | UAT |
+|---|---:|---:|---:|---:|
+| Usuarios y permisos | Sí | Sí | Sí | Sí |
+| Banco y cartolas | Sí | Sí | Sí | Sí |
+| Conciliación | Sí | Sí | Sí | Sí |
+| Facturación | Sí | Sí | Sí | Sí |
+| Cobranza | Sí | Sí | Sí | Sí |
+| Rendiciones | Sí | Sí | Sí | Sí |
+| Factoring | Sí | Sí | Sí | Sí |
+| Archivos | Sí | Sí | Sí | Sí |
+| Auditoría | Sí | Sí | Sí | Limitada |
+| Alertas | Sí | Sí | Sí | Sí |
+| Reportes | Sí | Sí | Sí | Sí |
+
+6
+
+| Recuperación | Sí | Sí | Sí | No necesariamente |
+--# 4. Escenarios end-to-end obligatorios
+## Escenario E2E-01 — Factura y pago normal
+```text id="uj7ffo"
+Crear cliente
+→ emitir factura
+→ registrar pago
+→ importar cartola
+→ identificar ingreso
+→ conciliar con PagoCliente
+→ aplicar pago a factura
+→ actualizar estado
+→ generar reporte
+
+Resultado esperado
+• El movimiento queda conciliado.
+• El pago queda bancariamente conciliado.
+• La factura queda parcial o totalmente pagada.
+• El monto no se duplica.
+• El historial identifica al usuario.
+• El reporte coincide con los datos operativos.
+
+Escenario E2E-02 — Un pago cubre varias facturas
+```text id="dqrjjh" Movimiento bancario → PagoCliente → Factura A → Factura B → Factura C
+
+### Validaciones
+- No se supera el movimiento.
+- No se supera el pago.
+- No se supera ninguna factura.
+- Las aplicaciones parciales son correctas.
+- El excedente permanece disponible.
+- Una reversa recupera todos los saldos correspondientes.
+--## Escenario E2E-03 — Varios movimientos cubren un pago
+```text id="tykfea"
+Movimiento A
++
+
+7
+
+Movimiento B
+→ PagoCliente
+→ Facturas
+
+Resultado esperado
+• El pago puede quedar parcialmente conciliado.
+• El segundo movimiento completa la conciliación.
+• Los movimientos mantienen estados independientes.
+• No existe sobreaplicación concurrente.
+
+Escenario E2E-04 — Rendición cuadrada
+```text id="8s6mfp" Crear responsable → entregar fondo → conciliar egreso → registrar gastos →
+adjuntar documentos → presentar → revisar → aprobar → liquidar → resultado CUADRADA → cerrar
+
+### Resultado esperado
+- No existe devolución.
+- No existe reembolso.
+- La liquidación conserva snapshot.
+- El historial contiene todas las decisiones.
+- La rendición puede exportarse.
+--## Escenario E2E-05 — Responsable devuelve dinero
+```text id="8hgol5"
+Entrega de fondo
+→ gastos aprobados inferiores
+→ liquidación RESPONSABLE_DEVUELVE
+→ devolución
+→ ingreso bancario
+→ conciliación
+→ cierre
+
+Resultado esperado
+• La devolución se relaciona con la liquidación.
+• Se exige un movimiento de ingreso.
+• Se permiten devoluciones parciales.
+• La rendición no se cierra hasta completar la regularización.
+
+8
+
+Escenario E2E-06 — Empresa reembolsa al responsable
+```text id="6yytp0" Gastos superiores a fondos → aprobación → liquidación EMPRESA_REEMBOLSA →
+orden de reembolso → aprobación → egreso → conciliación → cierre
+
+### Resultado esperado
+- Existe segregación entre solicitud, aprobación y pago.
+- Se exige un movimiento de egreso.
+- No se supera el saldo de la liquidación.
+- Los datos bancarios permanecen congelados.
+--## Escenario E2E-07 — Factoring normal
+```text id="aezblt"
+Factura emitida
+→ cesión
+→ anticipo
+→ conciliación del anticipo
+→ cliente paga al factor
+→ factor liquida
+→ conciliación de liquidación
+→ cierre
+
+Resultado esperado
+• El pago al factor no crea ingreso bancario propio.
+• Anticipo y liquidación permanecen separados.
+• Comisión y retención se muestran correctamente.
+• La factura, la operación y los flujos tienen estados coherentes.
+
+Escenario E2E-08 — Mora y recurso
+```text id="vu3h66" Factura cedida → vencimiento → mora → alerta → notificación del factor → reclamo
+con recurso → aprobación → egreso → conciliación
+
+### Resultado esperado
+- La deuda del cliente no desaparece.
+- El pago al factor se registra como egreso.
+- No se crea un `PagoCliente` falso.
+- El reclamo conserva documentos y decisiones.
+---
+
+9
+
+## Escenario E2E-09 — Pago directo de factura cedida
+```text id="jxa1xk"
+Factura cedida
+→ cliente paga por error a Extintores Real
+→ ingreso bancario
+→ aplicación PAGO_ERRONEO_FACTORING
+→ incidente crítico
+→ devolución al cliente
+→ egreso bancario
+→ conciliación
+→ cierre del incidente
+
+Resultado esperado
+• El ingreso queda conciliado.
+• La factura no queda pagada al factor.
+• El importe queda reservado.
+• La devolución requiere aprobación.
+• El egreso se vincula con el pago original.
+• La operación de factoring continúa abierta cuando corresponde.
+
+Escenario E2E-10 — Conciliación múltiple transversal
+```text id="f5sb7d" Un movimiento ├── pago de cliente ├── entrega de fondo ├── flujo de
+factoring └── otro destino autorizado
+
+### Resultado esperado
+- La suma no supera el movimiento.
+- Cada destino respeta su saldo.
+- La dirección de cada operación es compatible.
+- El movimiento queda parcial o conciliado según el total.
+--## Escenario E2E-11 — Duplicado de cartola
+```text id="6mqsqb"
+Importar archivo
+→ procesar
+→ volver a importar el mismo archivo
+
+Resultado esperado
+• El hash detecta el duplicado.
+
+10
+
+• No se crean movimientos repetidos.
+• Se registra alerta o rechazo.
+• La primera importación permanece intacta.
+
+Escenario E2E-12 — Reversa y reapertura
+```text id="hufcem" Conciliar movimiento → cerrar período → detectar error → solicitar reapertura →
+reabrir → reversar aplicación → corregir → cerrar nuevamente
+
+### Resultado esperado
+- El snapshot original permanece.
+- Se incrementa el número de revisión.
+- La reversa recupera saldos.
+- Se genera un nuevo snapshot.
+- El historial muestra ambos cierres.
+--## Escenario E2E-13 — Alertas automáticas
+Ejecutar procesos para:
+- Facturas vencidas.
+- Rendiciones atrasadas.
+- Movimientos sin identificar.
+- Fondos sin rendir.
+- Factoring en mora.
+- Liquidaciones pendientes.
+- Cierres bancarios pendientes.
+### Resultado esperado
+- No existen alertas duplicadas.
+- Las condiciones resueltas cierran sus alertas.
+- Las alertas reaparecen cuando la condición vuelve.
+- La severidad cambia conforme al atraso.
+--## Escenario E2E-14 — Archivos y auditoría
+```text id="6eviih"
+Subir documento
+→ visualizar
+→ reemplazar
+
+11
+
+→ descargar
+→ verificar historial
+
+Resultado esperado
+• El archivo no es público.
+• El usuario sin permiso no accede.
+• Se valida extensión, MIME y tamaño.
+• Se conserva hash.
+• Los eventos de acceso o modificación requeridos quedan auditados.
+
+Escenario E2E-15 — Dashboard y exportaciones
+Validaciones
+• Totales de pantalla.
+• Totales de exportación.
+• Filtros.
+• Fecha de corte.
+• Estados.
+• Permisos.
+• Enmascaramiento.
+• Archivos temporales.
+
+Resultado esperado
+```text id="d6jrnv" Listado = dashboard = exportación
+
+considerando los mismos filtros y fecha de corte.
+--# 5. Pruebas de seguridad
+## 5.1 Autenticación
+Validar:
+- Sesión obligatoria.
+- Cierre de sesión.
+- Expiración.
+- Redirección segura.
+- Bloqueo de rutas protegidas.
+--## 5.2 Autorización
+
+12
+
+Validar:
+- Permisos por modelo.
+- Permisos por acción.
+- Permisos por objeto.
+- Alcance por responsable.
+- Alcance por cuenta bancaria.
+- Alcance por área.
+--## 5.3 Segregación de funciones
+Casos obligatorios:
+```text id="1kg29u"
+Responsable no aprueba su rendición
+Solicitante no aprueba su devolución
+Usuario de cobranza no reabre períodos
+Auditor no modifica operaciones
+Conciliador no cierra sin permiso
+
+5.4 Ataques y entradas maliciosas
+Validar:
+• CSRF.
+• XSS en descripciones.
+• Inyección mediante parámetros.
+• Manipulación de IDs.
+• Fórmulas en Excel.
+• Nombres de archivo peligrosos.
+• MIME falso.
+• Archivos excesivos.
+• Rutas de descarga.
+• URLs no autorizadas.
+
+5.5 Información sensible
+Comprobar que:
+• Contraseñas no aparezcan en logs.
+• Tokens no aparezcan en errores.
+• Cuentas bancarias estén enmascaradas.
+• Archivos privados no tengan URL pública.
+• Los reportes respeten permisos.
+• Los respaldos estén protegidos.
+
+13
+
+6. Pruebas de concurrencia
+Se deben ejecutar pruebas simultáneas sobre:
+• Numeración de rendiciones.
+• Creación de operaciones de factoring.
+• Aplicación de pagos.
+• Aplicación de movimientos.
+• Aprobaciones.
+• Liquidaciones.
+• Devoluciones.
+• Cierres bancarios.
+• Reaperturas.
+Resultado global:
+```text id="qkx5vb" No deben existir: - saldos negativos - montos sobreaplicados - duplicados - dos
+cierres activos - dos aprobaciones contradictorias
+
+--# 7. Pruebas de rendimiento
+## Listados
+Validar:
+- Paginación.
+- Filtros.
+- Ordenamiento.
+- Cantidad de consultas.
+- Tiempo de respuesta.
+## Dashboards
+Validar:
+- Agregaciones.
+- Caché.
+- Filtros.
+- Separación por usuario.
+## Exportaciones
+Validar:
+- Mil filas.
+- Diez mil filas.
+
+14
+
+- Archivos grandes.
+- Memoria.
+- Tiempo de generación.
+## Procesos automáticos
+Validar:
+- Alertas.
+- Reglas de conciliación.
+- Importaciones.
+- Resolución automática.
+- Ejecución repetida.
+--# 8. Pruebas de recuperación
+## Transacción fallida
+Provocar error después de:
+- Crear pago.
+- Crear aplicación.
+- Actualizar factura.
+Resultado:
+```text id="3ilxc0"
+Ningún cambio parcial persiste
+
+Migración fallida
+Validar:
+• Base de datos respaldada.
+• Migración reversible o plan de corrección.
+• Aplicación no se habilita en estado inconsistente.
+
+Restauración
+Probar:
+• Respaldo de base de datos.
+• Respaldo de archivos.
+• Restauración en ambiente controlado.
+• Integridad posterior.
+
+15
+
+• Acceso a adjuntos.
+No basta con comprobar que el respaldo fue creado; debe probarse una restauración.
+
+9. Automatización
+Herramientas sugeridas:
+```text id="r9rmno" pytest pytest-django factory_boy coverage Playwright o Selenium
+
+Estructura:
+```text id="xvb0bi"
+tests/
+├── unit/
+├── integration/
+├── e2e/
+├── security/
+├── performance/
+├── recovery/
+└── acceptance_support/
+
+10. Evidencia de ejecución
+Cada prueba end-to-end debe registrar:
+• Código.
+• Versión del sistema.
+• Ambiente.
+• Fecha.
+• Usuario ejecutor.
+• Datos utilizados.
+• Pasos.
+• Resultado esperado.
+• Resultado obtenido.
+• Evidencia.
+• Estado.
+• Defecto relacionado.
+Estados:
+```text id="7mgxgz" NO_EJECUTADA APROBADA FALLIDA BLOQUEADA NO_APLICA
+
+---
+
+16
+
+# 11. Gestión de defectos
+## Severidad crítica
+Ejemplos:
+- Pérdida de dinero o registros.
+- Sobreaplicación.
+- Acceso no autorizado.
+- Factura cedida marcada erróneamente como pagada.
+- Cierre con datos corruptos.
+- Imposibilidad de recuperar respaldo.
+Resultado:
+```text id="iqz70w"
+Bloquea aceptación y despliegue
+
+Severidad alta
+Ejemplos:
+• Flujo principal no puede completarse.
+• Estado incorrecto.
+• Reporte financiero incorrecto.
+• Reversa inconsistente.
+• Permiso relevante incumplido.
+Resultado:
+```text id="0wzsrl" Debe resolverse antes de producción
+
+--## Severidad media
+Ejemplos:
+- Validación secundaria.
+- Mensaje poco claro.
+- Filtro incorrecto.
+- Exportación con problema no crítico.
+Puede aceptarse temporalmente con:
+- Workaround.
+- Responsable.
+- Fecha comprometida.
+
+17
+
+- Aprobación formal.
+--## Severidad baja
+Ejemplos:
+- Formato.
+- Alineación.
+- Texto.
+- Mejora menor.
+Puede planificarse para una versión posterior.
+--# 12. Criterios de salida de Q001
+Q001 se considerará aprobada cuando:
+1. Todos los escenarios críticos fueron ejecutados.
+2. El 100 % de las pruebas críticas está aprobado.
+3. No existen defectos críticos.
+4. No existen defectos altos abiertos.
+5. Los cálculos monetarios son correctos.
+6. Los permisos críticos están validados.
+7. Las pruebas de concurrencia pasan.
+8. Las reversas recuperan la consistencia.
+9. Los dashboards coinciden con los listados.
+10. Los reportes coinciden con los selectores.
+11. Los procesos automáticos son idempotentes.
+12. Los archivos están protegidos.
+13. El respaldo fue restaurado correctamente.
+14. Existe informe de resultados.
+15. El sistema está disponible para aceptación de usuarios.
+--# Q002 — Aceptación de usuario y ajustes
+## 1. Objetivo
+Permitir que los usuarios clave ejecuten procesos reales controlados,
+documenten observaciones y confirmen que el sistema responde a las
+necesidades operativas.
+La Carta Gantt exige que los casos reales sean ejecutados y que las
+observaciones sean resueltas antes de completar esta tarea.
+---
+
+18
+
+# 2. Participantes
+## Propietario del proceso
+Responsable de aceptar funcionalmente el módulo.
+## Usuarios clave
+Representantes de:
+- Facturación.
+- Cobranza.
+- Finanzas.
+- Conciliación.
+- Rendiciones.
+- Factoring.
+- Administración.
+## QA
+Coordina casos, evidencia y defectos.
+## Desarrollo
+Corrige defectos y entrega versiones.
+## Administrador técnico
+Verifica:
+- Despliegue.
+- Backups.
+- Procesos automáticos.
+- Seguridad.
+- Monitoreo.
+--# 3. Plan de aceptación
+Cada módulo tendrá:
+- Responsable de aceptación.
+- Casos asignados.
+- Datos.
+- Fecha.
+- Ambiente.
+- Resultado.
+- Observaciones.
+- Firma o aprobación.
+
+19
+
+--# 4. Casos reales controlados
+## Facturación y cobranza
+- Crear factura.
+- Registrar gestión.
+- Recibir pago.
+- Aplicar pago.
+- Emitir estado de cuenta.
+- Exportar informe.
+## Banco
+- Importar una cartola representativa.
+- Detectar duplicados.
+- Clasificar movimientos.
+- Ejecutar conciliación parcial.
+- Cerrar período.
+## Rendiciones
+- Crear borrador.
+- Adjuntar documentos.
+- Presentar.
+- Observar.
+- Corregir.
+- Aprobar.
+- Liquidar.
+- Regularizar.
+## Factoring
+- Ceder factura.
+- Registrar anticipo.
+- Confirmar pago al factor.
+- Registrar liquidación.
+- Procesar pago directo erróneo.
+- Procesar cobro con recurso.
+--# 5. Guion de aceptación
+Cada caso debe contener:
+```text id="tfebv8"
+Código
+Objetivo
+
+20
+
+Rol
+Condiciones iniciales
+Datos
+Pasos
+Resultado esperado
+Resultado real
+Evidencia
+Observaciones
+Aprobación
+
+Ejemplo:
+```text id="scl1af" Caso UAT-R-001 Objetivo: presentar una rendición válida Rol: responsable de rendición
+Resultado esperado: La rendición cambia a PRESENTADA, queda bloqueada y aparece en la bandeja de
+revisión.
+
+--# 6. Registro de observaciones
+Las observaciones se clasificarán como:
+```text id="mu0u92"
+DEFECTO
+AJUSTE_FUNCIONAL
+MEJORA_DE_USABILIDAD
+CAMBIO_DE_ALCANCE
+CAPACITACION
+DATOS
+CONFIGURACION
+
+7. Diferencia entre defecto y cambio de alcance
+Defecto
+El sistema no cumple una regla ya acordada.
+Ejemplo:
+```text id="u4k06o" La devolución puede superar el pago recibido.
+
+Debe corregirse dentro del alcance.
+---
+
+21
+
+## Cambio de alcance
+El usuario solicita una función que no estaba definida.
+Ejemplo:
+```text id="p1yigf"
+Integrar automáticamente con un nuevo banco
+no contemplado en el proyecto.
+
+Debe:
+• Estimarse.
+• Priorizarse.
+• Aprobarse.
+• Planificarse para una versión.
+No debe ocultarse como “corrección menor”.
+
+8. Priorización de ajustes
+Prioridad
+
+Tratamiento
+
+Bloqueante
+
+Corrección inmediata antes de continuar
+
+Alta
+
+Antes de aceptación
+
+Media
+
+Antes de producción o con aceptación formal
+
+Baja
+
+Backlog posterior
+
+9. Ciclo de corrección
+```text id="p8fxe6" Observación → clasificación → asignación → corrección → revisión técnica →
+despliegue en UAT → regresión → validación del usuario → cierre
+
+Una observación no debe marcarse resuelta únicamente porque se modificó
+código.
+Debe ser:
+```text id="cmn79n"
+Verificada por QA
+
+22
+
+y
+confirmada por el usuario cuando corresponda
+
+10. Regresión
+Después de cada lote de ajustes se ejecutará:
+• Prueba del defecto.
+• Flujo relacionado.
+• Casos críticos del módulo.
+• Pruebas de permisos.
+• Pruebas financieras relacionadas.
+Ejemplo:
+```text id="7xhnpl" Corrección en AplicacionMovimientoBancario → probar pagos → probar rendiciones
+→ probar factoring → probar cierre bancario
+
+El modelo puente distribuye movimientos entre pagos, flujos de factoring,
+entregas de fondos, liquidaciones y devoluciones; por ello un cambio en sus
+reglas puede afectar varios módulos simultáneamente.
+--# 11. Criterios de aceptación por módulo
+## Transversal
+- Roles correctos.
+- Auditoría disponible.
+- Archivos protegidos.
+- Navegación consistente.
+## Banco
+- Importación correcta.
+- Duplicados controlados.
+- Conciliación parcial y múltiple.
+- Reversas.
+- Cierre.
+## Facturación
+- Facturas.
+- Pagos.
+- Aplicaciones.
+- Cobranza.
+- Exportaciones.
+
+23
+
+## Rendiciones
+- Presentación.
+- Revisión.
+- Aprobación.
+- Liquidación.
+- Devolución o reembolso.
+- Cierre.
+## Factoring
+- Cesión.
+- Anticipo.
+- Pago al factor.
+- Mora.
+- Recurso.
+- Pago directo.
+- Devolución.
+- Liquidación.
+--# 12. Acta de aceptación
+El acta debe incluir:
+- Proyecto.
+- Versión.
+- Ambiente.
+- Fecha.
+- Alcance aceptado.
+- Módulos.
+- Casos ejecutados.
+- Resultados.
+- Defectos pendientes.
+- Riesgos aceptados.
+- Limitaciones.
+- Condiciones de producción.
+- Firmantes.
+Estados posibles:
+```text id="i8fel3"
+ACEPTADO
+ACEPTADO_CON_OBSERVACIONES
+RECHAZADO
+
+24
+
+12.1 Aceptado
+No existen observaciones que impidan operar.
+
+12.2 Aceptado con observaciones
+Solo se permite cuando:
+• No hay defectos críticos.
+• No hay defectos altos financieros o de seguridad.
+• Existe workaround.
+• Hay responsable.
+• Existe fecha de resolución.
+• El propietario del proceso acepta el riesgo.
+
+12.3 Rechazado
+Se utiliza cuando:
+• Un flujo crítico falla.
+• Existen resultados financieros incorrectos.
+• Los permisos son inseguros.
+• No se pueden recuperar datos.
+• Los usuarios no pueden completar el proceso.
+
+13. Preparación para producción
+Aunque la Gantt denomina Q002 “aceptación de usuario y ajustes”, su cierre debe incluir la
+comprobación de preparación productiva.
+
+13.1 Checklist previo
+• Versión etiquetada.
+• Código revisado.
+• Pruebas aprobadas.
+• Migraciones revisadas.
+• Dependencias congeladas.
+• Variables de entorno documentadas.
+• Backup generado.
+• Restauración probada.
+• Rollback definido.
+• Usuarios configurados.
+• Permisos validados.
+• Procesos programados.
+
+25
+
+• Documentación entregada.
+• Ventana de despliegue aprobada.
+
+13.2 Validaciones Django
+Ejecutar:
+```bash id="z0acbd" python manage.py check python manage.py check --deploy python manage.py
+migrate --plan python manage.py test python manage.py collectstatic --noinput
+
+Cuando se utilice `pytest`:
+```bash id="s1j7l8"
+pytest
+pytest --cov
+
+14. Plan de despliegue
+Paso 1 — Congelamiento
+• Detener cambios no autorizados.
+• Identificar commit.
+• Generar release.
+• Documentar hash de versión.
+
+Paso 2 — Respaldo
+• Base de datos.
+• Archivos media.
+• Configuración.
+• Estado de procesos programados.
+
+Paso 3 — Mantenimiento
+• Activar modo de mantenimiento cuando sea necesario.
+• Evitar escrituras durante migraciones críticas.
+
+Paso 4 — Despliegue
+• Instalar versión.
+• Actualizar dependencias.
+• Aplicar migraciones.
+• Recolectar estáticos.
+• Reiniciar servicios.
+
+26
+
+Paso 5 — Procesos programados
+Verificar tareas de:
+• Alertas bancarias.
+• Alertas de rendiciones.
+• Alertas de factoring.
+• Reglas de conciliación.
+• Limpieza de temporales.
+• Backups.
+
+Paso 6 — Smoke tests
+Ejecutar:
+• Inicio de sesión.
+• Dashboard.
+• Crear registro controlado.
+• Consultar factura.
+• Consultar movimiento.
+• Descargar archivo.
+• Ejecutar reporte.
+• Revisar logs.
+
+Paso 7 — Apertura
+• Desactivar mantenimiento.
+• Autorizar usuarios.
+• Comunicar disponibilidad.
+
+15. Plan de rollback
+Debe indicar:
+• Criterio para abortar.
+• Tiempo máximo para decidir.
+• Responsable.
+• Restauración de código.
+• Restauración de base.
+• Restauración de archivos.
+• Tratamiento de operaciones creadas durante la ventana.
+• Comunicación a usuarios.
+Se debe activar rollback ante:
+• Migración corrupta.
+• Pérdida de registros.
+• Error monetario crítico.
+
+27
+
+• Incumplimiento de permisos.
+• Fallo general de acceso.
+• Imposibilidad de completar procesos críticos.
+
+16. Estrategia de migración de datos
+Cuando existan datos previos:
+1. Inventariar fuentes.
+2. Normalizar identificadores.
+3. Validar clientes.
+4. Validar facturas.
+5. Validar cuentas.
+6. Detectar duplicados.
+7. Preparar script.
+8. Ejecutar ensayo.
+9. Comparar totales.
+10. Obtener aprobación.
+11. Ejecutar migración final.
+12. Archivar evidencia.
+
+16.1 Cuadre de migración
+Debe compararse:
+```text id="1blckh" Cantidad de registros de origen Cantidad migrada Cantidad rechazada Totales
+monetarios de origen Totales monetarios migrados Diferencias
+
+Una migración no debe considerarse exitosa solo porque terminó sin lanzar una
+excepción.
+--# 17. Monitoreo posterior
+Durante la estabilización se supervisará:
+- Errores HTTP.
+- Excepciones Django.
+- Fallos de tareas.
+- Tiempo de respuesta.
+- Uso de disco.
+- Crecimiento de media.
+- Estado de backups.
+- Correos fallidos.
+- Alertas no procesadas.
+
+28
+
+- Importaciones bloqueadas.
+- Diferencias financieras.
+--# 18. Período de estabilización
+Se recomienda definir un período controlado posterior al despliegue.
+Durante este período:
+- Se priorizan defectos productivos.
+- Se monitorean flujos críticos.
+- Se revisan logs diariamente.
+- Se validan backups.
+- Se acompaña a los usuarios.
+- Se documentan incidentes.
+- Se evita introducir cambios de alcance no urgentes.
+--# 19. Documentación de entrega
+## 19.1 Documentación funcional
+- Manual de facturación.
+- Manual de banco.
+- Manual de rendiciones.
+- Manual de factoring.
+- Casos frecuentes.
+- Matrices de estados.
+## 19.2 Documentación técnica
+- Arquitectura.
+- Modelos.
+- Servicios.
+- Selectores.
+- Permisos.
+- Integraciones.
+- Tareas programadas.
+- Variables de entorno.
+- Dependencias.
+- Migraciones.
+- Backups.
+- Restauración.
+- Despliegue.
+- Rollback.
+## 19.3 Documentación operativa
+
+29
+
+- Alta de usuarios.
+- Resolución de alertas.
+- Cierre de períodos.
+- Reaperturas.
+- Corrección de errores.
+- Gestión de archivos.
+- Monitoreo.
+- Escalamiento.
+--# 20. Capacitación
+## Sesión 1 — Administración
+- Usuarios.
+- Permisos.
+- Catálogos.
+- Configuración.
+## Sesión 2 — Banco
+- Importación.
+- Conciliación.
+- Exclusiones.
+- Cierre.
+## Sesión 3 — Facturación y cobranza
+- Facturas.
+- Pagos.
+- Aplicaciones.
+- Alertas.
+## Sesión 4 — Rendiciones
+- Registro.
+- Revisión.
+- Liquidación.
+- Regularización.
+## Sesión 5 — Factoring
+- Cesión.
+- Flujos.
+- Mora.
+- Recurso.
+- Pago directo.
+Cada capacitación debe registrar:
+
+30
+
+- Fecha.
+- Participantes.
+- Temario.
+- Material.
+- Preguntas.
+- Asistencia.
+--# 21. Criterios Go/No-Go
+## Go
+Se autoriza producción cuando:
+1. Q001 está aprobada.
+2. Q002 está aprobada.
+3. No existen defectos críticos.
+4. No existen defectos altos financieros o de seguridad.
+5. Los casos críticos pasan.
+6. Los usuarios clave aceptaron.
+7. El respaldo fue restaurado.
+8. El rollback fue revisado.
+9. Los permisos están configurados.
+10. La documentación fue entregada.
+11. Los usuarios fueron capacitados.
+12. Existe responsable de soporte.
+--## No-Go
+Se cancela o posterga el despliegue cuando:
+- Los saldos son inconsistentes.
+- Se sobreaplican movimientos.
+- Se pierden adjuntos.
+- Los permisos exponen datos.
+- Un respaldo no puede restaurarse.
+- Una migración presenta diferencias.
+- Un flujo financiero crítico falla.
+- El propietario del proceso no acepta.
+--# 22. Entregables finales
+```text id="kzwehs"
+Informe de Q001
+Matriz de pruebas
+Evidencias
+
+31
+
+Registro de defectos
+Informe de regresión
+Plan de UAT
+Casos UAT
+Acta de aceptación
+Plan de despliegue
+Plan de rollback
+Manual técnico
+Manuales de usuario
+Registro de capacitación
+Inventario de configuración
+Acta de cierre
+Backlog posterior
+
+23. Estructura documental recomendada
+```text id="ry438g" docs/ ├── arquitectura/ │ ├── arquitectura_general.md │ ├── modelos.md
+│ ├── servicios.md │ └── integraciones.md │ ├── pruebas/ │ ├── estrategia.md │ ├──
+matriz_cobertura.xlsx │ ├── casos_e2e/ │ ├── resultados/ │ ├── defectos/ │ └──
+informe_final.md │ ├── aceptacion/ │ ├── plan_uat.md │ ├── casos_uat/ │ ├──
+observaciones.xlsx │ ├── acta_aceptacion.md │ └── acta_cierre.md │ ├── despliegue/ │
+├── requisitos.md │ ├── variables_entorno.md │ ├── despliegue.md │ ├── rollback.md │
+├── backup_restore.md │ └── monitoreo.md │ ├── operacion/ │ ├── banco.md │ ├──
+facturacion.md │ ├── rendiciones.md │ ├── factoring.md │ └── soporte.md │ └──
+capacitacion/ ├── materiales/ ├── asistencia/ └── preguntas_frecuentes.md
+
+--# 24. Automatización de CI
+El pipeline debe ejecutar como mínimo:
+```text id="rttix4"
+Instalar dependencias
+→ revisar formato o lint
+→ validar migraciones
+→ ejecutar pruebas
+→ generar cobertura
+→ construir artefacto
+
+Validaciones recomendadas:
+```bash id="igpmvs" python manage.py makemigrations --check --dry-run python manage.py check
+pytest
+
+32
+
+No debe desplegarse una versión cuando:
+- Las pruebas fallan.
+- Existen migraciones no generadas.
+- El chequeo de Django falla.
+- El artefacto no puede construirse.
+--# 25. Modelos y migraciones
+Q001 y Q002 no requieren nuevos modelos de dominio obligatorios.
+La evidencia puede administrarse mediante:
+- Repositorio.
+- Herramienta de seguimiento.
+- Documentos.
+- Sistema de tickets.
+Solo se justificaría crear modelos como:
+```text id="avnczt"
+PlanPrueba
+CasoPrueba
+EjecucionPrueba
+ObservacionAceptacion
+
+cuando la empresa decida administrar QA dentro del propio sistema.
+Para el alcance actual no se recomienda agregar complejidad de producción únicamente para
+documentar la aceptación.
+
+26. Definición de terminado de Q001
+Q001 termina cuando:
+• Los escenarios E2E fueron ejecutados.
+• Existe evidencia.
+• Los flujos entre módulos funcionan.
+• Los estados son consistentes.
+• Los saldos son correctos.
+• Los permisos están validados.
+• Las concurrencias están controladas.
+• Las reversas funcionan.
+• Los reportes coinciden.
+• La restauración fue probada.
+
+33
+
+• No existen defectos bloqueantes.
+• Existe informe final de QA.
+
+27. Definición de terminado de Q002
+Q002 termina cuando:
+• Los usuarios ejecutaron casos reales controlados.
+• Las observaciones fueron clasificadas.
+• Los defectos críticos y altos fueron resueltos.
+• Se ejecutó regresión.
+• Los usuarios validaron las correcciones.
+• Existe acta de aceptación.
+• Se documentaron riesgos aceptados.
+• Se preparó el despliegue.
+• Se revisó el rollback.
+• Se entregaron manuales.
+• Se realizó capacitación.
+• Se definió soporte.
+• Existe autorización Go/No-Go.
+• Se firmó el cierre correspondiente.
+
+28. Riesgos del bloque
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Probar módulos por separado
+
+Alto
+
+Escenarios E2E transversales
+
+Utilizar datos inconsistentes
+
+Alto
+
+Dataset controlado
+
+Probar con datos personales
+
+Alto
+
+Anonimización
+
+Confundir defecto con nuevo alcance
+
+Alto
+
+Clasificación formal
+
+Aceptar sin evidencia
+
+Alto
+
+Matriz y acta
+
+Corregir sin regresión
+
+Alto
+
+Suite automática
+
+Desplegar con defectos críticos
+
+Crítico
+
+Criterio No-Go
+
+Backup no restaurable
+
+Crítico
+
+Prueba de restauración
+
+Rollback no definido
+
+Alto
+
+Procedimiento previo
+
+Migración descuadrada
+
+Crítico
+
+Comparación de cantidades y montos
+
+Permisos incompletos
+
+Crítico
+
+Pruebas por rol y objeto
+
+Autoaprobaciones
+
+Alto
+
+Segregación
+
+Reportes distintos de la operación
+
+Alto
+
+Selectores comunes
+
+34
+
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Datos reales en evidencias
+
+Alto
+
+Sanitización
+
+Archivos temporales expuestos
+
+Alto
+
+Limpieza y rutas protegidas
+
+Usuarios sin capacitación
+
+Medio/alto
+
+Plan formal
+
+Aceptación verbal
+
+Alto
+
+Acta firmada
+
+Cambios durante UAT
+
+Alto
+
+Congelamiento de versión
+
+Producción sin monitoreo
+
+Alto
+
+Plan de estabilización
+
+No definir soporte
+
+Alto
+
+Matriz de responsables
+
+29. Resultado consolidado del proyecto
+Con las trece partes quedan especificadas las siguientes áreas:
+```text id="fn6zup" Parte 1 Fundaciones transversales
+Partes 2, 3, 9 y 10 Banco y conciliación
+Partes 4 y 5 Facturación y cobranza
+Partes 6, 7 y 8 Rendiciones
+Partes 11 y 12 Factoring
+Parte 13 Calidad, aceptación y cierre
+
+El sistema planificado cubre:
+```text id="yv646c"
+Usuarios y permisos
+Auditoría
+Archivos
+Bancos
+Cuentas
+Cartolas
+Movimientos
+Conciliaciones
+Facturas
+Cobranza
+Pagos
+Rendiciones
+Fondos
+Gastos
+Liquidaciones
+
+35
+
+Factoring
+Alertas
+Dashboards
+Reportes
+Pruebas
+Aceptación
+
+30. Cierre final
+Este bloque completa la especificación funcional y técnica de las 79 tareas operativas.
+El cierre de la especificación no significa automáticamente que:
+• El código esté implementado.
+• Las pruebas hayan sido ejecutadas.
+• Los usuarios hayan aceptado.
+• El sistema esté desplegado.
+La conclusión correcta es:
+```text id="yxnydy" La ruta de implementación, prueba, aceptación y despliegue ha quedado definida.
+
+El proyecto podrá declararse terminado en producción únicamente cuando:
+```text id="gm4uae"
+Implementación completada
++
+Q001 aprobada
++
+Q002 aprobada
++
+Acta de aceptación
++
+Despliegue verificado
++
+Soporte operativo activo
+
+36
+
+

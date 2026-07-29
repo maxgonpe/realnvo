@@ -1,0 +1,2734 @@
+Bloque 8 — Mini-especificaciones funcionales y
+técnicas
+Rendiciones: R018 a R022
+
+1. Propósito del bloque
+Este bloque completa el módulo de Rendiciones mediante funciones de control, análisis, respaldo y
+puesta en producción.
+Incluye:
+• Alertas automáticas.
+• Bandejas de trabajo.
+• Identificación de fondos sin rendir.
+• Control de rendiciones atrasadas.
+• Seguimiento de observaciones.
+• Seguimiento de devoluciones y reembolsos.
+• Exportación individual y consolidada.
+• Informes PDF y Excel.
+• Dashboard con indicadores.
+• Pruebas integrales del módulo.
+• Manual operativo para cada tipo de usuario.
+Al finalizar este bloque, el módulo no solo permitirá registrar y procesar rendiciones, sino también:
+
+Detectar pendientes
+→ priorizar trabajo
+→ analizar resultados
+→ obtener respaldos
+→ comprobar el funcionamiento
+→ capacitar a los usuarios
+
+2. Resumen del bloque
+Código
+
+Actividad
+
+Horas
+
+Recurso
+
+Cobertura actual
+
+Resultado
+
+R018
+
+Alertas de
+rendiciones
+
+4h
+
+Backend
+
+No cubierta
+específicamente
+
+Alertas operativas
+sin duplicados
+
+1
+
+Código
+
+Actividad
+
+Horas
+
+Recurso
+
+Cobertura actual
+
+Resultado
+
+R019
+
+Exportación
+PDF y Excel
+
+6h
+
+Frontend
+
+Sin modelo
+adicional
+obligatorio
+
+Respaldo
+individual y
+reportes
+
+R020
+
+Dashboard de
+rendiciones
+
+8h
+
+Frontend
+
+Sin modelo
+adicional inicial
+
+Indicadores por
+estado,
+responsable y
+diferencia
+
+R021
+
+Pruebas del
+módulo
+
+12 h
+
+QA / Tester
+
+Pendiente
+
+Validación integral
+del flujo
+
+R022
+
+Manual de
+rendiciones
+
+6h
+
+Documentación
+
+Pendiente
+
+Guía operativa y
+casos frecuentes
+
+El bloque suma 36 horas.
+La Carta Gantt define los siguientes resultados:
+• R018: pendientes, vencidas, observadas y fondos sin rendir.
+• R019: resumen y detalle reproducibles para respaldo.
+• R020: indicadores por responsable, estado y diferencia.
+• R021: pruebas unitarias, de integración y casos de liquidación.
+• R022: guía operativa y resolución de casos frecuentes.
+
+3. Secuencia funcional
+R018 Alertas
+→ R019 Exportaciones
+→ R020 Dashboard
+→ R021 Pruebas integrales
+→ R022 Manual de usuario
+El orden es apropiado porque:
+1. Las alertas definen qué situaciones deben controlarse.
+2. Las exportaciones fijan la estructura de información reproducible.
+3. El dashboard reutiliza esos mismos selectores e indicadores.
+4. Las pruebas validan los flujos y salidas.
+5. El manual documenta la versión funcional ya comprobada.
+
+2
+
+4. Cobertura actual de modelos
+El modelo Rendicion ya posee los estados necesarios para diferenciar borradores, presentadas,
+revisadas, observadas, aprobadas, liquidadas y cerradas.
+LiquidacionRendicion ya distingue:
+• Rendición cuadrada.
+• Responsable debe devolver.
+• Empresa debe reembolsar.
+PagoLiquidacionRendicion ya identifica devoluciones y reembolsos, por lo que puede utilizarse
+para detectar regularizaciones financieras pendientes.
+Existe un modelo AlertaCobranza , pero sus tipos están orientados a facturas, factoring y pagos sin
+factura.
+Por tanto, no es recomendable utilizar AlertaCobranza para Rendiciones. Se debe crear una entidad
+específica o una alerta transversal suficientemente genérica.
+
+5. Decisión arquitectónica sobre alertas
+Existen dos alternativas.
+
+Alternativa A — Modelo específico
+AlertaRendicion
+Ventajas:
+• Reglas claras.
+• Relaciones directas.
+• Menor complejidad.
+• Fácil de consultar.
+• Adecuado para el alcance actual.
+
+Alternativa B — Modelo transversal
+AlertaOperacional
+Podría manejar:
+• Cobranza.
+• Banco.
+• Factoring.
+
+3
+
+• Rendiciones.
+• Otros módulos futuros.
+Ventajas:
+• Bandeja única.
+• Menos modelos.
+Desventajas:
+• Mayor abstracción.
+• Relaciones genéricas.
+• Más complejidad para el MVP.
+
+Recomendación
+Para la primera versión se recomienda:
+
+AlertaRendicion
+La interfaz puede mostrar posteriormente alertas de distintos módulos en una bandeja consolidada sin
+obligar a que todas compartan inmediatamente la misma tabla.
+
+R018 — Alertas de rendiciones
+1. Objetivo
+Detectar automáticamente situaciones que requieren atención y asignarlas al usuario o rol
+correspondiente.
+Las alertas no deben limitarse a mostrar que una rendición está “pendiente”. Deben indicar:
+• Qué ocurrió.
+• Desde cuándo.
+• Quién debe actuar.
+• Qué nivel de urgencia tiene.
+• Qué acción permitirá resolverla.
+
+2. Modelo propuesto
+class AlertaRendicion(ModeloAuditoria):
+class Tipo(models.TextChoices):
+BORRADOR_ANTIGUO = (
+"BORRADOR_ANTIGUO",
+"Borrador sin presentar",
+
+4
+
+)
+RENDICION_VENCIDA = (
+"RENDICION_VENCIDA",
+"Rendición no presentada dentro del plazo",
+)
+PRESENTADA_SIN_REVISOR = (
+"PRESENTADA_SIN_REVISOR",
+"Presentada sin revisor asignado",
+)
+REVISION_VENCIDA = (
+"REVISION_VENCIDA",
+"Revisión fuera de plazo",
+)
+OBSERVADA_SIN_CORREGIR = (
+"OBSERVADA_SIN_CORREGIR",
+"Observada sin corregir",
+)
+APROBADA_SIN_LIQUIDAR = (
+"APROBADA_SIN_LIQUIDAR",
+"Aprobada sin liquidación",
+)
+FONDO_SIN_RENDIR = (
+"FONDO_SIN_RENDIR",
+"Fondo entregado sin rendir",
+)
+DEVOLUCION_PENDIENTE = (
+"DEVOLUCION_PENDIENTE",
+"Devolución pendiente",
+)
+REEMBOLSO_PENDIENTE = (
+"REEMBOLSO_PENDIENTE",
+"Reembolso pendiente",
+)
+REGULARIZACION_PARCIAL = (
+"REGULARIZACION_PARCIAL",
+"Regularización parcial",
+)
+CONCILIACION_PENDIENTE = (
+"CONCILIACION_PENDIENTE",
+"Regularización sin conciliación",
+)
+DOCUMENTO_OBSERVADO = (
+"DOCUMENTO_OBSERVADO",
+"Documento observado",
+)
+OTRO = "OTRO", "Otro"
+class Severidad(models.TextChoices):
+BAJA = "BAJA", "Baja"
+MEDIA = "MEDIA", "Media"
+ALTA = "ALTA", "Alta"
+
+5
+
+CRITICA = "CRITICA", "Crítica"
+class Estado(models.TextChoices):
+ABIERTA = "ABIERTA", "Abierta"
+EN_GESTION = "EN_GESTION", "En gestión"
+RESUELTA = "RESUELTA", "Resuelta"
+DESCARTADA = "DESCARTADA", "Descartada"
+rendicion = models.ForeignKey(
+Rendicion,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="alertas",
+)
+entrega_fondo = models.ForeignKey(
+EntregaFondo,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="alertas",
+)
+liquidacion = models.ForeignKey(
+LiquidacionRendicion,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="alertas",
+)
+pago_liquidacion = models.ForeignKey(
+PagoLiquidacionRendicion,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="alertas",
+)
+tipo = models.CharField(
+max_length=40,
+choices=Tipo.choices,
+)
+severidad = models.CharField(
+max_length=20,
+choices=Severidad.choices,
+default=Severidad.MEDIA,
+)
+
+6
+
+estado = models.CharField(
+max_length=20,
+choices=Estado.choices,
+default=Estado.ABIERTA,
+)
+titulo = models.CharField(max_length=200)
+detalle = models.TextField()
+fecha_limite = models.DateField(
+null=True,
+blank=True,
+)
+responsable_usuario = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_rendicion_asignadas",
+)
+responsable_grupo = models.ForeignKey(
+Group,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_rendicion",
+)
+clave_control = models.CharField(
+max_length=200,
+unique=True,
+)
+resuelta_en = models.DateTimeField(
+null=True,
+blank=True,
+)
+resuelta_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_rendicion_resueltas",
+)
+motivo_resolucion = models.TextField(blank=True)
+
+7
+
+3. Relación válida
+Cada alerta debe apuntar al objeto principal que la origina.
+Ejemplos:
+
+BORRADOR_ANTIGUO
+→ Rendicion
+
+FONDO_SIN_RENDIR
+→ EntregaFondo
+
+DEVOLUCION_PENDIENTE
+→ LiquidacionRendicion
+
+CONCILIACION_PENDIENTE
+→ PagoLiquidacionRendicion
+Puede existir además una relación con la rendición para facilitar navegación y filtros.
+
+4. Prevención de duplicados
+El proceso automático se ejecutará periódicamente. Sin un control, podría crear la misma alerta todos
+los días.
+Se utilizará:
+
+clave_control
+Ejemplos:
+
+BORRADOR_ANTIGUO:rendicion:125
+FONDO_SIN_RENDIR:entrega:84
+DEVOLUCION_PENDIENTE:liquidacion:32
+CONCILIACION_PENDIENTE:pago:51
+Mientras exista una alerta abierta o en gestión con esa clave, no se crea otra.
+Cuando la condición desaparece:
+
+8
+
+Alerta → RESUELTA
+Si la condición vuelve a aparecer después de una reapertura, podrá crearse una nueva clave
+incorporando:
+• Número de ciclo.
+• Fecha de reapertura.
+• Identificador de evento.
+
+5. Políticas de plazo
+Los plazos no deben quedar escritos directamente en cada vista.
+Se recomienda una configuración central:
+
+PLAZOS_RENDICIONES = {
+"DIAS_MAXIMO_BORRADOR": 15,
+"DIAS_PRESENTAR_DESDE_FIN_PERIODO": 5,
+"DIAS_ASIGNAR_REVISOR": 2,
+"DIAS_MAXIMO_REVISION": 5,
+"DIAS_CORREGIR_OBSERVACION": 5,
+"DIAS_LIQUIDAR_APROBADA": 3,
+"DIAS_DEVOLVER": 5,
+"DIAS_REEMBOLSAR": 5,
+"DIAS_CONCILIAR": 3,
+}
+Estos valores son ejemplos técnicos. Los valores definitivos deben provenir de la política administrativa
+de la empresa.
+
+6. Tipos de alerta
+6.1 Borrador antiguo
+Condición:
+
+Estado = BORRADOR
+y fecha de creación supera el plazo
+Destinatario:
+• Responsable.
+
+9
+
+Resolución:
+• Presentar.
+• Anular borrador.
+• Justificar extensión.
+
+6.2 Rendición vencida
+Condición:
+
+Período terminó
+y la rendición no fue presentada
+dentro del plazo
+Destinatarios:
+• Responsable.
+• Supervisor o Finanzas, según severidad.
+
+6.3 Presentada sin revisor
+Condición:
+
+Estado = PRESENTADA
+y revisor_actual es vacío
+y supera el plazo de asignación
+Destinatario:
+• Grupo de revisores.
+• Administrador del módulo.
+
+6.4 Revisión vencida
+Condición:
+
+Estado = EN_REVISION
+y revisión supera plazo
+Destinatario:
+• Revisor asignado.
+
+10
+
+Escalamiento:
+• Supervisor.
+• Administrador.
+
+6.5 Observada sin corregir
+Condición:
+
+Estado = OBSERVADA
+y no existe nueva presentación
+dentro del plazo
+Destinatario:
+• Responsable.
+
+6.6 Fondo sin rendir
+Condición:
+
+Entrega de fondo activa
+sin rendición cerrada
+y supera plazo definido
+El monto mostrado debe ser el saldo todavía no regularizado, no necesariamente el monto original
+completo.
+Destinatarios:
+• Responsable.
+• Finanzas.
+
+6.7 Aprobada sin liquidar
+Condición:
+
+Estado = APROBADA
+sin LiquidacionRendicion
+
+11
+
+Destinatario:
+• Finanzas.
+
+6.8 Devolución pendiente
+Condición:
+
+Liquidación = RESPONSABLE_DEVUELVE
+y saldo_por_regularizar > 0
+Destinatarios:
+• Responsable.
+• Finanzas.
+
+6.9 Reembolso pendiente
+Condición:
+
+Liquidación = EMPRESA_REEMBOLSA
+y saldo_por_regularizar > 0
+Destinatarios:
+• Finanzas.
+• Aprobador de pagos.
+
+6.10 Conciliación pendiente
+Condición:
+
+Pago ejecutado
+y saldo_por_conciliar > 0
+Destinatario:
+• Finanzas o conciliador bancario.
+
+12
+
+7. Severidad
+Condición
+
+Severidad inicial
+
+Borrador próximo a plazo
+
+Baja
+
+Borrador vencido
+
+Media
+
+Rendición vencida
+
+Alta
+
+Revisión vencida
+
+Alta
+
+Fondo sin rendir
+
+Alta
+
+Devolución pendiente
+
+Alta
+
+Reembolso pendiente
+
+Alta
+
+Conciliación pendiente
+
+Media
+
+Diferencia alta sin regularizar
+
+Crítica
+
+Documento con posible fraude
+
+Crítica
+
+La severidad puede incrementarse en función de:
+• Días de atraso.
+• Monto involucrado.
+• Reincidencia.
+• Tipo de error.
+• Estado del proceso.
+
+8. Proceso automático
+Comando:
+
+python manage.py generar_alertas_rendiciones
+Flujo:
+
+Actualizar estados operativos
+→ buscar condiciones
+→ crear alertas faltantes
+→ actualizar severidades
+→ reasignar responsables cuando corresponda
+→ resolver condiciones corregidas
+→ registrar resumen de ejecución
+Este comando debe ser idempotente:
+
+13
+
+Ejecutarlo dos veces
+no genera alertas duplicadas
+
+9. Notificaciones
+La primera fase puede limitarse a:
+• Bandeja interna.
+• Contador en menú.
+• Indicadores en dashboard.
+Posteriormente podrán agregarse:
+• Correo.
+• Notificación dentro de la aplicación.
+• Integración con mensajería.
+La existencia de una alerta no debe depender de que el correo sea enviado correctamente.
+
+10. Bandeja de alertas
+URL:
+
+/administracion/rendiciones/alertas/
+Filtros:
+• Tipo.
+• Severidad.
+• Estado.
+• Responsable.
+• Revisor.
+• Fecha límite.
+• Días de atraso.
+• Rendición.
+• Área.
+• Monto.
+• Asignada a mí.
+
+11. Columnas
+Columna
+
+Contenido
+
+Severidad
+
+Badge
+
+14
+
+Columna
+
+Contenido
+
+Tipo
+
+Situación
+
+Rendición
+
+Número
+
+Responsable
+
+Persona
+
+Monto
+
+Cuando corresponda
+
+Fecha límite
+
+Fecha
+
+Atraso
+
+Días
+
+Asignado
+
+Usuario o grupo
+
+Estado
+
+Abierta, en gestión o resuelta
+
+Acción
+
+Abrir proceso
+
+12. Acciones
+• Abrir rendición.
+• Abrir fondo.
+• Iniciar revisión.
+• Registrar devolución.
+• Generar orden de reembolso.
+• Conciliar.
+• Marcar en gestión.
+• Resolver.
+• Descartar con motivo.
+• Reasignar.
+Resolver manualmente no debe ocultar permanentemente una condición que continúa activa. El
+siguiente proceso automático deberá reabrirla o generar una nueva alerta.
+
+13. Servicio
+services/rendiciones/alertas.py
+Funciones:
+
+generar_alertas_rendiciones()
+generar_alertas_borradores()
+generar_alertas_revision()
+generar_alertas_fondos()
+generar_alertas_liquidacion()
+resolver_alertas_corregidas()
+actualizar_severidades()
+
+15
+
+asignar_alerta()
+resolver_alerta()
+descartar_alerta()
+
+14. Permisos
+view_alertarendicion
+gestionar_alertarendicion
+resolver_alertarendicion
+descartar_alertarendicion
+reasignar_alertarendicion
+Los responsables solo deben ver alertas relacionadas con sus propias rendiciones.
+
+15. Auditoría
+Registrar:
+• Creación automática.
+• Cambio de severidad.
+• Asignación.
+• Inicio de gestión.
+• Resolución.
+• Descarte.
+• Reaparición.
+• Usuario.
+• Motivo.
+
+16. Pruebas
+• Borrador antiguo.
+• Rendición vencida.
+• Presentada sin revisor.
+• Revisión vencida.
+• Observada sin corregir.
+• Fondo sin rendir.
+• Aprobada sin liquidar.
+• Devolución pendiente.
+• Reembolso pendiente.
+• Conciliación pendiente.
+• Idempotencia.
+• Cambio de severidad.
+• Resolución automática.
+• Descarte manual.
+
+16
+
+• Reaparición.
+• Permisos por responsable.
+• Asignación por grupo.
+
+17. Criterios de aceptación
+• Las situaciones pendientes generan alertas.
+• Las alertas no se duplican.
+• Se asignan al usuario o grupo correcto.
+• La severidad cambia según atraso y monto.
+• Las condiciones corregidas se resuelven.
+• Las alertas contienen acceso directo a la acción.
+• Las resoluciones quedan auditadas.
+• El comando puede ejecutarse repetidamente.
+
+18. Evaluación de esfuerzo
+Las 4 horas de la Gantt permiten implementar una primera bandeja y algunas reglas principales.
+Para incluir todos los tipos, escalamiento, correos, pruebas y permisos, probablemente será necesario
+distribuir parte del trabajo entre:
+• Servicios transversales.
+• Dashboard.
+• Pruebas del módulo.
+• Configuración operativa.
+
+R019 — Exportación PDF y Excel
+1. Objetivo
+Generar respaldos reproducibles de una rendición individual y reportes consolidados de varias
+rendiciones.
+La Carta Gantt exige un resumen y detalle que puedan reproducirse como evidencia.
+
+2. Tipos de exportación
+2.1 Expediente individual PDF
+Documento legible para:
+• Archivo.
+
+17
+
+• Revisión.
+• Aprobación.
+• Auditoría.
+• Entrega a terceros autorizados.
+
+2.2 Detalle individual Excel
+Archivo con todas las filas, montos, estados y referencias.
+
+2.3 Reporte consolidado Excel
+Permite exportar múltiples rendiciones aplicando los mismos filtros de la lista.
+
+2.4 Certificado de liquidación PDF
+Resume:
+• Fondos.
+• Gastos aprobados.
+• Diferencia.
+• Resultado.
+• Pagos.
+• Conciliación.
+• Cierre.
+
+3. Exportación según estado
+Borrador
+Se permite exportar, pero debe mostrar:
+
+BORRADOR — DOCUMENTO NO PRESENTADO
+No debe confundirse con una rendición aprobada.
+
+Presentada o en revisión
+Debe indicar:
+
+PENDIENTE DE APROBACIÓN
+
+18
+
+Aprobada
+Debe mostrar:
+• Aprobador.
+• Fecha.
+• Gastos aprobados.
+• Gastos rechazados.
+
+Liquidada o cerrada
+Debe utilizar los valores congelados de la liquidación.
+No debe recalcular retrospectivamente el resultado histórico utilizando datos que pudieran haber
+cambiado después.
+
+4. Contenido del PDF individual
+Portada
+• Logo.
+• Nombre de empresa.
+• Número de rendición.
+• Estado.
+• Responsable.
+• RUT.
+• Cargo.
+• Período.
+• Fecha de generación.
+• Usuario generador.
+
+Resumen
+Concepto
+
+Monto
+
+Fondos entregados
+
+$500.000 CLP
+
+Gastos declarados
+
+$480.000 CLP
+
+Gastos aprobados
+
+$450.000 CLP
+
+Gastos rechazados
+
+$30.000 CLP
+
+Diferencia
+
+$50.000 CLP
+
+Resultado
+
+Responsable devuelve
+
+19
+
+Fondos
+• Fecha.
+• Forma.
+• Referencia.
+• Monto.
+• Estado bancario.
+
+Detalle de gastos
+• Fecha.
+• Documento.
+• Número.
+• Proveedor.
+• Categoría.
+• Descripción.
+• Neto.
+• IVA.
+• Total.
+• Estado de revisión.
+• Monto aprobado.
+• Observación.
+
+Validaciones
+• Errores.
+• Advertencias.
+• Justificaciones.
+
+Aprobaciones
+• Presentación.
+• Revisión.
+• Observaciones.
+• Aprobación o rechazo.
+• Usuarios y fechas.
+
+Liquidación
+• Totales congelados.
+• Diferencia.
+• Resultado.
+• Usuario que liquida.
+
+Regularización
+• Devoluciones o reembolsos.
+• Fechas.
+• Referencias.
+• Conciliación bancaria.
+
+20
+
+Adjuntos
+El PDF no tiene que incorporar físicamente todos los comprobantes en la primera versión.
+Debe incluir un índice:
+Archivo
+
+Tipo
+
+Hash
+
+Cargado por
+
+Una versión posterior puede anexar automáticamente imágenes y PDF de respaldo.
+
+5. Estructura del Excel individual
+Hojas recomendadas:
+
+Resumen
+Fondos
+Gastos
+Validaciones
+Historial
+Liquidación
+Adjuntos
+
+Hoja Resumen
+• Cabecera.
+• Responsable.
+• Período.
+• Estado.
+• Totales.
+• Diferencia.
+• Resultado.
+
+Hoja Gastos
+Cada gasto en una fila, con columnas técnicas suficientes para auditoría.
+
+Hoja Historial
+• Fecha.
+• Usuario.
+• Acción.
+• Estado anterior.
+• Estado nuevo.
+• Comentario.
+
+21
+
+6. Reporte consolidado
+Filtros:
+• Período.
+• Responsable.
+• Estado.
+• Área.
+• Resultado de liquidación.
+• Con fondos pendientes.
+• Con devolución.
+• Con reembolso.
+• Con alertas.
+• Con documentos observados.
+• Fecha de cierre.
+Columnas:
+Número
+
+Responsable
+
+Período
+
+Estado
+
+Fondos
+
+7. Reproducibilidad
+Cada exportación debe incluir:
+• Fecha y hora.
+• Usuario.
+• Filtros.
+• Estado del documento.
+• Versión del formato.
+• Zona horaria.
+• Moneda.
+• Identificador único.
+Se recomienda un modelo opcional:
+
+class ExportacionRendicion(ModeloAuditoria):
+class Formato(models.TextChoices):
+PDF = "PDF", "PDF"
+XLSX = "XLSX", "Excel"
+CSV = "CSV", "CSV"
+rendicion = models.ForeignKey(
+Rendicion,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+
+22
+
+Declarado
+
+Aprobado
+
+Diferencia
+
+Resultado
+
+related_name="exportaciones",
+)
+formato = models.CharField(
+max_length=10,
+choices=Formato.choices,
+)
+tipo_reporte = models.CharField(max_length=50)
+filtros = models.JSONField(default=dict, blank=True)
+cantidad_registros = models.PositiveIntegerField(default=0)
+hash_archivo = models.CharField(max_length=64, blank=True)
+nombre_archivo = models.CharField(max_length=255)
+No es obligatorio almacenar permanentemente cada archivo generado. Puede conservarse solo:
+• Metadatos.
+• Hash.
+• Evento de auditoría.
+
+8. Arquitectura
+Formulario de filtros
+→ selector de datos
+→ estructura normalizada
+→ generador PDF o Excel
+→ respuesta protegida
+→ auditoría
+La pantalla y la exportación deben usar los mismos selectores.
+No se debe construir una consulta distinta para el PDF y otra para el Excel si ambas representan el
+mismo informe.
+
+9. Servicios
+services/rendiciones/reportes/
+├── datos.py
+├── expediente_pdf.py
+├── liquidacion_pdf.py
+├── rendicion_xlsx.py
+├── consolidado_xlsx.py
+└── archivos.py
+
+23
+
+Funciones:
+
+obtener_datos_expediente()
+generar_expediente_pdf()
+generar_liquidacion_pdf()
+generar_rendicion_xlsx()
+generar_consolidado_xlsx()
+registrar_exportacion()
+
+10. Nombres de archivo
+Ejemplos:
+
+rendicion_REN-2026-000123.pdf
+rendicion_REN-2026-000123.xlsx
+liquidacion_REN-2026-000123.pdf
+rendiciones_2026-01-01_2026-12-31.xlsx
+Los nombres deben normalizarse y no incorporar texto no confiable del usuario.
+
+11. Seguridad
+1. Solo usuarios autorizados pueden exportar.
+2. La exportación respeta el alcance por objeto.
+3. El responsable solo exporta sus rendiciones.
+4. Los archivos no se guardan en rutas públicas.
+5. Los temporales se eliminan.
+6. Los datos bancarios se enmascaran cuando corresponda.
+7. Las descargas quedan auditadas.
+8. No se incluyen adjuntos sin permiso.
+9. El PDF no expone rutas internas.
+10. El Excel neutraliza valores que puedan interpretarse como fórmulas.
+
+12. URLs
+/administracion/rendiciones/<pk>/exportar/pdf/
+/administracion/rendiciones/<pk>/exportar/excel/
+/administracion/rendiciones/<pk>/liquidacion/pdf/
+/administracion/rendiciones/exportar/
+
+24
+
+13. Vistas
+RendicionExportarPDFView
+RendicionExportarExcelView
+LiquidacionExportarPDFView
+RendicionesExportarConsolidadoView
+
+14. Permisos
+exportar_rendicion
+exportar_rendiciones_consolidadas
+exportar_liquidacionrendicion
+exportar_datos_sensibles_rendicion
+
+15. Auditoría
+Registrar:
+• Usuario.
+• Fecha.
+• Formato.
+• Rendición o filtros.
+• Número de filas.
+• Nombre.
+• Hash.
+• Resultado de la generación.
+
+16. Pruebas
+• PDF de borrador.
+• PDF de presentada.
+• PDF de aprobada.
+• PDF de liquidada.
+• Excel individual.
+• Excel consolidado.
+• Totales iguales a pantalla.
+• Filtros iguales al listado.
+• Adjuntos listados.
+• Sin datos.
+• Caracteres especiales.
+• Montos CLP.
+
+25
+
+• Usuario no autorizado.
+• Archivo temporal eliminado.
+• Fórmula maliciosa en Excel.
+• Auditoría.
+
+17. Criterios de aceptación
+• Una rendición puede exportarse en PDF y Excel.
+• El estado queda claramente identificado.
+• Los totales coinciden con el sistema.
+• Las liquidaciones usan snapshot.
+• El consolidado respeta filtros.
+• Los documentos se generan sin rutas públicas.
+• La exportación queda auditada.
+• El archivo puede reproducirse usando los mismos datos y filtros.
+
+R020 — Dashboard de rendiciones
+1. Objetivo
+Presentar una vista ejecutiva y operativa del estado del módulo.
+La Carta Gantt solicita indicadores por:
+• Responsable.
+• Estado.
+• Diferencia.
+El dashboard debe permitir identificar:
+
+Qué está pendiente
+Quién debe actuar
+Cuánto dinero está involucrado
+Qué procesos están atrasados
+
+2. Dashboard según rol
+No todos los usuarios necesitan el mismo panel.
+
+26
+
+Responsable
+Debe ver:
+• Mis borradores.
+• Mis rendiciones observadas.
+• Mis fondos pendientes.
+• Devoluciones pendientes.
+• Últimas rendiciones.
+• Alertas asignadas.
+
+Revisor
+Debe ver:
+• Presentadas sin asignar.
+• Mis revisiones.
+• Revisiones vencidas.
+• Gastos observados.
+• Monto pendiente de revisar.
+• Tiempo promedio de revisión.
+
+Finanzas
+Debe ver:
+• Fondos entregados.
+• Fondos sin rendir.
+• Rendiciones aprobadas sin liquidar.
+• Devoluciones pendientes.
+• Reembolsos pendientes.
+• Conciliaciones pendientes.
+• Diferencias financieras.
+
+Administrador o gerencia
+Debe ver:
+• Indicadores consolidados.
+• Distribución por estado.
+• Tendencias.
+• Responsables con mayor atraso.
+• Montos por categoría.
+• Montos pendientes de regularización.
+
+3. Filtros generales
+• Fecha desde.
+
+27
+
+• Fecha hasta.
+• Fecha de corte.
+• Responsable.
+• Área.
+• Estado.
+• Categoría.
+• Resultado.
+• Revisor.
+• Con o sin alertas.
+• Moneda.
+Los filtros deben mantenerse al navegar desde un indicador hacia el listado detallado.
+
+4. Indicadores principales
+Operativos
+Borradores
+Presentadas
+En revisión
+Observadas
+Aprobadas sin liquidar
+Liquidadas
+Cerradas
+
+Financieros
+Fondos entregados
+Gastos declarados
+Gastos aprobados
+Monto por devolver
+Monto por reembolsar
+Monto regularizado
+Monto pendiente de conciliar
+
+Control
+Fondos sin rendir
+Rendiciones vencidas
+Revisiones vencidas
+Alertas críticas
+Documentos observados
+Gastos sin documento
+
+28
+
+5. Indicadores por responsable
+Tabla:
+Responsable
+
+Fondos entregados
+
+Rendido
+
+Pendiente
+
+Alertas
+
+Última actividad
+
+Debe permitir ordenar por:
+• Mayor saldo pendiente.
+• Más días de atraso.
+• Mayor número de alertas.
+• Mayor volumen rendido.
+
+6. Indicadores por estado
+Gráfico o tabla:
+Estado
+
+Cantidad
+
+Fondos
+
+Gastos declarados
+
+Borrador
+
+10
+
+$2.500.000 CLP
+
+$1.100.000 CLP
+
+En revisión
+
+6
+
+$1.800.000 CLP
+
+$1.700.000 CLP
+
+Observada
+
+4
+
+$950.000 CLP
+
+$910.000 CLP
+
+El color no debe ser la única señal; cada estado debe estar identificado con texto.
+
+7. Diferencias financieras
+Mostrar:
+
+Cuadradas
+Responsable devuelve
+Empresa reembolsa
+Indicadores:
+• Cantidad.
+• Monto total.
+• Monto regularizado.
+• Saldo pendiente.
+• Monto conciliado.
+
+29
+
+8. Gráficos recomendados
+Distribución por estado
+• Barras o dona.
+• Cantidad de rendiciones.
+
+Evolución mensual
+• Fondos.
+• Gastos aprobados.
+• Diferencias.
+
+Gastos por categoría
+• Suma de gastos aprobados.
+• Número de documentos.
+
+Antigüedad de pendientes
+0–5 días
+6–10 días
+11–30 días
+Más de 30 días
+
+Regularizaciones
+• Devoluciones.
+• Reembolsos.
+• Pendientes.
+• Conciliadas.
+
+9. Navegación desde indicadores
+Cada tarjeta debe funcionar como acceso a una lista filtrada.
+Ejemplo:
+
+Tarjeta “Observadas: 8”
+→ /administracion/rendiciones/?estado=OBSERVADA
+
+Tarjeta “Fondos sin rendir: $3.500.000 CLP”
+→ /administracion/rendiciones/fondos/?pendientes=1
+
+30
+
+10. Selectores
+selectors/dashboard_rendiciones.py
+Funciones:
+
+obtener_indicadores_generales()
+obtener_indicadores_responsable()
+obtener_indicadores_revisor()
+obtener_indicadores_finanzas()
+obtener_distribucion_estados()
+obtener_resumen_diferencias()
+obtener_gastos_por_categoria()
+obtener_antiguedad_pendientes()
+obtener_alertas_dashboard()
+
+11. Rendimiento
+En la primera fase se usarán:
+• Agregaciones.
+• Anotaciones.
+• select_related .
+• prefetch_related .
+• Consultas separadas por indicador complejo.
+No debe calcularse cada tarjeta recorriendo objetos en Python.
+Para volúmenes altos podrá incorporarse posteriormente:
+
+class ResumenDiarioRendiciones(models.Model):
+fecha = models.DateField()
+datos = models.JSONField()
+Sin embargo, no se recomienda crear snapshots diarios antes de comprobar que las consultas reales
+presentan problemas de rendimiento.
+
+12. Caché
+Puede aplicarse una caché breve para dashboards globales:
+
+31
+
+1 a 5 minutos
+Las bandejas personales y alertas críticas deben mantenerse más actualizadas.
+La caché debe incluir en su clave:
+• Usuario o rol.
+• Filtros.
+• Período.
+• Fecha de corte.
+
+13. URL
+/administracion/rendiciones/dashboard/
+
+14. Vista
+class RendicionesDashboardView(
+LoginRequiredMixin,
+PermissionRequiredMixin,
+TemplateView,
+):
+template_name = (
+"administracion/rendiciones/dashboard.html"
+)
+
+15. Templates
+templates/administracion/rendiciones/dashboard/
+├── index.html
+├── _filtros.html
+├── _tarjetas.html
+├── _estados.html
+├── _diferencias.html
+├── _responsables.html
+├── _categorias.html
+└── _alertas.html
+
+32
+
+16. Accesibilidad
+• Indicadores con texto.
+• Gráficos acompañados por tabla.
+• Navegación mediante teclado.
+• Contraste adecuado.
+• Valores disponibles para lectores de pantalla.
+• No depender únicamente de colores.
+• Tooltips no esenciales para comprender la información.
+
+17. Permisos
+view_dashboard_rendiciones
+view_dashboard_rendiciones_global
+view_dashboard_rendiciones_financiero
+Un responsable solo debe visualizar sus propios montos, salvo permiso adicional.
+
+18. Auditoría
+La consulta normal del dashboard no requiere registrar cada acceso.
+Sí se auditarán:
+• Exportaciones.
+• Acceso a datos sensibles cuando la política lo exija.
+• Cambios de configuración.
+
+19. Pruebas
+• Dashboard de responsable.
+• Dashboard de revisor.
+• Dashboard financiero.
+• Dashboard administrador.
+• Filtros.
+• Fecha de corte.
+• Tarjetas.
+• Totales.
+• Diferencias.
+• Gráficos.
+• Navegación a listas.
+• Usuario sin permiso.
+
+33
+
+• Usuario limitado a sus datos.
+• Consultas N+1.
+• Caché con filtros.
+• Sin datos.
+
+20. Criterios de aceptación
+• El dashboard cambia según rol.
+• Los indicadores coinciden con los listados.
+• Los montos coinciden con reportes.
+• Los filtros son combinables.
+• Cada indicador permite abrir el detalle.
+• Los datos restringidos no se exponen.
+• Los gráficos tienen alternativa tabular.
+• Las consultas son eficientes.
+
+R021 — Pruebas del módulo
+1. Objetivo
+Validar que el módulo completo de Rendiciones funciona correctamente desde la creación del
+responsable hasta el cierre y la generación de reportes.
+La Carta Gantt requiere pruebas:
+• Unitarias.
+• De integración.
+• De casos de liquidación.
+La prueba debe cubrir también:
+• Permisos.
+• Archivos.
+• Alertas.
+• Dashboard.
+• Exportaciones.
+• Concurrencia.
+• Auditoría.
+
+2. Niveles de prueba
+Unitarias
+• Cálculos.
+
+34
+
+• Validaciones.
+• Estados.
+• Fingerprints.
+• Severidad.
+• Plazos.
+• Diferencias.
+• Saldos.
+
+Servicios
+• Crear rendición.
+• Presentar.
+• Revisar.
+• Aprobar.
+• Liquidar.
+• Devolver.
+• Reembolsar.
+• Conciliar.
+• Cerrar.
+
+Integración
+• Relación entre modelos.
+• Banco.
+• Archivos.
+• Usuarios.
+• Alertas.
+• Exportaciones.
+
+Vistas
+• Formularios.
+• Filtros.
+• Paginación.
+• Botones.
+• Mensajes.
+• Redirecciones.
+
+Seguridad
+• Permisos.
+• Alcance por objeto.
+• Descarga protegida.
+• Autoaprobación.
+• Escalamiento de rol.
+
+Rendimiento
+• Consultas.
+• Dashboard.
+
+35
+
+• Exportaciones.
+• Listados.
+
+3. Escenarios funcionales mínimos
+Escenario 1 — Rendición cuadrada
+Fondo entregado:
+Gastos aprobados:
+
+$500.000 CLP
+$500.000 CLP
+
+Resultado:
+
+CUADRADA
+→ sin devolución
+→ sin reembolso
+→ liquidación regularizada
+→ cierre
+
+Escenario 2 — Responsable devuelve
+Fondo entregado:
+Gastos aprobados:
+Diferencia:
+
+$500.000 CLP
+$430.000 CLP
+$70.000 CLP
+
+Resultado:
+
+RESPONSABLE_DEVUELVE
+→ devolución
+→ ingreso bancario
+→ conciliación
+→ cierre
+
+Escenario 3 — Empresa reembolsa
+Fondo entregado:
+Gastos aprobados:
+Diferencia:
+
+$300.000 CLP
+$380.000 CLP
+-$80.000 CLP
+
+Resultado:
+
+36
+
+EMPRESA_REEMBOLSA
+→ orden de pago
+→ aprobación
+→ egreso bancario
+→ conciliación
+→ cierre
+
+Escenario 4 — Sin fondo entregado
+Fondos:
+Gastos aprobados:
+
+$0 CLP
+$120.000 CLP
+
+Resultado:
+
+Empresa reembolsa $120.000 CLP
+
+Escenario 5 — Múltiples fondos
+Fondo A:
+Fondo B:
+Fondo C:
+
+$200.000 CLP
+$150.000 CLP
+$50.000 CLP
+
+Resultado:
+
+Total fondos:
+
+$400.000 CLP
+
+Escenario 6 — Observación y corrección
+Rendición presentada
+→ gasto observado
+→ responsable corrige documento
+→ presenta nuevamente
+→ revisor aprueba
+Debe conservarse todo el historial.
+
+37
+
+Escenario 7 — Aprobación parcial
+Gasto declarado:
+Monto aprobado:
+
+$100.000 CLP
+$80.000 CLP
+
+Resultado:
+• El gasto queda aprobado parcialmente.
+• La diferencia queda justificada.
+• La liquidación usa $80.000 CLP.
+
+Escenario 8 — Gasto rechazado
+El gasto permanece en el total declarado, pero no en el total aprobado.
+
+Escenario 9 — Documento duplicado
+Factura con mismo RUT
++ número
++ monto
+Resultado:
+• Error documental.
+• No se puede presentar sin resolución autorizada.
+
+Escenario 10 — Gasto sin documento
+Resultado esperado:
+• Justificación obligatoria.
+• Categoría autorizada.
+• Advertencia o aprobación especial.
+
+Escenario 11 — Devolución parcial
+Debe devolver:
+Pago 1:
+Pago 2:
+
+$100.000 CLP
+$60.000 CLP
+$40.000 CLP
+
+Estados:
+
+38
+
+PENDIENTE
+→ PARCIAL
+→ REGULARIZADA
+→ CONCILIADA
+
+Escenario 12 — Reembolso parcial
+Misma lógica aplicada a pagos de empresa.
+
+Escenario 13 — Conciliación con varios movimientos
+Un pago de liquidación se cubre con dos movimientos bancarios.
+
+Escenario 14 — Movimiento compartido
+Un movimiento bancario se distribuye entre:
+• Dos reembolsos.
+• Otro destino financiero.
+No debe superarse el movimiento.
+
+Escenario 15 — Rendición observada fuera de plazo
+Resultado:
+• Alerta abierta.
+• Responsable asignado.
+• Escalamiento según severidad.
+
+Escenario 16 — Fondo sin rendir
+Resultado:
+• Alerta.
+• Monto pendiente.
+• Acceso a rendición o fondo.
+
+39
+
+Escenario 17 — Exportación
+PDF y Excel deben coincidir con los datos de pantalla.
+
+Escenario 18 — Dashboard
+Los indicadores deben coincidir con los listados filtrados.
+
+4. Pruebas de estado
+Transiciones válidas:
+
+BORRADOR → PRESENTADA
+PRESENTADA → EN_REVISION
+EN_REVISION → OBSERVADA
+OBSERVADA → PRESENTADA
+EN_REVISION → APROBADA
+EN_REVISION → RECHAZADA
+APROBADA → LIQUIDADA
+LIQUIDADA → CERRADA
+Transiciones inválidas que deben rechazarse:
+
+BORRADOR → APROBADA
+PRESENTADA → LIQUIDADA
+OBSERVADA → CERRADA
+RECHAZADA → LIQUIDADA
+CERRADA → BORRADOR
+
+5. Pruebas de permisos
+Acción
+
+Responsable
+
+Revisor
+
+Finanzas
+
+Administrador
+
+Crear rendición
+propia
+
+Sí
+
+Según
+permiso
+
+Según permiso
+
+Sí
+
+Editar borrador
+propio
+
+Sí
+
+No
+
+Según permiso
+
+Sí
+
+Presentar
+
+Sí
+
+No
+
+Según permiso
+
+Sí
+
+Revisar
+
+No
+
+Sí
+
+Según permiso
+
+Sí
+
+40
+
+Acción
+
+Responsable
+
+Revisor
+
+Finanzas
+
+Administrador
+
+Aprobar propia
+
+No
+
+No
+
+No, si es
+responsable
+
+No, si es
+responsable
+
+Liquidar
+
+No
+
+No
+
+Sí
+
+Sí
+
+Registrar
+devolución
+
+Sí o
+Finanzas
+
+No
+
+Sí
+
+Sí
+
+Aprobar reembolso
+
+No
+
+No
+
+Sí, según
+segregación
+
+Sí
+
+Conciliar
+
+No
+
+No
+
+Sí
+
+Sí
+
+Ver auditoría
+
+Limitado
+
+Limitado
+
+Limitado
+
+Sí
+
+6. Pruebas de concurrencia
+Numeración
+Dos usuarios crean rendiciones al mismo tiempo.
+Resultado:
+• Números diferentes.
+• No existe error de unicidad sin controlar.
+
+Presentación
+Dos solicitudes intentan presentar el mismo borrador.
+Resultado:
+• Una se confirma.
+• La otra recibe error de estado.
+
+Revisión
+Dos revisores intentan tomar la misma rendición.
+Resultado:
+• Solo uno queda asignado.
+
+Aprobación
+Dos usuarios intentan aprobar simultáneamente.
+
+41
+
+Resultado:
+• Una única decisión válida.
+
+Liquidación
+Dos solicitudes intentan liquidar.
+Resultado:
+• Una sola liquidación.
+
+Regularización
+Dos usuarios utilizan el mismo saldo pendiente.
+Resultado:
+• No se supera la diferencia.
+
+Conciliación bancaria
+Dos usuarios utilizan el mismo saldo del movimiento.
+Resultado:
+• No existe sobreaplicación.
+
+7. Pruebas de archivos
+• Imagen válida.
+• PDF válido.
+• Varios archivos.
+• Archivo vacío.
+• Extensión inválida.
+• MIME incorrecto.
+• Archivo excesivo.
+• Descarga autorizada.
+• Descarga denegada.
+• Reemplazo.
+• Historial.
+• Hash.
+• Archivo inactivo.
+• Eliminación temporal segura.
+
+42
+
+8. Pruebas de alertas
+• Creación.
+• No duplicación.
+• Cambio de severidad.
+• Resolución.
+• Reaparición.
+• Asignación.
+• Permisos.
+• Ejecución repetida del comando.
+• Condición corregida.
+• Fecha límite.
+• Escalamiento.
+
+9. Pruebas de reportes
+• PDF borrador.
+• PDF aprobado.
+• PDF liquidado.
+• Excel individual.
+• Excel consolidado.
+• Totales.
+• Filtros.
+• Hash.
+• Seguridad.
+• Fórmulas.
+• Grandes volúmenes.
+• Archivo sin registros.
+
+10. Pruebas de dashboard
+• Indicadores por estado.
+• Indicadores por responsable.
+• Diferencias.
+• Fondos pendientes.
+• Alertas.
+• Fecha de corte.
+• Rol.
+• Filtros.
+• Navegación.
+• Caché.
+• Sin datos.
+• Conteo de consultas.
+
+43
+
+11. Fábricas de prueba
+ResponsableRendicionFactory
+CategoriaGastoFactory
+SubcategoriaGastoFactory
+RendicionFactory
+EntregaFondoFactory
+DetalleRendicionFactory
+AdjuntoRendicionFactory
+ValidacionDetalleRendicionFactory
+RevisionDetalleRendicionFactory
+LiquidacionRendicionFactory
+PagoLiquidacionRendicionFactory
+OrdenReembolsoRendicionFactory
+AlertaRendicionFactory
+MovimientoBancarioFactory
+AplicacionMovimientoBancarioFactory
+
+12. Estructura
+tests/rendiciones/
+├── test_responsables.py
+├── test_categorias.py
+├── test_cabecera.py
+├── test_fondos.py
+├── test_gastos.py
+├── test_adjuntos.py
+├── test_validaciones.py
+├── test_presentacion.py
+├── test_revision.py
+├── test_aprobacion.py
+├── test_liquidacion.py
+├── test_devoluciones.py
+├── test_reembolsos.py
+├── test_conciliacion.py
+├── test_alertas.py
+├── test_reportes.py
+├── test_dashboard.py
+├── test_permisos.py
+├── test_auditoria.py
+└── test_concurrencia.py
+
+44
+
+13. Criterios de aceptación
+R021 se considerará terminada cuando:
+• Los flujos principales pasan.
+• Las transiciones inválidas se rechazan.
+• Los cálculos son correctos.
+• No se superan fondos, diferencias ni movimientos.
+• Los documentos quedan protegidos.
+• Las alertas no se duplican.
+• Los reportes coinciden con la pantalla.
+• El dashboard coincide con los selectores.
+• Los permisos están cubiertos.
+• Las operaciones concurrentes son seguras.
+• Las transacciones revierten completamente ante error.
+• No existen consultas N+1 críticas.
+• La suite puede ejecutarse repetidamente.
+
+14. Evaluación de esfuerzo
+Las 12 horas son suficientes para una suite inicial de flujos críticos.
+La cobertura completa de:
+• Archivos.
+• Concurrencia.
+• Exportaciones.
+• Alertas.
+• Dashboard.
+• Seguridad.
+puede requerir trabajo adicional distribuido en cada tarea de desarrollo, en lugar de dejar todas las
+pruebas para R021.
+La recomendación es crear pruebas durante cada tarea y utilizar R021 para:
+• Completar cobertura.
+• Ejecutar pruebas integrales.
+• Corregir fallos.
+• Preparar datos de aceptación.
+
+45
+
+R022 — Manual de rendiciones
+1. Objetivo
+Crear una guía operativa para que cada usuario comprenda:
+• Qué puede hacer.
+• Qué pasos debe seguir.
+• Qué significa cada estado.
+• Cómo resolver errores frecuentes.
+• A quién escalar problemas.
+La Carta Gantt solicita una guía operativa y resolución de casos frecuentes.
+
+2. Audiencias
+El manual debe diferenciar:
+
+Responsable de rendición
+Revisor
+Aprobador
+Finanzas
+Administrador
+Auditor
+No todos necesitan ver instrucciones técnicas ni acciones que no pueden ejecutar.
+
+3. Formatos
+Se recomienda mantener tres formatos.
+
+Manual web
+Integrado dentro de la aplicación:
+
+/administracion/ayuda/rendiciones/
+Ventajas:
+• Actualización sencilla.
+• Acceso contextual.
+• Enlaces desde pantallas.
+
+46
+
+Manual PDF
+Para:
+• Capacitación.
+• Respaldo.
+• Distribución.
+• Trabajo sin conexión.
+
+Ayuda contextual
+Pequeños enlaces desde:
+• Formularios.
+• Estados.
+• Alertas.
+• Errores.
+• Acciones financieras.
+
+4. Estructura del manual
+Capítulo 1 — Introducción
+• Propósito.
+• Alcance.
+• Conceptos.
+• Roles.
+• Seguridad.
+
+Capítulo 2 — Estados
+Explicar:
+
+BORRADOR
+PRESENTADA
+EN REVISION
+OBSERVADA
+APROBADA
+RECHAZADA
+LIQUIDADA
+CERRADA
+ANULADA
+Incluir:
+• Quién actúa.
+
+47
+
+• Qué puede modificarse.
+• Qué sucede después.
+
+Capítulo 3 — Crear rendición
+• Abrir nueva.
+• Seleccionar período.
+• Ingresar motivo.
+• Guardar borrador.
+
+Capítulo 4 — Fondos
+• Ver fondos.
+• Vincular entrega.
+• Interpretar saldos.
+• Fondo pendiente.
+
+Capítulo 5 — Registrar gastos
+• Tipos de documento.
+• Proveedor.
+• Categorías.
+• Neto, IVA y total.
+• Forma de pago.
+• Gastos sin documento.
+
+Capítulo 6 — Adjuntos
+• Subir.
+• Previsualizar.
+• Reemplazar.
+• Descargar.
+• Formatos admitidos.
+
+Capítulo 7 — Validaciones
+• Error.
+• Advertencia.
+• Justificación.
+• Duplicados.
+• Documento faltante.
+
+Capítulo 8 — Presentar
+• Revisión previa.
+• Declaración.
+• Bloqueo.
+• Qué hacer si aparece un error.
+
+48
+
+Capítulo 9 — Revisión
+• Tomar revisión.
+• Aprobar gasto.
+• Aprobar parcialmente.
+• Observar.
+• Rechazar.
+
+Capítulo 10 — Correcciones
+• Abrir observaciones.
+• Cambiar información.
+• Reemplazar documento.
+• Presentar nuevamente.
+
+Capítulo 11 — Aprobación
+• Decisión final.
+• Gastos rechazados.
+• Total aprobado.
+• Historial.
+
+Capítulo 12 — Liquidación
+• Cuadrada.
+• Responsable devuelve.
+• Empresa reembolsa.
+
+Capítulo 13 — Devoluciones
+• Registrar.
+• Adjuntar comprobante.
+• Confirmar.
+• Conciliar.
+
+Capítulo 14 — Reembolsos
+• Orden.
+• Aprobación.
+• Pago.
+• Conciliación.
+
+Capítulo 15 — Alertas
+• Tipos.
+• Severidad.
+• Bandeja.
+• Resolución.
+
+49
+
+Capítulo 16 — Dashboard
+• Indicadores.
+• Filtros.
+• Navegación.
+• Interpretación de montos.
+
+Capítulo 17 — Exportaciones
+• PDF.
+• Excel.
+• Borrador.
+• Documento aprobado.
+• Reporte consolidado.
+
+Capítulo 18 — Casos frecuentes
+• Rendición sin fondo.
+• Fondo sin rendición.
+• Gasto duplicado.
+• Gasto sin documento.
+• Documento ilegible.
+• Monto incorrecto.
+• Rendición observada.
+• Devolución parcial.
+• Reembolso pendiente.
+• Movimiento bancario no encontrado.
+• Archivo no permitido.
+• Usuario sin permiso.
+
+5. Formato de cada procedimiento
+Cada procedimiento debe incluir:
+
+Objetivo
+Quién puede hacerlo
+Condiciones previas
+Pasos
+Resultado esperado
+Errores frecuentes
+Cómo revertir o corregir
+Ejemplo:
+
+Procedimiento: presentar una rendición
+
+50
+
+Quién:
+Responsable
+Condiciones:
+La rendición está en borrador.
+No existen errores documentales.
+Pasos:
+1. Abra la rendición.
+2. Revise el resumen.
+3. Corrija errores.
+4. Seleccione Presentar.
+5. Acepte la declaración.
+Resultado:
+La rendición cambia a PRESENTADA y queda bloqueada.
+
+6. Capturas de pantalla
+Las capturas deben:
+• Usar datos ficticios.
+• No mostrar información personal real.
+• Resaltar el área relevante.
+• Incluir texto alternativo.
+• Coincidir con la versión actual.
+No se deben utilizar capturas como única explicación, porque se vuelven obsoletas rápidamente.
+
+7. Ayuda contextual
+Ejemplos:
+
+¿Qué significa “saldo por regularizar”?
+
+¿Por qué no puedo editar esta rendición?
+
+¿Cómo se corrige un documento observado?
+Cada ayuda debe enlazar al capítulo correspondiente.
+
+51
+
+8. Versionado
+El manual debe tener:
+• Versión.
+• Fecha.
+• Sistema compatible.
+• Responsable de actualización.
+• Historial de cambios.
+Ejemplo:
+
+Manual de Rendiciones
+Versión 1.0
+Sistema 2026.1
+
+9. Ubicación en el repositorio
+docs/rendiciones/
+├── README.md
+├── manual_responsable.md
+├── manual_revisor.md
+├── manual_finanzas.md
+├── manual_administrador.md
+├── casos_frecuentes.md
+├── glosario.md
+├── imagenes/
+└── versiones.md
+
+10. Integración con Django
+Templates:
+
+templates/administracion/ayuda/rendiciones/
+├── index.html
+├── responsable.html
+├── revisor.html
+├── finanzas.html
+├── administrador.html
+└── casos_frecuentes.html
+
+52
+
+URL:
+
+/administracion/ayuda/rendiciones/
+
+11. Permisos
+La ayuda general puede estar disponible para cualquier usuario autenticado.
+Los capítulos sobre:
+• Auditoría.
+• Configuración.
+• Reaperturas.
+• Administración.
+pueden mostrarse únicamente a roles autorizados.
+
+12. Criterios de aceptación
+• Existe manual para cada rol principal.
+• Los estados están explicados.
+• Todos los flujos críticos están documentados.
+• Los casos frecuentes tienen solución.
+• Las capturas utilizan datos ficticios.
+• Existe versión y fecha.
+• El manual está disponible en la aplicación.
+• Puede generarse una copia PDF.
+• Los enlaces contextuales funcionan.
+• El contenido coincide con la versión probada.
+
+6. Estructura de archivos del bloque
+administracion/
+├── models/
+│
+
+└── alertas_rendiciones.py
+
+│
+├── forms/
+│
+
+├── alertas_rendiciones.py
+
+│
+
+├── exportaciones_rendiciones.py
+
+│
+
+└── dashboard_rendiciones.py
+
+│
+├── views/
+
+53
+
+│
+
+├── alertas_rendiciones.py
+
+│
+
+├── exportaciones_rendiciones.py
+
+│
+
+├── dashboard_rendiciones.py
+
+│
+
+└── ayuda_rendiciones.py
+
+│
+├── services/rendiciones/
+│
+
+├── alertas.py
+
+│
+
+└── reportes/
+
+│
+
+├── datos.py
+
+│
+
+├── expediente_pdf.py
+
+│
+
+├── liquidacion_pdf.py
+
+│
+
+├── rendicion_xlsx.py
+
+│
+
+└── consolidado_xlsx.py
+
+│
+├── selectors/
+│
+
+├── alertas_rendiciones.py
+
+│
+
+├── dashboard_rendiciones.py
+
+│
+
+└── reportes_rendiciones.py
+
+│
+├── management/commands/
+│
+
+└── generar_alertas_rendiciones.py
+
+│
+├── templates/administracion/
+│
+
+├── rendiciones/alertas/
+
+│
+
+├── rendiciones/dashboard/
+
+│
+
+├── rendiciones/reportes/
+
+│
+
+└── ayuda/rendiciones/
+
+│
+├── static/administracion/js/
+│
+
+├── dashboard_rendiciones.js
+
+│
+
+└── reportes_rendiciones.js
+
+│
+└── tests/rendiciones/
+Documentación:
+
+docs/rendiciones/
+├── README.md
+├── manual_responsable.md
+├── manual_revisor.md
+├── manual_finanzas.md
+├── manual_administrador.md
+├── casos_frecuentes.md
+├── glosario.md
+├── imagenes/
+└── versiones.md
+
+54
+
+7. Migraciones previstas
+Migración 1 — Alertas
+Crear:
+
+AlertaRendicion
+Agregar:
+• Relaciones.
+• Tipo.
+• Severidad.
+• Estado.
+• Fecha límite.
+• Asignación.
+• Clave de control.
+• Resolución.
+
+Migración 2 — Exportaciones
+Opcionalmente crear:
+
+ExportacionRendicion
+Puede omitirse si toda la evidencia queda suficientemente registrada en EventoAuditoria .
+
+Migración 3 — Índices
+En AlertaRendicion :
+
+models.Index(
+fields=["estado", "severidad"],
+)
+models.Index(
+fields=["tipo", "estado"],
+)
+models.Index(
+fields=["responsable_usuario", "estado"],
+)
+
+55
+
+models.Index(
+fields=["responsable_grupo", "estado"],
+)
+models.Index(
+fields=["fecha_limite", "estado"],
+)
+models.Index(
+fields=["rendicion", "estado"],
+)
+
+8. Definición de terminado del bloque
+R018–R022 se considerará terminado cuando:
+• Existen alertas específicas de rendiciones.
+• Las alertas no se duplican.
+• Se detectan borradores y rendiciones vencidas.
+• Se detectan fondos sin rendir.
+• Se detectan revisiones atrasadas.
+• Se detectan devoluciones y reembolsos pendientes.
+• Se detectan conciliaciones pendientes.
+• Las alertas se asignan y resuelven.
+• Se puede exportar una rendición a PDF.
+• Se puede exportar una rendición a Excel.
+• Se puede exportar un consolidado.
+• Los totales coinciden con la aplicación.
+• El dashboard cambia según el rol.
+• Los indicadores coinciden con los listados.
+• Existen pruebas unitarias e integrales.
+• Se validan permisos y concurrencia.
+• Existe manual para responsables.
+• Existe manual para revisores.
+• Existe manual para Finanzas.
+• Existen casos frecuentes.
+• La documentación tiene versión.
+• Todas las pruebas automáticas pasan.
+
+9. Riesgos del bloque
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Alertas duplicadas
+
+Alto
+
+Clave de control
+
+Plazos dispersos
+
+Alto
+
+Configuración central
+
+56
+
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Alertas sin responsable
+
+Medio/alto
+
+Asignación a usuario o grupo
+
+Resolver sin corregir condición
+
+Alto
+
+Reevaluación automática
+
+PDF distinto al sistema
+
+Alto
+
+Selector común
+
+Excel con fórmulas maliciosas
+
+Alto
+
+Neutralización de celdas
+
+Totales distintos entre dashboard y reporte
+
+Alto
+
+Selectores reutilizados
+
+Consultas lentas
+
+Medio/alto
+
+Agregaciones e índices
+
+Dashboard expone datos ajenos
+
+Alto
+
+Alcance por rol
+
+Caché mezcla usuarios
+
+Alto
+
+Clave por usuario y filtros
+
+Manual obsoleto
+
+Medio
+
+Versionado y revisión
+
+Capturas con datos reales
+
+Alto
+
+Datos ficticios
+
+Pruebas solo al final
+
+Alto
+
+Pruebas durante cada tarea
+
+Exportaciones públicas
+
+Alto
+
+Descarga autenticada
+
+Archivos temporales acumulados
+
+Medio
+
+Eliminación controlada
+
+Cobertura insuficiente de concurrencia
+
+Alto
+
+Pruebas transaccionales
+
+10. Resultado consolidado del módulo
+Rendiciones
+Al finalizar los bloques 6, 7 y 8 existirá el ciclo completo:
+
+Responsable habilitado
+→ rendición en borrador
+→ fondos y gastos
+→ adjuntos
+→ validación documental
+→ presentación
+→ revisión
+→ correcciones
+→ aprobación
+→ liquidación
+├── devolución
+└── reembolso
+→ conciliación bancaria
+→ cierre
+→ alertas
+→ dashboard
+
+57
+
+→ exportación
+→ auditoría
+El módulo quedará preparado para integrarse con las siguientes tareas:
+
+B010–B017
+Conciliación bancaria avanzada
+B018–B021
+Dashboard, alertas, reportes y pruebas bancarias
+X001–X013
+Factoring
+Q001–Q002
+Pruebas end-to-end y aceptación final
+
+58
+
+

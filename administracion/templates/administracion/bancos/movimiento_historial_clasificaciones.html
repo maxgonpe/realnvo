@@ -1,0 +1,43 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Historial clasificaciones {{ movimiento.pk }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B008</p>
+  <h1>Historial de clasificaciones #{{ movimiento.pk }}</h1>
+  <p>
+    <a href="{% url 'adm_movimiento_detalle' movimiento.pk %}">← Detalle</a>
+    · <a href="{% url 'adm_movimiento_clasificar' movimiento.pk %}">Clasificar / reclasificar</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem; overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:.92rem;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid #c5d0da;">
+          <th style="padding:.35rem;">Fecha</th>
+          <th style="padding:.35rem;">Categoría</th>
+          <th style="padding:.35rem;">Contraparte</th>
+          <th style="padding:.35rem;">Observación</th>
+          <th style="padding:.35rem;">Usuario</th>
+          <th style="padding:.35rem;">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in historial %}
+        <tr style="border-bottom:1px solid #e8eef3;">
+          <td style="padding:.35rem;">{{ c.clasificado_en }}</td>
+          <td style="padding:.35rem;">{{ c.get_categoria_display }}</td>
+          <td style="padding:.35rem;">{{ c.contraparte_normalizada|default:"—" }}
+            {% if c.rut_contraparte_normalizado %}<br><small>{{ c.rut_contraparte_normalizado }}</small>{% endif %}
+          </td>
+          <td style="padding:.35rem;">{{ c.observacion|default:"—" }}</td>
+          <td style="padding:.35rem;">{{ c.clasificado_por|default:"—" }}</td>
+          <td style="padding:.35rem;">{% if c.activa %}<strong>Activa</strong>{% else %}Histórica{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="padding:.5rem; color:#5c6b7a;">Sin clasificaciones.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

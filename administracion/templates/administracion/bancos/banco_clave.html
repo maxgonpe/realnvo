@@ -1,0 +1,50 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Clave cartola — {{ banco.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B001</p>
+  <h1>Clave de cartola — {{ banco.nombre }}</h1>
+  <p>
+    <a href="{% url 'adm_banco_detalle' banco.pk %}">← Detalle</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem; max-width:640px;">
+    <p style="color:#5c6b7a;">
+      La clave del PDF <strong>nunca se muestra</strong> después de guardarla.
+      Solo puede reemplazarla o eliminarla. Queda cifrada en la base de datos
+      (derivada de <code>SECRET_KEY</code>).
+    </p>
+    <p>
+      Estado actual:
+      {% if tiene_clave %}
+        <strong>clave configurada</strong>
+        {% if banco.clave_cartola_actualizada_en %}
+          ({{ banco.clave_cartola_actualizada_en }})
+        {% endif %}
+      {% else %}
+        <strong>sin clave</strong>
+      {% endif %}
+    </p>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem;">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+      {% endif %}
+      {% for field in form %}
+        <div style="margin-bottom:.85rem;">
+          <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+          {% for error in field.errors %}
+            <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit">Guardar clave</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Cuentas bancarias{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B002</p>
+  <h1>Cuentas bancarias</h1>
+  <p>
+    Cuentas controladas por la empresa.
+    <a class="btn-vivo" href="{% url 'adm_cuenta_crear' %}">+ Nueva cuenta</a>
+    <a class="btn-vivo" href="{% url 'adm_cuenta_desde_cartola' %}">↑ Cargar desde cartola PDF</a>
+  </p>
+
+  <form method="get" style="display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar alias, número, titular…" class="form-control" style="max-width:260px;">
+    <select name="estado" class="form-select" style="max-width:160px;">
+      <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+      <option value="activos" {% if estado == "activos" %}selected{% endif %}>Solo activas</option>
+      <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Solo inactivas</option>
+    </select>
+    <select name="banco" class="form-select" style="max-width:220px;">
+      <option value="">Todos los bancos</option>
+      {% for b in bancos %}
+      <option value="{{ b.pk }}" {% if banco_id == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.nombre }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  <table style="width:100%; border-collapse:collapse; background:#fff;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.5rem;">Alias</th>
+        <th style="padding:.5rem;">Banco</th>
+        <th style="padding:.5rem;">Número</th>
+        <th style="padding:.5rem;">Tipo</th>
+        <th style="padding:.5rem;">Titular</th>
+        <th style="padding:.5rem;">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cuentas %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.5rem;"><a href="{% url 'adm_cuenta_detalle' c.pk %}">{{ c.nombre }}</a></td>
+        <td style="padding:.5rem;">{{ c.banco.nombre }}</td>
+        <td style="padding:.5rem;"><code>{{ c.numero_enmascarado }}</code></td>
+        <td style="padding:.5rem;">{{ c.get_tipo_cuenta_display }}</td>
+        <td style="padding:.5rem;">{{ c.titular|default:"—" }}</td>
+        <td style="padding:.5rem;">{% if c.activa %}Activa{% else %}Inactiva{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:1rem;">No hay cuentas. Cargue una desde cartola PDF.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

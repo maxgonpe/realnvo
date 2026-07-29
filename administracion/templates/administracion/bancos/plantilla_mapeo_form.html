@@ -1,0 +1,75 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ titulo_esqueleto }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">{{ codigo_gantt }}</p>
+  <h1>{{ titulo_esqueleto }}</h1>
+  <p><a href="{% url 'adm_plantilla_mapeo_lista' %}">← Volver a la lista</a></p>
+
+  {% if sin_bancos %}
+  <div class="esqueleto" style="margin:1rem 0; border-color:#e0b4b4; background:#fff5f5;">
+    <p style="color:#a33; margin:0;">
+      No hay bancos activos. Crea al menos uno en el admin Django
+      (<code>/admin/administracion/banco/</code>) o implementa B001 antes de guardar plantillas.
+    </p>
+  </div>
+  {% endif %}
+
+  <form method="post" class="esqueleto" style="margin-top:1rem;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+    {% endif %}
+
+    <h2>1. Identificación y estructura</h2>
+    {% for field in form %}
+      <div style="margin-bottom:.85rem; max-width:640px;">
+        <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}
+          <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <h2>2. Mapeo de columnas</h2>
+    <p style="color:#5c6b7a; font-size:.95rem;">
+      Obligatorios: <strong>Fecha operación</strong>, <strong>Descripción</strong> y un esquema monetario:
+      (A) Tipo + Monto, (B) Monto con signo, o (C) Monto ingreso + Monto egreso.
+    </p>
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+      <ul style="color:#a33;">{{ formset.non_form_errors }}</ul>
+    {% endif %}
+    <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+          <th style="padding:.4rem;">Campo sistema</th>
+          <th style="padding:.4rem;">Columna cartola</th>
+          <th style="padding:.4rem;">Oblig.</th>
+          <th style="padding:.4rem;">Default</th>
+          <th style="padding:.4rem;">Orden</th>
+          <th style="padding:.4rem;">Borrar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in formset %}
+        <tr style="border-bottom:1px solid #eef2f6; vertical-align:top;">
+          <td style="padding:.35rem;">{{ f.id }}{{ f.campo_destino }}{% for e in f.campo_destino.errors %}<div style="color:#a33;">{{ e }}</div>{% endfor %}</td>
+          <td style="padding:.35rem;">{{ f.columna_origen }}{% for e in f.columna_origen.errors %}<div style="color:#a33;">{{ e }}</div>{% endfor %}</td>
+          <td style="padding:.35rem;">{{ f.obligatorio }}</td>
+          <td style="padding:.35rem;">{{ f.valor_defecto }}</td>
+          <td style="padding:.35rem;">{{ f.orden }}</td>
+          <td style="padding:.35rem;">{% if f.DELETE %}{{ f.DELETE }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <button type="submit">{% if modo == "crear" %}Crear plantilla{% else %}Guardar cambios{% endif %}</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ banco.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B001</p>
+  <h1>{{ banco.nombre }}</h1>
+  <p>
+    <a href="{% url 'adm_banco_lista' %}">← Lista</a>
+    ·
+    <a href="{% url 'adm_banco_editar' banco.pk %}">Editar</a>
+    ·
+    <a href="{% url 'adm_banco_clave' banco.pk %}">Clave cartola</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2>Identificación</h2>
+    <ul>
+      <li><strong>Código:</strong> {{ banco.codigo|default:"—" }}</li>
+      <li><strong>Estado:</strong> {% if banco.activo %}Activo{% else %}Inactivo{% endif %}</li>
+    </ul>
+
+    <h2>Acceso a cartolas PDF</h2>
+    <ul>
+      <li><strong>Clave:</strong>
+        {% if resumen.tiene_clave_cartola %}
+          Configurada (cifrada; no se muestra)
+        {% else %}
+          Sin configurar
+        {% endif %}
+      </li>
+      <li><strong>Última actualización:</strong>
+        {% if resumen.clave_actualizada_en %}
+          {{ resumen.clave_actualizada_en }}
+        {% else %}
+          —
+        {% endif %}
+      </li>
+    </ul>
+    <p><a href="{% url 'adm_banco_clave' banco.pk %}">Cambiar o verificar clave →</a></p>
+
+    <h2>Resumen</h2>
+    <ul>
+      <li>Cuentas: {{ resumen.cuentas_activas }} activas / {{ resumen.total_cuentas }} total</li>
+      <li>Plantillas: {{ resumen.plantillas_activas }} activas / {{ resumen.plantillas }} total</li>
+    </ul>
+
+    {% if banco.activo %}
+    <form method="post" action="{% url 'adm_banco_desactivar' banco.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Desactivar</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'adm_banco_activar' banco.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Activar</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

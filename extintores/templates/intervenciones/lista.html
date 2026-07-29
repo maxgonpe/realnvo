@@ -68,10 +68,11 @@
         </div>
     </div>
 
-    <!-- Pestaña Administración (referencias — sin URL aún) -->
+    <!-- Pestaña Administración — esqueleto Gantt cableado -->
     <div class="tab-pane fade" id="administracion" role="tabpanel">
         <p class="text-muted small mt-3 mb-2">
-            Módulo administración — enlaces de referencia (pendientes de implementar).
+            Módulo administración — rutas del esqueleto según Carta Gantt.
+            <a href="{% url 'adm_panel' %}">Abrir panel completo</a>
         </p>
 
         <h6 class="mt-3 mb-2">Rendiciones</h6>
@@ -82,38 +83,28 @@
             <a href="{% url 'adm_rendicion_crear' %}" class="btn btn-success btn-sm">
                 <i class="bi bi-plus-circle"></i> Nueva rendición
             </a>
-            <span class="btn btn-outline-secondary btn-sm disabled">Responsables de rendición</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Entregas de fondo</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Aprobaciones de rendición</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Liquidaciones de rendición</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Pagos de liquidación</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Categorías de gasto</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Subcategorías de gasto</span>
+            <a href="{% url 'adm_responsable_lista' %}" class="btn btn-outline-secondary btn-sm">Responsables</a>
+            <a href="{% url 'adm_categoria_lista' %}" class="btn btn-outline-secondary btn-sm">Categorías</a>
+            <a href="{% url 'adm_rendicion_dashboard' %}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+            <a href="{% url 'adm_rendicion_desde_imagen' %}" class="btn btn-outline-secondary btn-sm">Ingreso desde imagen</a>
         </div>
 
         <h6 class="mb-2">Banco y conciliación</h6>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="btn btn-outline-secondary btn-sm disabled">Bancos</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Cuentas bancarias</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Importaciones de cartola</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Movimientos bancarios</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Conciliaciones bancarias</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Exclusiones de movimiento</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Aplicaciones de movimiento</span>
+            <a href="{% url 'adm_banco_lista' %}" class="btn btn-outline-secondary btn-sm">Bancos</a>
+            <a href="{% url 'adm_cuenta_lista' %}" class="btn btn-outline-secondary btn-sm">Cuentas bancarias</a>
+            <a href="{% url 'adm_cartola_importar' %}" class="btn btn-outline-secondary btn-sm">Importar cartola</a>
+            <a href="{% url 'adm_movimiento_lista' %}" class="btn btn-outline-secondary btn-sm">Movimientos</a>
+            <a href="{% url 'adm_conciliacion_dashboard' %}" class="btn btn-outline-secondary btn-sm">Dashboard conciliación</a>
         </div>
 
         <h6 class="mb-2">Facturación, cobranza y factoring</h6>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="btn btn-outline-secondary btn-sm disabled">Facturas de venta</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Gestiones de cobranza</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Pagos de clientes</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Aplicaciones de pago a factura</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Empresas de factoring</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Operaciones de factoring</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Eventos de factoring</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Flujos de factoring</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Devoluciones de pago</span>
-            <span class="btn btn-outline-secondary btn-sm disabled">Alertas de cobranza</span>
+            <a href="{% url 'adm_factura_lista' %}" class="btn btn-outline-secondary btn-sm">Facturas</a>
+            <a href="{% url 'adm_pago_crear' %}" class="btn btn-outline-secondary btn-sm">Registrar pago</a>
+            <a href="{% url 'adm_cobranza_lista' %}" class="btn btn-outline-secondary btn-sm">Cobranza</a>
+            <a href="{% url 'adm_empresa_factoring_lista' %}" class="btn btn-outline-secondary btn-sm">Empresas factoring</a>
+            <a href="{% url 'adm_operacion_factoring_lista' %}" class="btn btn-outline-secondary btn-sm">Operaciones factoring</a>
         </div>
     </div>
 </div>

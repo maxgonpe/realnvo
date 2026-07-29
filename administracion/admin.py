@@ -129,8 +129,12 @@ class RendicionAdmin(admin.ModelAdmin):
 MODELOS_SIMPLE = [
     m.Banco,
     m.CuentaBancaria,
+    m.PlantillaMapeoCartola,
+    m.CampoMapeoCartola,
     m.ImportacionCartola,
+    m.CartolaBancaria,
     m.MovimientoBancario,
+    m.ClasificacionMovimientoBancario,
     m.ConciliacionBancaria,
     m.ExclusionMovimientoBancario,
     m.FacturaVenta,

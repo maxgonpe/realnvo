@@ -1,0 +1,49 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Bancos{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B001</p>
+  <h1>Catálogo de bancos</h1>
+  <p>
+    Instituciones bancarias y acceso cifrado a cartolas PDF.
+    <a href="{% url 'adm_banco_crear' %}">+ Nuevo banco</a>
+  </p>
+
+  <form method="get" style="display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar nombre o código…" class="form-control" style="max-width:260px;">
+    <select name="estado" class="form-select" style="max-width:160px;">
+      <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+      <option value="activos" {% if estado == "activos" %}selected{% endif %}>Solo activos</option>
+      <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Solo inactivos</option>
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  <table style="width:100%; border-collapse:collapse; background:#fff;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.5rem;">Nombre</th>
+        <th style="padding:.5rem;">Código</th>
+        <th style="padding:.5rem;">Cuentas</th>
+        <th style="padding:.5rem;">Plantillas</th>
+        <th style="padding:.5rem;">Clave cartola</th>
+        <th style="padding:.5rem;">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bancos %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.5rem;"><a href="{% url 'adm_banco_detalle' b.pk %}">{{ b.nombre }}</a></td>
+        <td style="padding:.5rem;">{{ b.codigo|default:"—" }}</td>
+        <td style="padding:.5rem;">{{ b.total_cuentas_activas }}/{{ b.total_cuentas }}</td>
+        <td style="padding:.5rem;">{{ b.total_plantillas }}</td>
+        <td style="padding:.5rem;">{% if b.tiene_clave_cartola %}Configurada{% else %}Sin clave{% endif %}</td>
+        <td style="padding:.5rem;">{% if b.activo %}Activo{% else %}Inactivo{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:1rem;">No hay bancos con ese filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

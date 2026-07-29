@@ -1,0 +1,13 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ titulo_esqueleto }}{% endblock %}
+{% block content %}
+<section class="esqueleto">
+  <p class="badge">{{ codigo_gantt }}</p>
+  <h1>{{ titulo_esqueleto }}</h1>
+  <p>{{ mensaje_esqueleto }}</p>
+  {% if objeto_id %}
+  <p>Objeto: <code>#{{ objeto_id }}</code></p>
+  {% endif %}
+  <p><a href="{% url 'adm_panel' %}">← Volver al panel</a></p>
+</section>
+{% endblock %}

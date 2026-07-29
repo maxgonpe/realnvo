@@ -1,0 +1,131 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Importar cartola{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B003 · B005</p>
+  <h1>Importar cartola PDF</h1>
+  <p>
+    Primero <strong>analice duplicados</strong> (archivo, exactos, en-archivo y posibles).
+    Luego importe. Los montos se guardan como <strong>enteros</strong>.
+  </p>
+
+  {% if archivo_duplicado %}
+  <div class="esqueleto" style="margin:1rem 0; border-color:#e0b4b4; background:#fff5f5;">
+    <p style="margin:0; color:#a33;">
+      <strong>ARCHIVO_DUPLICADO</strong> —
+      Importación previa
+      <a href="{% url 'adm_cartola_detalle' archivo_duplicado.pk %}">#{{ archivo_duplicado.pk }}</a>
+      el {{ archivo_duplicado.creado_en }}
+      · {{ archivo_duplicado.total_importadas }} movimientos
+      · {{ archivo_duplicado.get_estado_display }}
+      {% if archivo_duplicado.creado_por %}· {{ archivo_duplicado.creado_por.username }}{% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="esqueleto" style="margin-top:1rem; max-width:720px;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+    {% endif %}
+    {% for field in form %}
+      <div style="margin-bottom:.85rem;">
+        <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<div style="color:#a33;">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn-vivo">Ejecutar</button>
+  </form>
+
+  {% if analisis %}
+  <div class="esqueleto" style="margin-top:1.25rem;">
+    <h2>Análisis B005 — {{ analisis.nombre_archivo }}</h2>
+    <ul>
+      <li>Período: {{ analisis.cabecera.fecha_inicio }} → {{ analisis.cabecera.fecha_fin }}</li>
+      <li>Parser: {{ analisis.cabecera.parser }}</li>
+      <li>Válidos: {{ analisis.total_validos }}</li>
+      <li>Duplicados exactos: {{ analisis.total_duplicados_exactos }}</li>
+      <li>Duplicados en archivo: {{ analisis.total_duplicados_en_archivo }}</li>
+      <li>Posibles duplicados: {{ analisis.total_posibles }}</li>
+    </ul>
+    {% if analisis.archivo_duplicado %}
+    <p style="color:#a33;">
+      Archivo ya importado:
+      <a href="{% url 'adm_cartola_detalle' analisis.archivo_duplicado.id %}">
+        #{{ analisis.archivo_duplicado.id }}
+      </a>
+      ({{ analisis.archivo_duplicado.creado_en }},
+      {{ analisis.archivo_duplicado.total_movimientos }} movs,
+      {{ analisis.archivo_duplicado.estado }})
+    </p>
+    {% endif %}
+
+    <table style="width:100%; border-collapse:collapse; background:#fff; font-size:.9rem;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+          <th style="padding:.35rem;">Fila</th>
+          <th style="padding:.35rem;">Fecha</th>
+          <th style="padding:.35rem;">Tipo</th>
+          <th style="padding:.35rem;">Monto</th>
+          <th style="padding:.35rem;">Descripción</th>
+          <th style="padding:.35rem;">Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in analisis.filas %}
+        <tr style="border-bottom:1px solid #eef2f6;">
+          <td style="padding:.3rem;">{{ f.fila }}</td>
+          <td style="padding:.3rem;">{{ f.fecha }}</td>
+          <td style="padding:.3rem;">{{ f.tipo }}</td>
+          <td style="padding:.3rem; text-align:right;">{{ f.monto }}</td>
+          <td style="padding:.3rem;">{{ f.descripcion }}</td>
+          <td style="padding:.3rem;">
+            {% if f.resultado == "VALIDO" %}
+              <span class="badge badge-vivo">Válido</span>
+            {% elif f.resultado == "DUPLICADO_EXACTO" %}
+              <span class="badge" style="background:#fde8e8; color:#a33; border-color:#e0b4b4;">Duplicado existente</span>
+            {% elif f.resultado == "DUPLICADO_EN_ARCHIVO" %}
+              <span class="badge" style="background:#fde8e8; color:#a33; border-color:#e0b4b4;">Duplicado en archivo</span>
+            {% else %}
+              <span class="badge badge-parcial">Posible duplicado</span>
+            {% endif %}
+            {% if f.movimiento_existente_id %}
+              <a href="{% url 'adm_movimiento_detalle' f.movimiento_existente_id %}">#{{ f.movimiento_existente_id }}</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <h2>Importaciones recientes</h2>
+  <table style="width:100%; border-collapse:collapse; background:#fff;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.4rem;">Fecha</th>
+        <th style="padding:.4rem;">Cuenta</th>
+        <th style="padding:.4rem;">Archivo</th>
+        <th style="padding:.4rem;">Movs</th>
+        <th style="padding:.4rem;">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in recientes %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.4rem;"><a href="{% url 'adm_cartola_detalle' r.pk %}">{{ r.creado_en }}</a></td>
+        <td style="padding:.4rem;">{{ r.cuenta_bancaria }}</td>
+        <td style="padding:.4rem;">{{ r.nombre_archivo }}</td>
+        <td style="padding:.4rem;">{{ r.total_importadas }}</td>
+        <td style="padding:.4rem;">{{ r.get_estado_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="padding:.5rem;">Aún no hay importaciones.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

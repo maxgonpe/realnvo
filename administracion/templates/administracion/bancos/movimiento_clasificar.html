@@ -1,0 +1,51 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Clasificar movimiento {{ movimiento.pk }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B008</p>
+  <h1>Clasificar movimiento #{{ movimiento.pk }}</h1>
+  <p>
+    <a href="{% url 'adm_movimiento_detalle' movimiento.pk %}">← Detalle</a>
+    · <a href="{% url 'adm_movimiento_historial_clasificaciones' movimiento.pk %}">Historial</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <p style="color:#5c6b7a; margin-top:0;">
+      Datos bancarios de solo lectura (no se modifican):
+    </p>
+    <ul>
+      <li><strong>Fecha:</strong> {{ movimiento.fecha_operacion }}</li>
+      <li><strong>Dirección:</strong> {{ movimiento.get_tipo_display }}</li>
+      <li><strong>Monto:</strong> {{ movimiento.monto }}</li>
+      <li><strong>Descripción:</strong> {{ movimiento.descripcion_movimiento|default:movimiento.descripcion_original }}</li>
+      <li><strong>Contraparte original:</strong> {{ movimiento.contraparte|default:"—" }}</li>
+      <li><strong>Referencia:</strong> {{ movimiento.referencia_bancaria|default:"—" }}</li>
+      <li><strong>Estado conciliación:</strong> {{ movimiento.get_estado_conciliacion_display }}</li>
+    </ul>
+    {% if clasificacion %}
+      <p><strong>Clasificación activa:</strong> {{ clasificacion.get_categoria_display }}
+        — reclasificar desactiva la anterior y conserva historial.</p>
+    {% endif %}
+  </div>
+
+  <form method="post" class="esqueleto" style="margin-top:1rem; max-width:640px;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+    {% endif %}
+    {% for field in form %}
+      <div style="margin-bottom:.85rem;">
+        <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:#5c6b7a; display:block;">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}
+          <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit">Guardar clasificación</button>
+  </form>
+</section>
+{% endblock %}

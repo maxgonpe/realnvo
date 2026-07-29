@@ -1,0 +1,55 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ responsable.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">R003</p>
+  <h1>{{ responsable.nombre }}</h1>
+  <p>
+    <a href="{% url 'adm_responsable_lista' %}">← Lista</a>
+    ·
+    <a href="{% url 'adm_responsable_editar' responsable.pk %}">Editar</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2>Identificación</h2>
+    <ul>
+      <li><strong>RUT:</strong> {{ responsable.rut|default:"—" }}</li>
+      <li><strong>Cargo:</strong> {{ responsable.cargo|default:"—" }}</li>
+      <li><strong>Área:</strong> {{ responsable.area|default:"—" }}</li>
+      <li><strong>Correo:</strong> {{ responsable.correo|default:"—" }}</li>
+      <li><strong>Teléfono:</strong> {{ responsable.telefono|default:"—" }}</li>
+      <li><strong>Usuario:</strong> {% if responsable.user %}{{ responsable.user.username }}{% else %}Sin acceso al sistema{% endif %}</li>
+      <li><strong>Estado:</strong> {% if responsable.activo %}Activo{% else %}Inactivo{% endif %}</li>
+    </ul>
+    {% if responsable.observaciones %}
+    <p><strong>Observaciones:</strong> {{ responsable.observaciones }}</p>
+    {% endif %}
+
+    <h2>Resumen</h2>
+    <ul>
+      <li>Total rendiciones: {{ resumen.total }}</li>
+      <li>En borrador: {{ resumen.borrador }}</li>
+      <li>Pendientes (flujo): {{ resumen.pendientes }}</li>
+      <li>Última:
+        {% if resumen.ultima %}
+          {{ resumen.ultima.numero }} ({{ resumen.ultima.get_estado_display }})
+        {% else %}
+          —
+        {% endif %}
+      </li>
+    </ul>
+
+    {% if responsable.activo %}
+    <form method="post" action="{% url 'adm_responsable_desactivar' responsable.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Desactivar</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'adm_responsable_activar' responsable.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Activar</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

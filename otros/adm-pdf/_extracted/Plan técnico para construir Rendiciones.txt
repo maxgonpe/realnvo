@@ -1,0 +1,392 @@
+Ejemplo de plan técnico para comenzar a
+construir el sistema
+1. El recorrido desde la idea hasta una funcionalidad terminada
+Cada tarea debería recorrer esta cadena:
+
+Necesidad de negocio
+→ reglas y decisiones pendientes
+→ modelo de datos
+→ migración
+→ servicio transaccional
+→ pruebas del servicio
+→ selector de consultas
+→ formulario
+→ vista y URL
+→ interfaz
+→ permisos
+→ auditoría
+→ prueba integral
+→ aceptación
+Esto evita construir pantallas que funcionan visualmente, pero que permiten operaciones financieras
+inconsistentes.
+
+2. Qué es un corte vertical
+Un corte vertical es una función pequeña que atraviesa todas las capas del sistema.
+Por ejemplo:
+
+“Crear una rendición en borrador”
+No significa solamente crear un formulario. Incluye:
+
+Modelo y migración
+Servicio para crearla
+Numeración segura
+Permisos
+Formulario
+Vista
+URL
+
+1
+
+Template
+Auditoría
+Pruebas
+Al terminar ese corte, un usuario puede crear una rendición real y el sistema garantiza que queda
+correctamente registrada.
+
+3. Orden recomendado para construir
+Rendiciones
+Como ya estás trabajando en este módulo, un plan razonable sería el siguiente.
+
+Iteración 0 — Fundaciones necesarias
+Antes de continuar con las funciones financieras:
+Trabajo
+
+Resultado
+
+Separar models.py si ya es demasiado grande
+
+Código mantenible
+
+Consolidar ModeloAuditoria
+
+Fechas y usuarios comunes
+
+Crear servicios y selectores
+
+Reglas separadas de vistas
+
+Configurar grupos y permisos
+
+Control de acceso
+
+Definir adjuntos protegidos
+
+Archivos seguros
+
+Definir eventos de auditoría
+
+Historial transversal
+
+Crear factories de prueba
+
+Datos de prueba repetibles
+
+Estructura inicial:
+
+administracion/
+├── models/
+│
+
+├── base.py
+
+│
+
+├── bancos.py
+
+│
+
+├── facturacion.py
+
+│
+
+├── rendiciones.py
+
+│
+
+└── factoring.py
+
+├── services/
+├── selectors/
+├── forms/
+├── views/
+├── templates/
+└── tests/
+
+2
+
+No es obligatorio dividir inmediatamente todos los modelos, pero sí conviene establecer esta
+arquitectura antes de que el módulo crezca demasiado.
+
+Iteración 1 — Maestros y cabecera
+Tareas:
+
+R003 Responsables
+R004 Categorías
+R002 Crear y editar rendición
+R001 Lista y búsqueda
+Resultado visible:
+
+Usuario entra al módulo
+→ crea un responsable
+→ configura categorías
+→ crea una rendición
+→ la encuentra en el listado
+Criterio para avanzar:
+• Numeración única.
+• Responsable válido.
+• Período válido.
+• Borrador editable.
+• Permisos funcionando.
+• Pruebas aprobadas.
+
+Iteración 2 — Fondos, gastos y documentos
+Tareas:
+
+R005 Entregas de fondo
+R006 Gastos
+R007 Adjuntos
+R008 Validación documental
+R009 Cálculos
+Resultado visible:
+
+Rendición
+→ recibe fondos
+
+3
+
+→ incorpora gastos
+→ adjunta comprobantes
+→ muestra errores
+→ calcula diferencia
+Criterio para avanzar:
+• Los fondos anulados no suman.
+• Los gastos anulados no suman.
+• Los montos usan Decimal .
+• Los documentos están protegidos.
+• Los duplicados se detectan.
+• Los totales de listado y detalle coinciden.
+
+Iteración 3 — Workflow
+Tareas:
+
+R010 Presentación
+R011 Revisión
+R012 Aprobación
+R013 Historial
+Resultado visible:
+
+BORRADOR
+→ PRESENTADA
+→ EN REVISIÓN
+→ OBSERVADA o APROBADA
+Criterio para avanzar:
+• No se edita después de presentar.
+• El responsable no aprueba su propia rendición.
+• Las observaciones no sobrescriben el historial.
+• Las aprobaciones parciales quedan justificadas.
+• Las transiciones inválidas son rechazadas.
+
+Iteración 4 — Liquidación y banco
+Tareas:
+
+R014 Liquidación
+R015 Devolución
+
+4
+
+R016 Reembolso
+R017 Conciliación
+Resultado visible:
+
+Rendición aprobada
+→ liquidación
+├── cuadrada
+├── responsable devuelve
+└── empresa reembolsa
+→ conciliación bancaria
+→ cierre
+Criterio para avanzar:
+• La liquidación conserva snapshot.
+• No se paga más que la diferencia.
+• Una devolución exige ingreso bancario.
+• Un reembolso exige egreso bancario.
+• No existen saldos negativos.
+• El cierre solo ocurre al completar la regularización.
+
+Iteración 5 — Operación y control
+Tareas:
+
+R018 Alertas
+R019 Exportaciones
+R020 Dashboard
+R021 Pruebas integrales
+R022 Manual
+Resultado visible:
+
+Módulo completo
+→ alertas
+→ dashboard
+→ PDF y Excel
+→ pruebas
+→ manual
+
+5
+
+4. Ejemplo completo: implementar R014 —
+Liquidar una rendición
+Este ejemplo muestra cómo una mini especificación se convierte en código.
+LiquidacionRendicion ya existe en tu modelo y se relaciona uno a uno con Rendicion ; también
+conserva fondos, gastos aprobados, diferencia y resultado.
+
+Paso 1 — Escribir la regla de negocio en lenguaje simple
+Una rendición solo puede liquidarse si está aprobada.
+Al liquidar:
+1. Se recalculan los fondos entregados.
+2. Se recalculan los gastos aprobados.
+3. Se calcula la diferencia.
+4. Se determina quién debe pagar.
+5. Se guarda un snapshot.
+6. La rendición cambia a LIQUIDADA.
+7. Se registra la acción.
+Fórmula:
+
+diferencia = fondos entregados − gastos aprobados
+Interpretación:
+
+diferencia = 0
+→ CUADRADA
+diferencia > 0
+→ RESPONSABLE_DEVUELVE
+diferencia < 0
+→ EMPRESA_REEMBOLSA
+
+Paso 2 — Registrar decisiones abiertas
+Antes de programar, se crea un documento pequeño:
+
+6
+
+ADR-014 — Liquidación de rendiciones
+Un ADR es un registro de decisión arquitectónica.
+Ejemplo:
+
+Decisión 1:
+Los totales se recalcularán al liquidar.
+Decisión 2:
+Los valores definitivos se guardarán como snapshot.
+Decisión 3:
+Una liquidación no se editará directamente.
+Decisión 4:
+Las correcciones posteriores exigirán reapertura.
+Decisión 5:
+Los pagos parciales serán permitidos.
+Esto evita que cada programador interprete las reglas de una manera diferente.
+
+Paso 3 — Revisar el modelo
+Una versión simplificada podría quedar así:
+
+from decimal import Decimal
+from django.conf import settings
+from django.db import models
+
+class LiquidacionRendicion(ModeloAuditoria):
+class Resultado(models.TextChoices):
+CUADRADA = "CUADRADA", "Cuadrada"
+RESPONSABLE_DEVUELVE = (
+"RESPONSABLE_DEVUELVE",
+"Responsable debe devolver",
+)
+EMPRESA_REEMBOLSA = (
+"EMPRESA_REEMBOLSA",
+"Empresa debe reembolsar",
+)
+class Estado(models.TextChoices):
+
+7
+
+PENDIENTE = "PENDIENTE", "Pendiente"
+PARCIAL = "PARCIAL", "Parcial"
+REGULARIZADA = "REGULARIZADA", "Regularizada"
+CONCILIADA = "CONCILIADA", "Conciliada"
+ANULADA = "ANULADA", "Anulada"
+rendicion = models.OneToOneField(
+"Rendicion",
+on_delete=models.PROTECT,
+related_name="liquidacion",
+)
+total_fondos = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+total_declarado = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+total_aprobado = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+diferencia = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+resultado = models.CharField(
+max_length=30,
+choices=Resultado.choices,
+)
+estado = models.CharField(
+max_length=20,
+choices=Estado.choices,
+default=Estado.PENDIENTE,
+)
+datos_snapshot = models.JSONField(
+default=dict,
+blank=True,
+)
+liquidada_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.PROTECT,
+
+8
+
+related_name="liquidaciones_realizadas",
+)
+
+Paso 4 — Crear la migración
+python manage.py makemigrations administracion
+python manage.py migrate
+Antes de aplicarla en producción:
+
+python manage.py migrate --plan
+La migración debe revisarse manualmente para comprobar:
+• Que no elimine datos.
+• Que no cambie nombres inesperadamente.
+• Que los valores predeterminados sean correctos.
+• Que las restricciones sean compatibles con registros existentes.
+
+Paso 5 — Crear el servicio financiero
+Este es el corazón de la funcionalidad.
+
+# administracion/services/rendiciones/liquidacion.py
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Sum
+from django.utils import timezone
+from administracion.models import (
+LiquidacionRendicion,
+Rendicion,
+)
+
+@transaction.atomic
+def liquidar_rendicion(
+*,
+rendicion_id: int,
+usuario,
+observaciones: str = "",
+
+9
+
+) -> LiquidacionRendicion:
+rendicion = (
+Rendicion.objects
+.select_for_update

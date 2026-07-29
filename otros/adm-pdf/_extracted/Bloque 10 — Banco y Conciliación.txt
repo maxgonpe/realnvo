@@ -1,0 +1,2622 @@
+Bloque 10 — Mini-especificaciones funcionales y
+técnicas
+Banco y conciliación: B018 a B021
+
+1. Propósito del bloque
+Este bloque completa el módulo bancario mediante funciones de seguimiento, análisis, control y
+validación.
+Incluye:
+• Dashboard de conciliación.
+• Indicadores por cuenta y período.
+• Antigüedad de movimientos pendientes.
+• Seguimiento de conciliaciones parciales.
+• Visualización de diferencias.
+• Alertas automáticas.
+• Detección de movimientos sin identificar.
+• Control de importaciones con errores.
+• Seguimiento de cierres pendientes.
+• Reportes bancarios.
+• Exportación de movimientos y aplicaciones.
+• Certificados de cierre.
+• Pruebas integrales del módulo.
+• Pruebas de concurrencia, permisos y rendimiento.
+Al finalizar este bloque, el sistema podrá responder:
+
+¿Cuántos movimientos están pendientes?
+¿Cuánto dinero continúa sin identificar?
+¿Qué movimientos llevan más tiempo sin conciliar?
+¿Qué cuentas tienen diferencias?
+¿Qué períodos todavía no se han cerrado?
+¿Qué conciliaciones fueron reabiertas?
+¿Qué operaciones fueron excluidas o reversadas?
+¿Los reportes coinciden con el dashboard?
+¿El módulo resiste conciliaciones simultáneas?
+
+1
+
+2. Resumen del bloque
+Código
+
+Actividad
+
+B018
+
+Dashboard de
+conciliación
+
+B019
+
+Horas
+
+Recurso
+
+Cobertura actual
+
+Resultado
+
+8h
+
+Frontend
+
+Sin modelo adicional
+obligatorio
+
+Indicadores
+operativos y
+financieros
+
+Alertas
+bancarias
+
+4h
+
+Backend
+
+No cubierta
+específicamente
+
+Bandeja automática
+de excepciones
+
+B020
+
+Reportes y
+exportación
+
+8h
+
+Frontend
+
+Sin modelo
+obligatorio
+
+Informes y evidencia
+reproducible
+
+B021
+
+Pruebas de
+conciliación
+
+16 h
+
+QA /
+Tester
+
+Pendiente
+
+Validación integral
+del módulo
+
+El bloque suma 36 horas.
+Los criterios establecidos en la Carta Gantt son:
+• B018: pendientes, parciales, diferencias y antigüedad.
+• B019: duplicados, movimientos sin identificar y cierres pendientes.
+• B020: conciliados, pendientes, diferencias y aplicaciones.
+• B021: casos parciales, múltiples, duplicados y reversas.
+
+3. Secuencia funcional
+B018 Dashboard
+→ B019 Alertas bancarias
+→ B020 Reportes y exportación
+→ B021 Pruebas integrales
+Esta secuencia permite:
+1. Definir los indicadores que necesita el área financiera.
+2. Convertir las excepciones importantes en alertas.
+3. Reutilizar los mismos selectores en reportes y exportaciones.
+4. Verificar que dashboard, alertas, reportes y procesos bancarios sean consistentes.
+
+4. Componentes del módulo que alimentan este
+bloque
+El dashboard, las alertas y los reportes utilizarán información de:
+
+2
+
+Banco
+CuentaBancaria
+ImportacionCartola
+MovimientoBancario
+ClasificacionMovimientoBancario
+AplicacionMovimientoBancario
+ExclusionMovimientoBancario
+ConciliacionBancaria
+ReglaCruceBancario
+SugerenciaCruceBancario
+También consultarán operaciones relacionadas de:
+
+PagoCliente
+FacturaVenta
+FlujoFactoring
+EntregaFondo
+PagoLiquidacionRendicion
+DevolucionPagoCliente
+CuentaBancaria ya identifica banco, número de cuenta, tipo, moneda y estado activo.
+ImportacionCartola conserva cuenta, período, archivo, nombre, hash, total de movimientos y
+estado, incluyendo importaciones pendientes, procesadas, con errores o anuladas.
+MovimientoBancario conserva el monto original, calcula el monto aplicado y determina si está no
+conciliado, parcial, conciliado o excluido.
+ConciliacionBancaria ya representa una cuenta y un período, con saldos, diferencia, estado y
+datos del cierre.
+
+5. Decisión arquitectónica sobre alertas
+El modelo existente AlertaCobranza está orientado a:
+• Facturas vencidas.
+• Factoring.
+• Pagos directos de facturas cedidas.
+• Pagos sin factura.
+También se relaciona específicamente con facturas, pagos y operaciones de factoring.
+No se recomienda utilizarlo para alertas bancarias porque produciría una mezcla de dominios y
+relaciones opcionales poco claras.
+Se propone crear:
+
+3
+
+AlertaBancaria
+En una evolución posterior, AlertaBancaria , AlertaCobranza y AlertaRendicion podrán
+mostrarse en una bandeja operacional unificada, sin necesidad de utilizar inmediatamente una misma
+tabla.
+
+B018 — Dashboard de conciliación
+1. Objetivo
+Mostrar una visión operativa y financiera del estado de las cuentas, movimientos y períodos de
+conciliación.
+El dashboard debe identificar:
+
+Qué está pendiente
+Cuánto dinero está involucrado
+Desde cuándo permanece pendiente
+Quién debe actuar
+Qué cuentas presentan diferencias
+Qué períodos necesitan cierre
+
+2. URL
+/administracion/conciliacion/dashboard/
+Nombre recomendado:
+
+administracion:conciliacion_dashboard
+
+3. Vista
+class ConciliacionDashboardView(
+LoginRequiredMixin,
+PermissionRequiredMixin,
+TemplateView,
+):
+permission_required = (
+"administracion.view_dashboard_conciliacion"
+
+4
+
+)
+template_name = (
+"administracion/conciliacion/dashboard/index.html"
+)
+La vista debe limitarse a:
+• Validar permisos.
+• Procesar filtros.
+• Invocar selectores.
+• Entregar contexto al template.
+Los cálculos no deben quedar escritos directamente en la vista.
+
+4. Dashboard según rol
+4.1 Conciliador bancario
+Debe ver:
+• Movimientos no conciliados.
+• Movimientos parciales.
+• Sugerencias pendientes.
+• Movimientos sin clasificación.
+• Aplicaciones por confirmar.
+• Movimientos próximos a alcanzar el plazo máximo.
+• Mis alertas.
+• Períodos abiertos.
+
+4.2 Finanzas
+Debe ver:
+• Total de ingresos y egresos.
+• Monto conciliado.
+• Monto pendiente.
+• Diferencias por cuenta.
+• Conciliaciones por cerrar.
+• Reembolsos pendientes de conciliar.
+• Devoluciones pendientes de conciliar.
+• Fondos entregados sin vínculo bancario.
+• Importaciones con errores.
+
+5
+
+4.3 Administrador
+Debe ver:
+• Todas las cuentas.
+• Tendencia de conciliación.
+• Reglas automáticas.
+• Aplicaciones automáticas y manuales.
+• Reversas.
+• Exclusiones.
+• Reaperturas.
+• Rendimiento por período.
+• Usuarios conciliadores.
+
+4.4 Auditor
+Debe tener acceso de solo lectura a:
+• Estados.
+• Aplicaciones.
+• Exclusiones.
+• Reversas.
+• Cierres.
+• Snapshots.
+• Hash de cierre.
+• Historial.
+No debe visualizar botones de modificación.
+
+5. Filtros generales
+• Banco.
+• Cuenta bancaria.
+• Moneda.
+• Período desde.
+• Período hasta.
+• Fecha de corte.
+• Tipo de movimiento.
+• Estado de conciliación.
+• Destino de aplicación.
+• Clasificación.
+• Conciliador.
+• Importación.
+• Con o sin alerta.
+• Con o sin sugerencia.
+• Regla automática o manual.
+• Período abierto o cerrado.
+
+6
+
+Los filtros deben mantenerse al navegar hacia los listados detallados.
+
+6. Indicadores principales
+6.1 Movimientos
+Cantidad total
+No conciliados
+Parcialmente conciliados
+Conciliados
+Excluidos
+Sin clasificación
+
+6.2 Montos
+Total de ingresos
+Total de egresos
+Monto aplicado
+Saldo por conciliar
+Monto excluido
+Diferencia de períodos
+Ejemplo:
+Indicador
+
+Monto
+
+Ingresos del período
+
+85.000.000 CLP
+
+Egresos del período
+
+73.500.000 CLP
+
+Monto aplicado
+
+152.000.000 CLP
+
+Saldo por conciliar
+
+6.500.000 CLP
+
+Movimientos excluidos
+
+6.3 Períodos
+Períodos abiertos
+Períodos listos para cerrar
+Períodos con pendientes
+Períodos con diferencia
+
+7
+
+350.000 CLP
+
+Períodos cerrados
+Períodos reabiertos
+
+6.4 Importaciones
+Importaciones pendientes
+Importaciones procesadas
+Importaciones con errores
+Importaciones anuladas
+Archivos posiblemente duplicados
+El estado CON_ERRORES ya forma parte de ImportacionCartola , por lo que debe incorporarse al
+panel de excepciones.
+
+6.5 Sugerencias automáticas
+Sugerencias pendientes
+Sugerencias aceptadas
+Sugerencias rechazadas
+Sugerencias aplicadas automáticamente
+Coincidencias de alta confianza
+Conflictos entre reglas
+
+7. Antigüedad de pendientes
+La antigüedad se calculará respecto de:
+
+fecha_operacion
+y una fecha de corte configurable.
+Tramos recomendados:
+
+0–3 días
+4–7 días
+8–15 días
+16–30 días
+Más de 30 días
+Tabla:
+
+8
+
+Tramo
+
+Movimientos
+
+Saldo pendiente
+
+0–3 días
+
+28
+
+1.800.000 CLP
+
+4–7 días
+
+16
+
+850.000 CLP
+
+8–15 días
+
+9
+
+1.200.000 CLP
+
+16–30 días
+
+4
+
+600.000 CLP
+
+Más de 30 días
+
+2
+
+350.000 CLP
+
+Los movimientos excluidos y conciliados no forman parte de la antigüedad pendiente.
+
+8. Indicadores por cuenta
+Último
+cierre
+
+Cuenta
+
+Movimientos
+
+Conciliado
+
+Pendiente
+
+Diferencia
+
+Banco A
+••••1234
+
+850
+
+95.000.000
+CLP
+
+1.200.000
+CLP
+
+0 CLP
+
+30-09-2026
+
+Banco B
+••••9876
+
+210
+
+18.000.000
+CLP
+
+700.000 CLP
+
+25.000
+CLP
+
+Pendiente
+
+La cuenta debe mostrarse enmascarada, manteniendo visible:
+• Banco.
+• Nombre interno.
+• Últimos dígitos.
+• Moneda.
+
+9. Indicadores por destino
+Mostrar cuánto se aplicó a:
+
+Pagos de clientes
+Factoring
+Entregas de fondos
+Devoluciones de responsables
+Reembolsos
+Devoluciones a clientes
+Otros
+Esto permite comprobar qué módulos explican los flujos bancarios.
+
+9
+
+10. Diferencias por período
+Tabla:
+Cuenta
+
+Período
+
+Saldo banco
+
+Saldo libro
+
+Diferencia
+
+Estado
+
+Cuenta principal
+
+Septiembre
+2026
+
+25.500.000
+CLP
+
+25.500.000
+CLP
+
+0 CLP
+
+Cerrada
+
+Cuenta
+secundaria
+
+Septiembre
+2026
+
+8.300.000 CLP
+
+8.275.000 CLP
+
+25.000
+CLP
+
+Abierta
+
+La diferencia debe usar la misma fórmula definida en B017:
+
+diferencia = saldo banco − saldo libro
+
+11. Exclusiones y reversas
+Indicadores:
+• Movimientos excluidos.
+• Monto excluido.
+• Exclusiones por tipo.
+• Exclusiones revocadas.
+• Aplicaciones reversadas.
+• Períodos reabiertos.
+• Usuarios que ejecutaron reversas.
+• Monto total reversado.
+Estos indicadores deben servir como control, no como evaluación automática del desempeño de los
+usuarios.
+
+12. Gráficos recomendados
+Distribución por estado
+• No conciliado.
+• Parcial.
+• Conciliado.
+• Excluido.
+
+Evolución diaria o mensual
+• Saldo pendiente.
+
+10
+
+• Movimientos conciliados.
+• Diferencias.
+
+Antigüedad
+• Cantidad por tramo.
+• Monto por tramo.
+
+Aplicaciones por destino
+• Pagos.
+• Rendiciones.
+• Factoring.
+• Devoluciones.
+
+Cierres
+• Cerrados a tiempo.
+• Cerrados con atraso.
+• Reabiertos.
+• Con diferencia.
+Cada gráfico debe tener una tabla equivalente.
+
+13. Navegación desde indicadores
+Ejemplo:
+
+Tarjeta “Movimientos parciales: 18”
+→ /administracion/movimientos/?estado=PARCIAL
+
+Tarjeta “Importaciones con errores: 3”
+→ /administracion/cartolas/importaciones/?estado=CON_ERRORES
+
+Tarjeta “Períodos pendientes: 2”
+→ /administracion/conciliaciones/?estado=ABIERTA
+
+14. Selectores
+selectors/dashboard_conciliacion.py
+Funciones:
+
+11
+
+obtener_resumen_movimientos()
+obtener_resumen_montos()
+obtener_resumen_importaciones()
+obtener_antiguedad_pendientes()
+obtener_indicadores_por_cuenta()
+obtener_indicadores_por_destino()
+obtener_resumen_periodos()
+obtener_resumen_exclusiones()
+obtener_resumen_reversas()
+obtener_resumen_sugerencias()
+
+15. Rendimiento
+Se utilizarán:
+• Sum .
+• Count .
+• Case .
+• When .
+• Coalesce .
+• Anotaciones.
+• Consultas agrupadas.
+• values() .
+No debe recorrerse cada movimiento llamando individualmente:
+
+movimiento.monto_aplicado
+porque esto puede generar consultas N+1.
+Para el dashboard se construirán anotaciones equivalentes a:
+
+monto_aplicado_db
+saldo_por_conciliar_db
+cantidad_aplicaciones_db
+
+16. Caché
+Los indicadores globales pueden almacenarse durante un período breve:
+
+1 a 5 minutos
+
+12
+
+La clave debe incluir:
+• Usuario.
+• Rol.
+• Cuenta.
+• Período.
+• Filtros.
+• Fecha de corte.
+Las alertas críticas y los saldos de una pantalla de conciliación activa no deben depender
+exclusivamente de una caché desactualizada.
+
+17. Templates
+templates/administracion/conciliacion/dashboard/
+├── index.html
+├── _filtros.html
+├── _tarjetas.html
+├── _cuentas.html
+├── _antiguedad.html
+├── _destinos.html
+├── _diferencias.html
+├── _importaciones.html
+├── _alertas.html
+└── _cierres.html
+
+18. Permisos
+view_dashboard_conciliacion
+view_dashboard_conciliacion_global
+view_dashboard_conciliacion_financiero
+view_indicadores_auditoria_bancaria
+
+19. Pruebas
+• Dashboard sin datos.
+• Una cuenta.
+• Varias cuentas.
+• Filtro por período.
+• Filtro por moneda.
+• Pendientes.
+• Parciales.
+
+13
+
+• Excluidos.
+• Antigüedad.
+• Diferencias.
+• Importaciones con errores.
+• Sugerencias.
+• Exclusiones.
+• Reversas.
+• Roles.
+• Navegación.
+• Caché.
+• Conteo de consultas.
+
+20. Criterios de aceptación
+• Los indicadores coinciden con los listados.
+• Los montos coinciden con los reportes.
+• Los filtros son combinables.
+• La antigüedad usa fecha de corte.
+• Los movimientos excluidos se presentan separadamente.
+• Los datos cambian según el rol.
+• Las cuentas aparecen enmascaradas.
+• Los indicadores permiten abrir su detalle.
+• No existen consultas N+1 críticas.
+• Los gráficos tienen alternativa tabular.
+
+B019 — Alertas bancarias
+1. Objetivo
+Detectar automáticamente errores, atrasos, movimientos sin identificar y cierres pendientes.
+Las alertas deben indicar:
+• Condición detectada.
+• Cuenta.
+• Movimiento o período afectado.
+• Fecha límite.
+• Severidad.
+• Responsable.
+• Acción recomendada.
+
+14
+
+2. Modelo propuesto
+class AlertaBancaria(ModeloAuditoria):
+class Tipo(models.TextChoices):
+IMPORTACION_PENDIENTE = (
+"IMPORTACION_PENDIENTE",
+"Importación pendiente",
+)
+IMPORTACION_CON_ERRORES = (
+"IMPORTACION_CON_ERRORES",
+"Importación con errores",
+)
+ARCHIVO_DUPLICADO = (
+"ARCHIVO_DUPLICADO",
+"Archivo de cartola duplicado",
+)
+MOVIMIENTO_DUPLICADO = (
+"MOVIMIENTO_DUPLICADO",
+"Movimiento posiblemente duplicado",
+)
+MOVIMIENTO_SIN_IDENTIFICAR = (
+"MOVIMIENTO_SIN_IDENTIFICAR",
+"Movimiento sin identificar",
+)
+MOVIMIENTO_PARCIAL_ANTIGUO = (
+"MOVIMIENTO_PARCIAL_ANTIGUO",
+"Movimiento parcial antiguo",
+)
+MOVIMIENTO_PENDIENTE_ANTIGUO = (
+"MOVIMIENTO_PENDIENTE_ANTIGUO",
+"Movimiento pendiente antiguo",
+)
+SUGERENCIAS_CONFLICTIVAS = (
+"SUGERENCIAS_CONFLICTIVAS",
+"Sugerencias de conciliación conflictivas",
+)
+APLICACION_INCONSISTENTE = (
+"APLICACION_INCONSISTENTE",
+"Aplicación bancaria inconsistente",
+)
+PERIODO_PENDIENTE_CIERRE = (
+"PERIODO_PENDIENTE_CIERRE",
+"Período pendiente de cierre",
+)
+CIERRE_CON_DIFERENCIA = (
+"CIERRE_CON_DIFERENCIA",
+"Cierre con diferencia",
+)
+PERIODO_REABIERTO = (
+"PERIODO_REABIERTO",
+
+15
+
+"Período reabierto",
+)
+MOVIMIENTO_EN_PERIODO_CERRADO = (
+"MOVIMIENTO_EN_PERIODO_CERRADO",
+"Movimiento detectado en período cerrado",
+)
+OTRO = "OTRO", "Otro"
+class Severidad(models.TextChoices):
+BAJA = "BAJA", "Baja"
+MEDIA = "MEDIA", "Media"
+ALTA = "ALTA", "Alta"
+CRITICA = "CRITICA", "Crítica"
+class Estado(models.TextChoices):
+ABIERTA = "ABIERTA", "Abierta"
+EN_GESTION = "EN_GESTION", "En gestión"
+RESUELTA = "RESUELTA", "Resuelta"
+DESCARTADA = "DESCARTADA", "Descartada"
+tipo = models.CharField(
+max_length=50,
+choices=Tipo.choices,
+)
+severidad = models.CharField(
+max_length=10,
+choices=Severidad.choices,
+default=Severidad.MEDIA,
+)
+estado = models.CharField(
+max_length=20,
+choices=Estado.choices,
+default=Estado.ABIERTA,
+)
+cuenta_bancaria = models.ForeignKey(
+CuentaBancaria,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="alertas",
+)
+importacion = models.ForeignKey(
+ImportacionCartola,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas",
+
+16
+
+)
+movimiento = models.ForeignKey(
+MovimientoBancario,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas",
+)
+aplicacion = models.ForeignKey(
+AplicacionMovimientoBancario,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas",
+)
+conciliacion = models.ForeignKey(
+ConciliacionBancaria,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas",
+)
+titulo = models.CharField(max_length=200)
+detalle = models.TextField()
+datos = models.JSONField(default=dict, blank=True)
+fecha_limite = models.DateField(
+null=True,
+blank=True,
+)
+asignada_a = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_bancarias_asignadas",
+)
+asignada_grupo = models.ForeignKey(
+Group,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_bancarias",
+)
+
+17
+
+clave_control = models.CharField(
+max_length=220,
+unique=True,
+)
+resuelta_en = models.DateTimeField(
+null=True,
+blank=True,
+)
+resuelta_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="alertas_bancarias_resueltas",
+)
+motivo_resolucion = models.TextField(blank=True)
+
+3. Relación principal de la alerta
+Cada alerta debe tener un objeto principal.
+Ejemplos:
+
+IMPORTACION_CON_ERRORES
+→ ImportacionCartola
+
+MOVIMIENTO_SIN_IDENTIFICAR
+→ MovimientoBancario
+
+APLICACION_INCONSISTENTE
+→ AplicacionMovimientoBancario
+
+PERIODO_PENDIENTE_CIERRE
+→ ConciliacionBancaria
+No se debe exigir que todas las FKs estén informadas.
+
+18
+
+4. Prevención de duplicados
+Se utilizará:
+
+clave_control
+Ejemplos:
+
+IMPORTACION_CON_ERRORES:importacion:38
+MOVIMIENTO_SIN_IDENTIFICAR:movimiento:1854
+PERIODO_PENDIENTE_CIERRE:conciliacion:22
+Mientras exista una alerta abierta o en gestión con la misma clave, no se creará otra.
+El proceso debe ser idempotente.
+
+5. Alertas de importación
+5.1 Importación pendiente
+Condición:
+
+Estado PENDIENTE
+durante más del plazo configurado
+Resolución:
+• Procesar.
+• Anular.
+• Registrar error.
+
+5.2 Importación con errores
+Condición:
+
+ImportacionCartola.estado = CON_ERRORES
+La importación ya dispone de este estado.
+
+19
+
+La alerta debe informar:
+• Archivo.
+• Cuenta.
+• Período.
+• Cantidad de movimientos.
+• Error principal.
+• Usuario que importó.
+
+5.3 Archivo duplicado
+La detección utilizará:
+
+sha256
+ImportacionCartola ya almacena el hash del archivo.
+La alerta se generará cuando:
+• Se intente importar el mismo hash.
+• Exista un archivo diferente con movimientos idénticos.
+• Dos archivos cubran el mismo período con contenido superpuesto.
+
+6. Alertas de movimientos
+6.1 Movimiento sin identificar
+Condición:
+
+NO_CONCILIADO
+sin clasificación suficiente
+sin sugerencias de alta confianza
+y supera el plazo
+
+6.2 Movimiento pendiente antiguo
+Condición:
+
+NO_CONCILIADO
+y antigüedad superior al límite
+
+20
+
+6.3 Movimiento parcial antiguo
+Condición:
+
+PARCIAL
+con saldo pendiente
+y antigüedad superior al límite
+La alerta debe mostrar:
+• Monto original.
+• Monto aplicado.
+• Saldo.
+• Aplicaciones existentes.
+• Días pendiente.
+
+6.4 Movimiento posiblemente duplicado
+Aunque el fingerprint único impide duplicados exactos dentro de la misma cuenta, pueden existir
+posibles duplicados por diferencias en:
+• Texto.
+• Identificador.
+• Fecha contable.
+• Redondeo.
+• Archivo de origen.
+La alerta debe ser una advertencia revisable, no una eliminación automática.
+
+7. Alertas de aplicaciones
+Aplicación inconsistente
+Debe generarse ante problemas de integridad detectados por un proceso de control:
+• Origen sobreaplicado.
+• Destino sobreaplicado.
+• Dirección incorrecta.
+• Aplicación activa hacia operación anulada.
+• FK incompatible con destino.
+• Aplicación dentro de período cerrado después del snapshot.
+• Estado de movimiento diferente del calculado.
+
+21
+
+Estas condiciones deberían estar impedidas por servicios y restricciones. La alerta actúa como control
+defensivo ante:
+• Datos heredados.
+• Migraciones.
+• Cambios manuales.
+• Errores históricos.
+
+8. Alertas de reglas automáticas
+Sugerencias conflictivas
+Condición:
+• Dos candidatos tienen puntaje similar.
+• Varias reglas proponen destinos incompatibles.
+• Una regla automática intenta usar un saldo ya utilizado.
+• La sugerencia expiró antes de confirmarse.
+La alerta se asignará al conciliador.
+
+9. Alertas de cierre
+9.1 Período pendiente de cierre
+Condición:
+
+El período terminó
+y la conciliación continúa ABIERTA
+
+9.2 Cierre con diferencia
+Condición:
+
+diferencia != 0
+La severidad dependerá de:
+• Monto.
+• Tolerancia.
+• Días de atraso.
+• Cuenta.
+
+22
+
+9.3 Período reabierto
+Toda reapertura debe generar una alerta informativa o de severidad alta para:
+• Finanzas.
+• Auditoría.
+• Administrador.
+La alerta se resuelve después del nuevo cierre.
+
+9.4 Movimiento detectado en período cerrado
+Condición:
+• Se importa una cartola nueva.
+• Aparece un movimiento cuya fecha pertenece a un período cerrado.
+• El movimiento no formaba parte del snapshot.
+Debe generarse una alerta crítica porque podría requerir reapertura.
+
+10. Configuración de plazos
+PLAZOS_ALERTAS_BANCARIAS = {
+"DIAS_IMPORTACION_PENDIENTE": 1,
+"DIAS_MOVIMIENTO_SIN_IDENTIFICAR": 5,
+"DIAS_MOVIMIENTO_PARCIAL": 7,
+"DIAS_CIERRE_PERIODO": 5,
+"DIAS_GESTION_ALERTA_ALTA": 2,
+}
+Los valores son ejemplos técnicos y deben ajustarse a la política operativa.
+
+11. Proceso automático
+Comando:
+
+python manage.py generar_alertas_bancarias
+Flujo:
+
+23
+
+Revisar importaciones
+→ revisar duplicados
+→ revisar movimientos pendientes
+→ revisar parciales
+→ revisar integridad de aplicaciones
+→ revisar períodos
+→ crear alertas faltantes
+→ actualizar severidad
+→ resolver alertas corregidas
+
+12. Resolución automática
+Movimiento sin identificar
+Resolver cuando:
+• Se concilia.
+• Se excluye justificadamente.
+• Se clasifica y deja de cumplir la condición.
+
+Movimiento parcial
+Resolver cuando:
+• Se concilia completamente.
+• Se revierte y deja de estar parcial.
+• Se excluye después de una reapertura autorizada.
+
+Período pendiente
+Resolver cuando:
+• Se cierra.
+• Se anula justificadamente.
+
+Importación con errores
+Resolver cuando:
+• Se procesa correctamente una nueva versión.
+• Se anula.
+• Se corrige el error.
+
+13. Bandeja de alertas
+URL:
+
+24
+
+/administracion/conciliacion/alertas/
+Filtros:
+• Tipo.
+• Severidad.
+• Estado.
+• Cuenta.
+• Banco.
+• Movimiento.
+• Período.
+• Asignada a mí.
+• Fecha límite.
+• Días de atraso.
+• Monto involucrado.
+
+14. Acciones
+• Abrir importación.
+• Abrir movimiento.
+• Clasificar.
+• Ejecutar cruce asistido.
+• Excluir.
+• Revisar regla.
+• Abrir período.
+• Reabrir.
+• Marcar en gestión.
+• Resolver.
+• Descartar con motivo.
+• Reasignar.
+
+15. Servicio
+services/conciliacion/alertas.py
+Funciones:
+
+generar_alertas_importaciones()
+generar_alertas_duplicados()
+generar_alertas_movimientos()
+generar_alertas_aplicaciones()
+generar_alertas_sugerencias()
+generar_alertas_cierres()
+resolver_alertas_corregidas()
+
+25
+
+actualizar_severidades()
+asignar_alerta()
+resolver_alerta()
+descartar_alerta()
+
+16. Permisos
+view_alertabancaria
+gestionar_alertabancaria
+resolver_alertabancaria
+descartar_alertabancaria
+reasignar_alertabancaria
+
+17. Auditoría
+Registrar:
+• Creación.
+• Regla que originó la alerta.
+• Severidad inicial.
+• Cambios de severidad.
+• Asignación.
+• Gestión.
+• Resolución.
+• Descarte.
+• Reaparición.
+
+18. Pruebas
+• Importación pendiente.
+• Importación con errores.
+• Archivo duplicado.
+• Movimiento sin identificar.
+• Movimiento parcial antiguo.
+• Movimiento duplicado probable.
+• Aplicación inconsistente.
+• Sugerencias conflictivas.
+• Cierre pendiente.
+• Cierre con diferencia.
+• Período reabierto.
+• Movimiento en período cerrado.
+• Idempotencia.
+
+26
+
+• Resolución automática.
+• Descarte.
+• Reaparición.
+• Permisos.
+
+19. Criterios de aceptación
+• Las alertas se generan automáticamente.
+• No se duplican.
+• Se relacionan con su objeto.
+• Se asignan al rol correcto.
+• La severidad refleja monto y antigüedad.
+• Las condiciones corregidas se resuelven.
+• Las excepciones críticas permanecen auditables.
+• La bandeja contiene accesos directos.
+• El proceso puede ejecutarse repetidamente.
+
+20. Evaluación de esfuerzo
+Las 4 horas permiten un MVP con:
+• Movimientos sin identificar.
+• Importaciones con errores.
+• Cierres pendientes.
+• Bandeja básica.
+La integridad avanzada, escalamiento y todas las reglas descritas deben desarrollarse progresivamente
+junto con B012, B016, B017 y B021.
+
+B020 — Reportes y exportación
+1. Objetivo
+Generar informes reproducibles sobre:
+• Movimientos conciliados.
+• Movimientos pendientes.
+• Conciliaciones parciales.
+• Diferencias.
+• Aplicaciones.
+• Exclusiones.
+• Reversas.
+• Cierres.
+La Carta Gantt exige expresamente reportar conciliados, pendientes, diferencias y aplicaciones.
+
+27
+
+2. Reportes iniciales
+2.1 Movimientos bancarios
+Columnas:
+• Banco.
+• Cuenta.
+• Fecha.
+• Tipo.
+• Monto.
+• Descripción.
+• Contraparte.
+• Clasificación.
+• Monto aplicado.
+• Saldo pendiente.
+• Estado.
+• Importación.
+Filtros:
+• Cuenta.
+• Fecha.
+• Estado.
+• Tipo.
+• Clasificación.
+• Contraparte.
+• Monto.
+
+2.2 Movimientos pendientes
+Debe incluir:
+• Antigüedad.
+• Saldo.
+• Alertas.
+• Sugerencias.
+• Última actividad.
+• Conciliador asignado.
+
+2.3 Conciliaciones parciales
+Debe mostrar:
+• Movimiento.
+
+28
+
+• Monto original.
+• Aplicaciones.
+• Destinos.
+• Monto aplicado.
+• Saldo pendiente.
+• Días pendiente.
+
+2.4 Aplicaciones bancarias
+Una fila por aplicación:
+Movimiento
+
+Destino
+
+Operación
+
+Monto
+
+Debe permitir filtrar por:
+• Destino.
+• Usuario.
+• Manual o automático.
+• Activa o anulada.
+• Período.
+• Cuenta.
+
+2.5 Exclusiones
+Debe mostrar:
+• Movimiento.
+• Tipo de exclusión.
+• Monto.
+• Motivo.
+• Usuario.
+• Fecha.
+• Estado.
+• Revocación.
+
+2.6 Reversas
+Debe mostrar:
+• Aplicación original.
+• Movimiento.
+• Destino.
+• Monto.
+• Usuario que aplicó.
+• Usuario que reversó.
+
+29
+
+Fecha
+
+Estado
+
+Usuario
+
+• Motivo.
+• Estados afectados.
+• Período.
+• Correlation ID.
+
+2.7 Cierres de período
+Debe mostrar:
+• Cuenta.
+• Período.
+• Saldo banco.
+• Saldo libro.
+• Diferencia.
+• Movimientos.
+• Conciliados.
+• Excluidos.
+• Fecha de cierre.
+• Usuario.
+• Número de revisión.
+• Hash.
+
+2.8 Efectividad de reglas
+• Regla.
+• Versión.
+• Sugerencias.
+• Aceptadas.
+• Rechazadas.
+• Aplicadas automáticamente.
+• Reversadas.
+• Porcentaje de aceptación.
+Este reporte es de control de reglas, no de evaluación individual del personal.
+
+3. Formatos
+Primera fase:
+
+XLSX
+CSV
+Segunda fase:
+
+30
+
+PDF
+El PDF se utilizará principalmente para:
+• Certificado de cierre.
+• Resumen ejecutivo.
+• Informe de excepciones.
+Excel y CSV se utilizarán para datos detallados.
+
+4. Arquitectura
+Filtros
+→ selector
+→ estructura de datos
+→ exportador
+→ archivo protegido
+→ auditoría
+El dashboard, los listados y las exportaciones deben utilizar los mismos selectores.
+
+5. Fecha de corte
+Los reportes deben aceptar:
+
+fecha de corte
+Esto permite reproducir preguntas como:
+
+¿Cuál era el saldo pendiente al 30 de septiembre de 2026?
+Cuando el sistema no tenga snapshots diarios, el reporte histórico dependerá de:
+• Fechas de creación.
+• Fechas de aplicación.
+• Fechas de anulación.
+• Fecha de exclusión.
+• Fecha de cierre.
+Por ello, las aplicaciones y reversas deben conservar timestamps completos.
+
+31
+
+6. Excel de conciliación
+Hojas recomendadas:
+
+Resumen
+Movimientos
+Aplicaciones
+Pendientes
+Parciales
+Exclusiones
+Reversas
+Alertas
+Cierres
+Filtros
+
+7. Hoja Resumen
+Debe incluir:
+• Banco.
+• Cuenta.
+• Período.
+• Fecha de corte.
+• Ingresos.
+• Egresos.
+• Monto aplicado.
+• Saldo pendiente.
+• Monto excluido.
+• Diferencia.
+• Cantidades por estado.
+
+8. Certificado de cierre PDF
+Contenido:
+
+Identificación
+• Banco.
+• Cuenta enmascarada.
+• Moneda.
+• Período.
+• Número de revisión.
+
+32
+
+Saldos
+• Saldo inicial.
+• Ingresos.
+• Egresos.
+• Saldo final banco.
+• Saldo libro.
+• Diferencia.
+
+Conciliación
+• Movimientos totales.
+• Conciliados.
+• Excluidos.
+• Pendientes.
+• Parciales.
+
+Control
+• Usuario que cerró.
+• Fecha.
+• Motivo de diferencia.
+• Reaperturas.
+• Hash.
+
+Declaración
+El presente certificado reproduce el estado de la conciliación
+registrado al momento del cierre indicado.
+
+9. Exportación de aplicaciones
+Cada aplicación debe indicar el destino legible:
+
+Pago de cliente #184
+Entrega de fondo #32
+Liquidación de rendición REN-2026-000123
+Flujo de factoring #47
+Devolución a cliente #15
+No debe exportarse únicamente una FK numérica sin contexto.
+
+33
+
+10. Metadatos
+Cada archivo incluirá:
+• Nombre del reporte.
+• Fecha y hora.
+• Usuario.
+• Filtros.
+• Cuenta.
+• Período.
+• Fecha de corte.
+• Moneda.
+• Cantidad de filas.
+• Versión del formato.
+
+11. Modelo opcional
+class ExportacionBancaria(ModeloAuditoria):
+class Formato(models.TextChoices):
+XLSX = "XLSX", "Excel"
+CSV = "CSV", "CSV"
+PDF = "PDF", "PDF"
+tipo_reporte = models.CharField(max_length=50)
+formato = models.CharField(
+max_length=10,
+choices=Formato.choices,
+)
+cuenta_bancaria = models.ForeignKey(
+CuentaBancaria,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="exportaciones",
+)
+conciliacion = models.ForeignKey(
+ConciliacionBancaria,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="exportaciones",
+)
+filtros = models.JSONField(default=dict)
+cantidad_registros = models.PositiveIntegerField(default=0)
+
+34
+
+nombre_archivo = models.CharField(max_length=255)
+hash_archivo = models.CharField(max_length=64, blank=True)
+Este modelo puede omitirse si EventoAuditoria conserva toda la información necesaria.
+
+12. Seguridad
+1. La descarga requiere autenticación.
+2. Se valida permiso por cuenta.
+3. Los números de cuenta se enmascaran.
+4. El RUT puede ocultarse según rol.
+5. Los archivos temporales se eliminan.
+6. Los reportes no se publican en media .
+7. Los filtros se aplican también en el backend.
+8. El Excel neutraliza fórmulas.
+9. Las exportaciones quedan auditadas.
+10. Los snapshots cerrados no se recalculan.
+
+13. Neutralización de fórmulas
+Valores que comiencen por:
+
+=
++
+@
+y provengan de texto bancario deben tratarse como texto en Excel.
+Esto evita que una descripción importada sea interpretada como fórmula.
+
+14. Servicios
+services/conciliacion/reportes/
+├── datos.py
+├── movimientos_xlsx.py
+├── aplicaciones_xlsx.py
+├── pendientes_xlsx.py
+├── cierre_pdf.py
+├── exportacion_csv.py
+└── archivos.py
+
+35
+
+Funciones:
+
+obtener_datos_movimientos()
+obtener_datos_aplicaciones()
+obtener_datos_exclusiones()
+obtener_datos_reversas()
+obtener_datos_cierre()
+generar_reporte_xlsx()
+generar_reporte_csv()
+generar_certificado_cierre()
+registrar_exportacion()
+
+15. URLs
+/administracion/conciliacion/reportes/
+/administracion/conciliacion/reportes/movimientos/
+/administracion/conciliacion/reportes/pendientes/
+/administracion/conciliacion/reportes/aplicaciones/
+/administracion/conciliacion/reportes/exclusiones/
+/administracion/conciliacion/reportes/reversas/
+/administracion/conciliaciones/<pk>/certificado/
+
+16. Vistas
+ReportesConciliacionView
+MovimientosExportarView
+PendientesExportarView
+AplicacionesExportarView
+ExclusionesExportarView
+ReversasExportarView
+ConciliacionCertificadoView
+
+17. Permisos
+view_reportes_conciliacion
+exportar_movimientos_bancarios
+exportar_aplicaciones_bancarias
+exportar_datos_sensibles_bancarios
+exportar_certificado_conciliacion
+
+36
+
+18. Auditoría
+Registrar:
+• Usuario.
+• Tipo.
+• Formato.
+• Cuenta.
+• Período.
+• Filtros.
+• Número de registros.
+• Nombre.
+• Hash.
+• Resultado.
+
+19. Pruebas
+• Excel de movimientos.
+• Pendientes.
+• Parciales.
+• Aplicaciones.
+• Exclusiones.
+• Reversas.
+• Cierre PDF.
+• Filtros.
+• Totales.
+• Fecha de corte.
+• Cuenta enmascarada.
+• Fórmula maliciosa.
+• Archivo vacío.
+• Volumen alto.
+• Usuario sin permiso.
+• Eliminación de temporal.
+• Auditoría.
+
+20. Criterios de aceptación
+• Existen los reportes principales.
+• Los datos coinciden con los listados.
+• Los totales coinciden con el dashboard.
+• Las aplicaciones son identificables.
+• Los filtros quedan documentados.
+• Los archivos abren correctamente.
+• Los datos sensibles están protegidos.
+• Los certificados usan el snapshot de cierre.
+
+37
+
+• Las exportaciones quedan auditadas.
+
+B021 — Pruebas de conciliación
+1. Objetivo
+Validar integralmente el módulo bancario desde la configuración de la cuenta hasta el cierre y la
+reapertura de un período.
+Las pruebas deben cubrir:
+
+Importación
+Duplicados
+Movimientos
+Clasificación
+Aplicaciones
+Pagos
+Facturas
+Rendiciones
+Factoring
+Exclusiones
+Reversas
+Cierres
+Dashboard
+Alertas
+Reportes
+
+2. Niveles de prueba
+Unitarias
+Validan:
+• Fingerprints.
+• Saldos.
+• Estados.
+• Puntajes.
+• Antigüedad.
+• Diferencias.
+• Direcciones.
+• Tolerancias.
+
+38
+
+Servicios
+Validan:
+• Importación.
+• Aplicación.
+• Conciliación parcial.
+• Cruce automático.
+• Exclusión.
+• Reversa.
+• Cierre.
+• Reapertura.
+
+Integración
+Validan:
+• Banco y facturas.
+• Banco y rendiciones.
+• Banco y factoring.
+• Banco y devoluciones.
+• Alertas y dashboard.
+
+Vistas
+Validan:
+• Formularios.
+• Filtros.
+• Paginación.
+• Acciones.
+• Mensajes.
+
+Seguridad
+Validan:
+• Permisos.
+• Cuenta.
+• Período.
+• Descargas.
+• Datos sensibles.
+
+Rendimiento
+Validan:
+• Dashboard.
+• Listados.
+• Reportes.
+
+39
+
+• Generación de alertas.
+• Reglas automáticas.
+
+3. Escenarios críticos
+Escenario 1 — Importación correcta
+Crear cuenta
+→ importar cartola
+→ validar
+→ confirmar
+→ generar movimientos
+Resultado:
+• Importación procesada.
+• Movimientos únicos.
+• Totales correctos.
+• Archivo identificado mediante hash.
+
+Escenario 2 — Archivo duplicado
+Importar dos veces el mismo archivo
+Resultado:
+• Segunda carga bloqueada o advertida.
+• No se duplican movimientos.
+• Se registra el intento.
+
+Escenario 3 — Movimiento duplicado probable
+Dos archivos diferentes contienen una operación similar.
+Resultado:
+• Alerta de posible duplicado.
+• No se elimina automáticamente.
+• Revisión manual disponible.
+
+40
+
+Escenario 4 — Conciliación simple
+Movimiento de ingreso 500.000 CLP
+→ PagoCliente 500.000 CLP
+Resultado:
+
+Movimiento CONCILIADO
+Pago bancariamente CONCILIADO
+
+Escenario 5 — Conciliación parcial
+Movimiento:
+Aplicación:
+
+1.000.000 CLP
+600.000 CLP
+
+Resultado:
+
+Movimiento PARCIAL
+Saldo pendiente 400.000 CLP
+
+Escenario 6 — Varias aplicaciones
+Movimiento:
+Pago cliente:
+Flujo factoring:
+Otro destino:
+
+1.000.000 CLP
+600.000 CLP
+250.000 CLP
+150.000 CLP
+
+Resultado:
+• Movimiento conciliado.
+• Cada destino actualizado.
+• Historial completo.
+
+Escenario 7 — Un movimiento paga varias facturas
+Movimiento
+→ PagoCliente
+→ Factura A
+
+41
+
+→ Factura B
+→ Factura C
+Resultado:
+• No se crea relación directa movimiento-factura.
+• Los saldos de pago y facturas son correctos.
+
+Escenario 8 — Varios movimientos cubren un pago
+PagoCliente:
+Movimiento A:
+Movimiento B:
+
+1.000.000 CLP
+600.000 CLP
+400.000 CLP
+
+Resultado:
+• Pago conciliado.
+• Ambos movimientos actualizados.
+
+Escenario 9 — Entrega de fondo
+Movimiento EGRESO
+→ EntregaFondo
+Debe rechazarse un movimiento de ingreso.
+
+Escenario 10 — Devolución del responsable
+PagoLiquidacion DEVOLUCION_RESPONSABLE
+→ Movimiento INGRESO
+Debe rechazarse un egreso.
+
+Escenario 11 — Reembolso
+PagoLiquidacion REEMBOLSO_EMPRESA
+→ Movimiento EGRESO
+Debe rechazarse un ingreso.
+
+42
+
+Escenario 12 — Factoring
+Validar:
+• Anticipo.
+• Liquidación.
+• Comisión.
+• Cobro con recurso.
+• Dirección correcta.
+
+Escenario 13 — Regla automática
+Monto exacto
++ referencia exacta
++ RUT exacto
++ fecha cercana
+Resultado:
+• Sugerencia de alta confianza.
+• Razones visibles.
+• Aplicación solo si la regla está autorizada.
+
+Escenario 14 — Conflicto de sugerencias
+Dos operaciones obtienen puntajes similares.
+Resultado:
+• No se aplica automáticamente.
+• Se crea alerta.
+• Se envía a cruce asistido.
+
+Escenario 15 — Exclusión
+Movimiento sin aplicaciones
+→ excluir con motivo
+Resultado:
+• Estado EXCLUIDO .
+• Cartola intacta.
+
+43
+
+• Exclusión visible en cierre.
+
+Escenario 16 — Revocación de exclusión
+Resultado:
+• Movimiento vuelve a pendiente.
+• Historial conservado.
+• Requiere período abierto.
+
+Escenario 17 — Reversa simple
+Aplicación activa
+→ reversar
+Resultado:
+• Aplicación inactiva.
+• Movimiento recupera saldo.
+• Destino recupera saldo.
+• Motivo registrado.
+
+Escenario 18 — Reversa transversal
+Revertir una operación que creó:
+• Pago.
+• Aplicación bancaria.
+• Aplicaciones a facturas.
+Resultado:
+• Solo se revierten relaciones del mismo correlation_id .
+• No se anulan relaciones independientes.
+• Estados consistentes.
+
+Escenario 19 — Cierre sin diferencia
+Saldo banco = saldo libro
+Pendientes = 0
+
+44
+
+Resultado:
+• Período cerrado.
+• Snapshot.
+• Hash.
+• Bloqueo.
+
+Escenario 20 — Cierre con diferencia autorizada
+Resultado:
+• Diferencia dentro de tolerancia.
+• Motivo obligatorio.
+• Permiso especial.
+• Diferencia visible en certificado.
+
+Escenario 21 — Cierre bloqueado
+Condiciones posibles:
+• Movimiento pendiente.
+• Movimiento parcial.
+• Importación con errores.
+• Aplicación inválida.
+• Diferencia fuera de tolerancia.
+Resultado:
+• No se cierra.
+• Se informa cada impedimento.
+
+Escenario 22 — Período cerrado
+Intentar:
+• Aplicar.
+• Excluir.
+• Reversar.
+• Modificar saldo.
+Resultado:
+
+Operación denegada
+
+45
+
+Escenario 23 — Reapertura
+CERRADA
+→ reabrir con motivo
+→ corregir
+→ cerrar nuevamente
+Resultado:
+• Revisión incrementada.
+• Snapshot anterior conservado.
+• Alerta de reapertura.
+• Nuevo hash.
+
+Escenario 24 — Movimiento posterior al cierre
+Importar un movimiento cuya fecha pertenece a un período cerrado.
+Resultado:
+• No se incorpora silenciosamente.
+• Se genera alerta crítica.
+• Se requiere decisión de reapertura.
+
+Escenario 25 — Dashboard
+Los indicadores deben coincidir con:
+• Listado.
+• Selectores.
+• Reportes.
+• Fecha de corte.
+
+Escenario 26 — Alertas
+Validar:
+• No duplicación.
+• Cambio de severidad.
+• Resolución automática.
+• Reaparición.
+• Asignación.
+
+46
+
+Escenario 27 — Reportes
+Validar:
+• Excel.
+• CSV.
+• PDF.
+• Totales.
+• Filtros.
+• Seguridad.
+• Snapshots.
+
+4. Pruebas de límites
+• Monto cero.
+• Monto negativo.
+• Monto con decimales.
+• Movimiento muy alto.
+• Fecha fuera de período.
+• Período de un día.
+• Períodos superpuestos.
+• Referencia vacía.
+• RUT inválido.
+• Cuenta inactiva.
+• Moneda distinta.
+• Saldo negativo.
+• Exceso de origen.
+• Exceso de destino.
+• Aplicación duplicada.
+• Exclusión sin motivo.
+• Reversa sin motivo.
+• Diferencia exactamente en tolerancia.
+• Diferencia sobre tolerancia.
+
+5. Pruebas de concurrencia
+Aplicación al mismo movimiento
+Dos usuarios aplican simultáneamente el saldo.
+Resultado:
+• Una transacción confirma.
+• La otra recibe error controlado.
+• El movimiento no se sobreaplica.
+
+47
+
+Aplicación al mismo destino
+Dos movimientos intentan cubrir simultáneamente el mismo saldo.
+Resultado:
+• No se sobreaplica el destino.
+
+Aplicación y exclusión simultáneas
+Resultado:
+• Solo una operación es válida.
+• No queda movimiento excluido con aplicaciones activas.
+
+Reversa y aplicación simultáneas
+Resultado:
+• Estados consistentes.
+• Sin saldo negativo.
+• Rollback integral ante conflicto.
+
+Cierre y conciliación simultáneos
+Resultado:
+• El cierre bloquea los movimientos.
+• No aparecen aplicaciones posteriores al snapshot.
+
+Dos cierres simultáneos
+Resultado:
+• Un único cierre.
+• Un único snapshot.
+• Un único hash.
+
+48
+
+Reapertura y cierre simultáneos
+Resultado:
+• Transición única.
+• Número de revisión consistente.
+
+6. Pruebas de permisos
+Acción
+
+Conciliador
+
+Finanzas
+
+Auditor
+
+Administrador
+
+Ver movimientos
+
+Sí
+
+Sí
+
+Sí
+
+Sí
+
+Aplicar movimiento
+
+Sí
+
+Sí
+
+No
+
+Sí
+
+Configurar reglas
+
+Según permiso
+
+Sí
+
+No
+
+Sí
+
+Excluir
+
+Según permiso
+
+Sí
+
+No
+
+Sí
+
+Reversar
+
+Limitado
+
+Sí
+
+No
+
+Sí
+
+Cerrar período
+
+No o limitado
+
+Sí
+
+No
+
+Sí
+
+Reabrir
+
+No
+
+Limitado
+
+No
+
+Sí
+
+Ver snapshot
+
+Limitado
+
+Sí
+
+Sí
+
+Sí
+
+Exportar sensibles
+
+Según permiso
+
+Sí
+
+Según permiso
+
+Sí
+
+7. Pruebas de alertas
+• Comando repetido.
+• Alerta ya abierta.
+• Condición corregida.
+• Condición reaparece.
+• Fecha límite.
+• Severidad.
+• Usuario.
+• Grupo.
+• Descarte.
+• Resolución.
+• Movimiento eliminado del alcance por exclusión.
+• Período cerrado.
+• Reapertura.
+
+49
+
+8. Pruebas del dashboard
+• Totales por cuenta.
+• Totales por período.
+• Ingresos.
+• Egresos.
+• Pendientes.
+• Parciales.
+• Excluidos.
+• Antigüedad.
+• Destinos.
+• Diferencias.
+• Importaciones.
+• Reversas.
+• Roles.
+• Filtros.
+• Caché.
+• Consultas.
+
+9. Pruebas de reportes
+• Reporte vacío.
+• Una cuenta.
+• Varias cuentas.
+• Fecha de corte.
+• Aplicaciones activas.
+• Aplicaciones anuladas.
+• Exclusiones.
+• Reversas.
+• Cierre reabierto.
+• Cuenta enmascarada.
+• Fórmula maliciosa.
+• Gran volumen.
+• Archivo temporal.
+• Permiso denegado.
+• Auditoría.
+
+10. Fábricas de prueba
+BancoFactory
+CuentaBancariaFactory
+PlantillaCartolaFactory
+ImportacionCartolaFactory
+MovimientoBancarioFactory
+ClasificacionMovimientoFactory
+
+50
+
+AplicacionMovimientoBancarioFactory
+ExclusionMovimientoFactory
+ConciliacionBancariaFactory
+ReglaCruceBancarioFactory
+SugerenciaCruceBancarioFactory
+AlertaBancariaFactory
+PagoClienteFactory
+FacturaVentaFactory
+EntregaFondoFactory
+PagoLiquidacionRendicionFactory
+FlujoFactoringFactory
+
+11. Estructura de tests
+tests/conciliacion/
+├── test_bancos.py
+├── test_cuentas.py
+├── test_importacion_cartolas.py
+├── test_duplicados.py
+├── test_movimientos.py
+├── test_clasificacion.py
+├── test_aplicaciones.py
+├── test_pagos_facturas.py
+├── test_conciliacion_parcial.py
+├── test_reglas.py
+├── test_cruce_asistido.py
+├── test_cruce_transversal.py
+├── test_exclusiones.py
+├── test_reversas.py
+├── test_cierres.py
+├── test_reaperturas.py
+├── test_alertas.py
+├── test_dashboard.py
+├── test_reportes.py
+├── test_permisos.py
+├── test_auditoria.py
+└── test_concurrencia.py
+
+12. Criterios de aceptación
+B021 se considerará terminada cuando:
+• Las importaciones válidas funcionan.
+• Los duplicados se detectan.
+
+51
+
+• No se sobreaplican movimientos.
+• No se sobreaplican destinos.
+• Las conciliaciones parciales son correctas.
+• Los cruces múltiples funcionan.
+• Las reglas automáticas son explicables.
+• Los conflictos se derivan a revisión manual.
+• Las exclusiones conservan la cartola.
+• Las reversas recuperan saldos.
+• Los períodos cerrados quedan bloqueados.
+• Las reaperturas conservan snapshots.
+• Las alertas no se duplican.
+• El dashboard coincide con los listados.
+• Los reportes coinciden con el dashboard.
+• Los permisos se respetan.
+• Las operaciones concurrentes son seguras.
+• Las transacciones revierten completamente ante error.
+• No existen consultas N+1 críticas.
+• La suite puede ejecutarse repetidamente.
+
+13. Evaluación de esfuerzo
+Las 16 horas asignadas deben utilizarse principalmente para:
+• Escenarios end-to-end.
+• Concurrencia.
+• Integraciones transversales.
+• Regresión.
+• Corrección de defectos.
+Las pruebas unitarias de cada servicio deben construirse durante B001–B020 y no aplazarse
+completamente hasta B021.
+
+6. Estructura de archivos del bloque
+administracion/
+├── models/
+│
+
+└── alertas_bancarias.py
+
+│
+├── forms/
+│
+
+├── filtros_dashboard_conciliacion.py
+
+│
+
+├── alertas_bancarias.py
+
+│
+
+└── reportes_conciliacion.py
+
+│
+├── views/
+│
+
+├── dashboard_conciliacion.py
+
+│
+
+├── alertas_bancarias.py
+
+52
+
+│
+
+└── reportes_conciliacion.py
+
+│
+├── services/conciliacion/
+│
+
+├── alertas.py
+
+│
+
+└── reportes/
+
+│
+
+├── datos.py
+
+│
+
+├── movimientos_xlsx.py
+
+│
+
+├── pendientes_xlsx.py
+
+│
+
+├── aplicaciones_xlsx.py
+
+│
+
+├── exportacion_csv.py
+
+│
+
+└── cierre_pdf.py
+
+│
+├── selectors/
+│
+
+├── dashboard_conciliacion.py
+
+│
+
+├── alertas_bancarias.py
+
+│
+
+└── reportes_conciliacion.py
+
+│
+├── management/commands/
+│
+
+└── generar_alertas_bancarias.py
+
+│
+├── templates/administracion/conciliacion/
+│
+
+├── dashboard/
+
+│
+
+├── alertas/
+
+│
+
+└── reportes/
+
+│
+├── static/administracion/js/
+│
+
+├── dashboard_conciliacion.js
+
+│
+
+└── reportes_conciliacion.js
+
+│
+└── tests/conciliacion/
+
+7. Migraciones previstas
+Migración 1 — Alertas
+Crear:
+
+AlertaBancaria
+Incluye:
+• Tipo.
+• Severidad.
+• Estado.
+• Relaciones.
+• Asignación.
+
+53
+
+• Fecha límite.
+• Clave de control.
+• Resolución.
+
+Migración 2 — Exportaciones
+Opcionalmente crear:
+
+ExportacionBancaria
+Puede reemplazarse por auditoría estructurada cuando no se necesite conservar un catálogo de
+archivos generados.
+
+Migración 3 — Índices
+En AlertaBancaria :
+
+models.Index(
+fields=["estado", "severidad"],
+)
+models.Index(
+fields=["tipo", "estado"],
+)
+models.Index(
+fields=["cuenta_bancaria", "estado"],
+)
+models.Index(
+fields=["movimiento", "estado"],
+)
+models.Index(
+fields=["conciliacion", "estado"],
+)
+models.Index(
+fields=["asignada_a", "estado"],
+)
+models.Index(
+fields=["fecha_limite", "estado"],
+)
+
+54
+
+8. Definición de terminado del bloque
+B018–B021 se considerará terminado cuando:
+• Existe dashboard bancario.
+• Los indicadores cambian según rol.
+• Se visualizan pendientes y parciales.
+• Se visualiza la antigüedad.
+• Se visualizan diferencias.
+• Se controlan importaciones con errores.
+• Existen alertas bancarias.
+• Las alertas no se duplican.
+• Se detectan movimientos sin identificar.
+• Se detectan cierres pendientes.
+• Se detectan movimientos en períodos cerrados.
+• Existen reportes de movimientos.
+• Existen reportes de aplicaciones.
+• Existen reportes de exclusiones y reversas.
+• Se genera certificado de cierre.
+• Los reportes respetan filtros y permisos.
+• El dashboard coincide con los reportes.
+• Las pruebas de cruces parciales pasan.
+• Las pruebas de cruces múltiples pasan.
+• Las pruebas de duplicados pasan.
+• Las pruebas de reversas pasan.
+• Las pruebas de cierre y reapertura pasan.
+• Las pruebas concurrentes pasan.
+• Las operaciones quedan auditadas.
+
+9. Riesgos del bloque
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Dashboard distinto a reportes
+
+Alto
+
+Selectores comunes
+
+Indicadores lentos
+
+Medio/
+alto
+
+Agregaciones e índices
+
+Caché mezcla usuarios
+
+Alto
+
+Clave por usuario y filtros
+
+Alertas duplicadas
+
+Alto
+
+Clave de control
+
+Resolver sin corregir condición
+
+Alto
+
+Reevaluación automática
+
+Mezclar alertas de cobranza y banco
+
+Medio/
+alto
+
+Modelo específico
+
+No detectar movimiento en período
+cerrado
+
+Alto
+
+Control posterior a importación
+
+55
+
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Exportar número completo de cuenta
+
+Alto
+
+Enmascaramiento
+
+Fórmula maliciosa en Excel
+
+Alto
+
+Neutralización
+
+Certificado recalculado
+
+Alto
+
+Utilizar snapshot
+
+Pruebas únicamente al final
+
+Alto
+
+Pruebas durante cada tarea
+
+Concurrencia no cubierta
+
+Alto
+
+Tests transaccionales
+
+Reportes históricos incompletos
+
+Alto
+
+Fechas de aplicación y anulación
+
+Datos sensibles en temporales
+
+Alto
+
+Eliminación y almacenamiento
+protegido
+
+Alertas de integridad ignoradas
+
+Alto
+
+Severidad crítica y asignación
+
+Totales calculados con propiedades N+1
+
+Medio/
+alto
+
+Anotaciones
+
+Fecha de corte inconsistente
+
+Alto
+
+Parámetro común
+
+10. Resultado consolidado del módulo Banco y
+Conciliación
+Al finalizar los bloques B001–B021 existirá el ciclo completo:
+
+Banco y cuenta
+→ plantilla
+→ importación de cartola
+→ detección de duplicados
+→ movimientos
+→ clasificación
+→ aplicaciones múltiples
+→ pagos y facturas
+→ rendiciones
+→ factoring
+→ conciliación parcial
+→ reglas automáticas
+→ cruce asistido
+→ exclusiones
+→ reversas
+→ cierre de período
+→ dashboard
+→ alertas
+→ reportes
+→ pruebas
+
+56
+
+El módulo quedará preparado para alimentar:
+
+Facturación y cobranza
+Rendiciones
+Factoring
+Dashboard administrativo general
+Pruebas end-to-end
+Aceptación del sistema
+
+57
+
+

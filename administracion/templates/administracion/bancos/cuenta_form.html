@@ -1,0 +1,33 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ titulo_esqueleto }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">{{ codigo_gantt }}</p>
+  <h1>{{ titulo_esqueleto }}</h1>
+  <p>
+    <a href="{% url 'adm_cuenta_lista' %}">← Lista</a>
+    ·
+    <a href="{% url 'adm_cuenta_desde_cartola' %}">Cargar desde PDF</a>
+  </p>
+
+  <form method="post" class="esqueleto" style="margin-top:1rem; max-width:640px;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+    {% endif %}
+    {% for field in form %}
+      <div style="margin-bottom:.85rem;">
+        <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}
+          <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit">{% if modo == "crear" %}Crear cuenta{% else %}Guardar{% endif %}</button>
+  </form>
+</section>
+{% endblock %}

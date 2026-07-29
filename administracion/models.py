@@ -51,17 +51,38 @@ class ModeloAuditoria(models.Model):
 
 class Banco(ModeloAuditoria):
     nombre = models.CharField(max_length=120, unique=True)
-    codigo = models.CharField(max_length=20, blank=True)
+    codigo = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Código interno o SBIF. Opcional; único si se informa.",
+    )
     activo = models.BooleanField(default=True)
+    # B001 — acceso a cartolas PDF cifradas (nunca plaintext en BD)
+    clave_cartola_cifrada = models.TextField(
+        blank=True,
+        help_text="Clave PDF de cartolas, cifrada. No se muestra en claro.",
+    )
+    clave_cartola_actualizada_en = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "adm_banco"
         ordering = ["nombre"]
         verbose_name = "Banco"
         verbose_name_plural = "Bancos"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["codigo"],
+                condition=~models.Q(codigo=""),
+                name="uniq_adm_banco_codigo_no_vacio",
+            ),
+        ]
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def tiene_clave_cartola(self) -> bool:
+        return bool(self.clave_cartola_cifrada)
 
 
 class CuentaBancaria(ModeloAuditoria):
@@ -74,12 +95,16 @@ class CuentaBancaria(ModeloAuditoria):
     banco = models.ForeignKey(
         Banco, on_delete=models.PROTECT, related_name="cuentas"
     )
-    nombre = models.CharField(max_length=120)
+    nombre = models.CharField(
+        max_length=120,
+        help_text="Alias visible, p. ej. Cuenta corriente principal.",
+    )
     numero_cuenta = models.CharField(max_length=40)
     tipo_cuenta = models.CharField(
         max_length=20, choices=TipoCuenta.choices, default=TipoCuenta.CORRIENTE
     )
     moneda = models.CharField(max_length=3, default="CLP")
+    titular = models.CharField(max_length=150, blank=True)
     rut_titular = models.CharField(max_length=20, blank=True)
     activa = models.BooleanField(default=True)
     observaciones = models.TextField(blank=True)
@@ -99,16 +124,163 @@ class CuentaBancaria(ModeloAuditoria):
     def __str__(self):
         return f"{self.banco.nombre} — {self.numero_cuenta}"
 
+    def numero_enmascarado(self) -> str:
+        n = self.numero_cuenta or ""
+        if len(n) <= 4:
+            return n
+        return ("*" * (len(n) - 4)) + n[-4:]
+
+
+class PlantillaMapeoCartola(ModeloAuditoria):
+    """B004 — Configuración de columnas / parser para interpretar cartolas."""
+
+    class FormatoArchivo(models.TextChoices):
+        CSV = "CSV", "CSV"
+        XLSX = "XLSX", "Excel XLSX"
+        PDF = "PDF", "PDF bancario"
+
+    class ParserCodigo(models.TextChoices):
+        GENERICO = "GENERICO", "Genérico CSV/XLSX"
+        BANCO_ESTADO = "BANCO_ESTADO", "Banco Estado / CuentaRUT PDF"
+        BANCO_FALABELLA = "BANCO_FALABELLA", "Banco Falabella PDF"
+        BANCO_CHILE = "BANCO_CHILE", "Banco de Chile PDF"
+
+    banco = models.ForeignKey(
+        Banco,
+        on_delete=models.PROTECT,
+        related_name="plantillas_cartola",
+    )
+    cuenta_bancaria = models.ForeignKey(
+        CuentaBancaria,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="plantillas_cartola",
+        help_text="Opcional. Si se indica, tiene prioridad sobre la plantilla general del banco.",
+    )
+    nombre = models.CharField(max_length=120)
+    formato_archivo = models.CharField(
+        max_length=10,
+        choices=FormatoArchivo.choices,
+        default=FormatoArchivo.CSV,
+    )
+    parser_codigo = models.CharField(
+        max_length=30,
+        choices=ParserCodigo.choices,
+        default=ParserCodigo.GENERICO,
+        help_text="Parser PDF específico del banco, o genérico para CSV/XLSX.",
+    )
+    nombre_hoja = models.CharField(max_length=100, blank=True)
+    fila_encabezado = models.PositiveIntegerField(default=1)
+    fila_inicio_datos = models.PositiveIntegerField(default=2)
+    separador_csv = models.CharField(max_length=5, default=";")
+    codificacion = models.CharField(max_length=30, default="utf-8-sig")
+    formato_fecha = models.CharField(max_length=30, default="%d/%m/%Y")
+    fecha_sin_anio = models.BooleanField(
+        default=False,
+        help_text="Si la cartola imprime solo día/mes (p. ej. Banco de Chile).",
+    )
+    separador_decimal = models.CharField(
+        max_length=1,
+        default="",
+        blank=True,
+        help_text="Vacío = montos enteros (sin decimales). Puntos se tratan como miles.",
+    )
+    separador_miles = models.CharField(max_length=1, default=".")
+    simbolo_moneda = models.CharField(max_length=5, blank=True, default="$")
+    identificador_saldo_inicial = models.CharField(
+        max_length=80, blank=True, default="SALDO INICIAL"
+    )
+    identificador_saldo_final = models.CharField(
+        max_length=80, blank=True, default="SALDO FINAL"
+    )
+    ignorar_filas_vacias = models.BooleanField(default=True)
+    activa = models.BooleanField(default=True)
+    version = models.PositiveIntegerField(default=1)
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "adm_plantilla_mapeo_cartola"
+        ordering = ["banco__nombre", "nombre", "-version"]
+        verbose_name = "Plantilla de mapeo de cartola"
+        verbose_name_plural = "Plantillas de mapeo de cartola"
+
+    def __str__(self):
+        alcance = (
+            self.cuenta_bancaria.numero_cuenta
+            if self.cuenta_bancaria_id
+            else "todas las cuentas"
+        )
+        return f"{self.nombre} v{self.version} ({self.banco} / {alcance})"
+
+
+class CampoMapeoCartola(ModeloAuditoria):
+    """B004 — Columna de cartola → campo del sistema."""
+
+    class CampoDestino(models.TextChoices):
+        FECHA_OPERACION = "FECHA_OPERACION", "Fecha operación"
+        FECHA_CONTABLE = "FECHA_CONTABLE", "Fecha contable"
+        FECHA_VALOR = "FECHA_VALOR", "Fecha valor"
+        TIPO = "TIPO", "Tipo de movimiento"
+        MONTO = "MONTO", "Monto único"
+        MONTO_INGRESO = "MONTO_INGRESO", "Monto ingreso"
+        MONTO_EGRESO = "MONTO_EGRESO", "Monto egreso"
+        SALDO = "SALDO", "Saldo"
+        DESCRIPCION = "DESCRIPCION", "Descripción"
+        REFERENCIA = "REFERENCIA", "Referencia"
+        NUMERO_DOCUMENTO = "NUMERO_DOCUMENTO", "Número documento"
+        IDENTIFICADOR_EXTERNO = "IDENTIFICADOR_EXTERNO", "Identificador externo"
+        CONTRAPARTE = "CONTRAPARTE", "Contraparte"
+        RUT_CONTRAPARTE = "RUT_CONTRAPARTE", "RUT contraparte"
+        CUENTA_CONTRAPARTE = "CUENTA_CONTRAPARTE", "Cuenta contraparte"
+
+    plantilla = models.ForeignKey(
+        PlantillaMapeoCartola,
+        on_delete=models.CASCADE,
+        related_name="campos",
+    )
+    campo_destino = models.CharField(
+        max_length=40,
+        choices=CampoDestino.choices,
+    )
+    columna_origen = models.CharField(max_length=150)
+    obligatorio = models.BooleanField(default=False)
+    valor_defecto = models.CharField(max_length=255, blank=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "adm_campo_mapeo_cartola"
+        ordering = ["orden", "id"]
+        verbose_name = "Campo de mapeo de cartola"
+        verbose_name_plural = "Campos de mapeo de cartola"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["plantilla", "campo_destino"],
+                name="uniq_adm_campo_mapeo_plantilla_destino",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.columna_origen} → {self.get_campo_destino_display()}"
+
 
 class ImportacionCartola(ModeloAuditoria):
     class Estado(models.TextChoices):
         PENDIENTE = "PENDIENTE", "Pendiente"
+        VALIDADA = "VALIDADA", "Validada"
         PROCESADA = "PROCESADA", "Procesada"
         CON_ERRORES = "CON_ERRORES", "Con errores"
         ANULADA = "ANULADA", "Anulada"
 
     cuenta_bancaria = models.ForeignKey(
         CuentaBancaria, on_delete=models.PROTECT, related_name="importaciones"
+    )
+    plantilla = models.ForeignKey(
+        PlantillaMapeoCartola,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="importaciones",
     )
     fecha_desde = models.DateField()
     fecha_hasta = models.DateField()
@@ -118,10 +290,18 @@ class ImportacionCartola(ModeloAuditoria):
     nombre_archivo = models.CharField(max_length=255, blank=True)
     sha256 = models.CharField(max_length=64)
     total_movimientos = models.PositiveIntegerField(default=0)
+    total_filas = models.PositiveIntegerField(default=0)
+    total_validas = models.PositiveIntegerField(default=0)
+    total_importadas = models.PositiveIntegerField(default=0)
+    total_duplicadas = models.PositiveIntegerField(default=0)
+    total_errores = models.PositiveIntegerField(default=0)
+    validada_en = models.DateTimeField(null=True, blank=True)
+    procesada_en = models.DateTimeField(null=True, blank=True)
     estado = models.CharField(
         max_length=20, choices=Estado.choices, default=Estado.PENDIENTE
     )
     observaciones = models.TextField(blank=True)
+    error_importacion = models.TextField(blank=True)
 
     class Meta:
         db_table = "adm_importacion_cartola"
@@ -146,6 +326,73 @@ class ImportacionCartola(ModeloAuditoria):
         )
 
 
+class CartolaBancaria(ModeloAuditoria):
+    """
+    Cabecera de una cartola importada (titular, período, saldos y totales).
+    Los montos son enteros en pesos (sin decimales), según decisión de negocio.
+    """
+
+    cuenta_bancaria = models.ForeignKey(
+        CuentaBancaria, on_delete=models.PROTECT, related_name="cartolas"
+    )
+    importacion = models.OneToOneField(
+        ImportacionCartola,
+        on_delete=models.CASCADE,
+        related_name="cartola",
+        null=True,
+        blank=True,
+    )
+    tipo_documento = models.CharField(max_length=80, blank=True)
+    tipo_cuenta_texto = models.CharField(max_length=80, blank=True)
+    numero_cartola = models.CharField(max_length=40, blank=True)
+    fecha_emision = models.DateField(null=True, blank=True)
+    fecha_inicio_periodo = models.DateField()
+    fecha_fin_periodo = models.DateField()
+    pagina_actual = models.PositiveIntegerField(null=True, blank=True)
+    total_paginas = models.PositiveIntegerField(null=True, blank=True)
+    referencia_documento = models.CharField(max_length=120, blank=True)
+    nombre_titular = models.CharField(max_length=150, blank=True)
+    tratamiento_titular = models.CharField(max_length=40, blank=True)
+    correo_electronico = models.EmailField(blank=True)
+    numero_cuenta_texto = models.CharField(max_length=50, blank=True)
+    moneda = models.CharField(max_length=10, default="CLP")
+    sucursal_cuenta = models.CharField(max_length=120, blank=True)
+    codigo_sucursal_cuenta = models.CharField(max_length=40, blank=True)
+    ejecutivo_cuenta = models.CharField(max_length=120, blank=True)
+    telefono_banco = models.CharField(max_length=40, blank=True)
+
+    saldo_inicial = models.BigIntegerField(null=True, blank=True)
+    saldo_final = models.BigIntegerField(null=True, blank=True)
+    saldo_disponible = models.BigIntegerField(null=True, blank=True)
+    retenciones_total = models.BigIntegerField(null=True, blank=True)
+    retencion_un_dia = models.BigIntegerField(null=True, blank=True)
+    retencion_mas_un_dia = models.BigIntegerField(null=True, blank=True)
+
+    total_depositos = models.BigIntegerField(null=True, blank=True)
+    total_otros_abonos = models.BigIntegerField(null=True, blank=True)
+    total_abonos = models.BigIntegerField(null=True, blank=True)
+    total_cheques = models.BigIntegerField(null=True, blank=True)
+    total_giros = models.BigIntegerField(null=True, blank=True)
+    total_giros_autoservicio = models.BigIntegerField(null=True, blank=True)
+    total_redcompra = models.BigIntegerField(null=True, blank=True)
+    total_comisiones = models.BigIntegerField(null=True, blank=True)
+    total_impuestos = models.BigIntegerField(null=True, blank=True)
+    total_otros_cargos = models.BigIntegerField(null=True, blank=True)
+    total_cargos = models.BigIntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "adm_cartola_bancaria"
+        ordering = ["-fecha_fin_periodo", "-id"]
+        verbose_name = "Cartola bancaria"
+        verbose_name_plural = "Cartolas bancarias"
+
+    def __str__(self):
+        return (
+            f"Cartola {self.numero_cartola or self.pk} — "
+            f"{self.cuenta_bancaria} ({self.fecha_inicio_periodo}→{self.fecha_fin_periodo})"
+        )
+
+
 class MovimientoBancario(ModeloAuditoria):
     class Tipo(models.TextChoices):
         INGRESO = "INGRESO", "Ingreso"
@@ -167,25 +414,39 @@ class MovimientoBancario(ModeloAuditoria):
         blank=True,
         related_name="movimientos",
     )
+    cartola = models.ForeignKey(
+        CartolaBancaria,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="movimientos",
+    )
     fecha_operacion = models.DateField()
     fecha_contable = models.DateField(null=True, blank=True)
     fecha_valor = models.DateField(null=True, blank=True)
     tipo = models.CharField(max_length=10, choices=Tipo.choices)
-    monto = models.DecimalField(
-        max_digits=14,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.01"))],
-    )
-    saldo_bancario = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True
-    )
+    # Montos enteros en pesos (sin decimales)
+    monto = models.BigIntegerField(validators=[MinValueValidator(1)])
+    monto_cargo = models.BigIntegerField(default=0)
+    monto_abono = models.BigIntegerField(default=0)
+    saldo_bancario = models.BigIntegerField(null=True, blank=True)
     descripcion_original = models.TextField(blank=True)
+    descripcion_movimiento = models.TextField(blank=True)
     referencia_bancaria = models.CharField(max_length=100, blank=True)
     numero_documento = models.CharField(max_length=60, blank=True)
     identificador_externo = models.CharField(max_length=120, blank=True)
     contraparte = models.CharField(max_length=200, blank=True)
     rut_contraparte = models.CharField(max_length=20, blank=True)
     cuenta_contraparte = models.CharField(max_length=40, blank=True)
+    sucursal_movimiento = models.CharField(max_length=120, blank=True)
+    codigo_sucursal_movimiento = models.CharField(max_length=40, blank=True)
+    tipo_movimiento = models.CharField(max_length=40, blank=True)
+    canal_movimiento = models.CharField(max_length=40, blank=True)
+    fecha_operacion_original = models.DateField(null=True, blank=True)
+    hora_operacion_original = models.CharField(max_length=10, blank=True)
+    numero_fila_origen = models.PositiveIntegerField(null=True, blank=True)
+    numero_pagina_origen = models.PositiveIntegerField(null=True, blank=True)
+    datos_originales = models.JSONField(default=dict, blank=True)
     fingerprint = models.CharField(max_length=64)
     estado_conciliacion = models.CharField(
         max_length=20,
@@ -223,11 +484,13 @@ class MovimientoBancario(ModeloAuditoria):
         total = self.aplicaciones.filter(activa=True).aggregate(
             t=Sum("monto")
         )["t"]
-        return total or Decimal("0.00")
+        if total is None:
+            return 0
+        return int(total)
 
     @property
     def saldo_por_conciliar(self):
-        return self.monto - self.monto_aplicado
+        return int(self.monto) - self.monto_aplicado
 
     @property
     def estado_calculado(self):
@@ -236,7 +499,7 @@ class MovimientoBancario(ModeloAuditoria):
         aplicado = self.monto_aplicado
         if aplicado <= 0:
             return self.EstadoConciliacion.NO_CONCILIADO
-        if aplicado < self.monto:
+        if aplicado < int(self.monto):
             return self.EstadoConciliacion.PARCIAL
         return self.EstadoConciliacion.CONCILIADO
 
@@ -247,6 +510,145 @@ class MovimientoBancario(ModeloAuditoria):
             if guardar:
                 self.save(update_fields=["estado_conciliacion", "actualizado_en"])
         return nuevo
+
+    @property
+    def clasificacion_activa(self):
+        return self.clasificaciones.filter(activa=True).first()
+
+
+class ClasificacionMovimientoBancario(ModeloAuditoria):
+    """
+    B008 — Clasificación administrativa del movimiento.
+    No altera el dato bancario original ni crea aplicaciones.
+    Solo una clasificación activa por movimiento.
+    """
+
+    class Categoria(models.TextChoices):
+        # Ingresos
+        PAGO_CLIENTE = "PAGO_CLIENTE", "Pago de cliente"
+        ANTICIPO_FACTORING = "ANTICIPO_FACTORING", "Anticipo de factoring"
+        LIQUIDACION_FACTORING = "LIQUIDACION_FACTORING", "Liquidación de factoring"
+        DEVOLUCION_RESPONSABLE = "DEVOLUCION_RESPONSABLE", "Devolución de responsable"
+        TRANSFERENCIA_INTERNA = "TRANSFERENCIA_INTERNA", "Transferencia interna"
+        OTRO_INGRESO = "OTRO_INGRESO", "Otro ingreso"
+        # Egresos
+        ENTREGA_FONDO = "ENTREGA_FONDO", "Entrega de fondo"
+        REEMBOLSO_RENDICION = "REEMBOLSO_RENDICION", "Reembolso de rendición"
+        DEVOLUCION_CLIENTE = "DEVOLUCION_CLIENTE", "Devolución a cliente"
+        COMISION_FACTORING = "COMISION_FACTORING", "Comisión de factoring"
+        COBRO_RECURSO = "COBRO_RECURSO", "Cobro de recurso"
+        GASTO_BANCARIO = "GASTO_BANCARIO", "Gasto bancario"
+        OTRO_EGRESO = "OTRO_EGRESO", "Otro egreso"
+
+    CATEGORIAS_INGRESO = {
+        Categoria.PAGO_CLIENTE,
+        Categoria.ANTICIPO_FACTORING,
+        Categoria.LIQUIDACION_FACTORING,
+        Categoria.DEVOLUCION_RESPONSABLE,
+        Categoria.TRANSFERENCIA_INTERNA,
+        Categoria.OTRO_INGRESO,
+    }
+    CATEGORIAS_EGRESO = {
+        Categoria.ENTREGA_FONDO,
+        Categoria.REEMBOLSO_RENDICION,
+        Categoria.DEVOLUCION_CLIENTE,
+        Categoria.COMISION_FACTORING,
+        Categoria.COBRO_RECURSO,
+        Categoria.GASTO_BANCARIO,
+        Categoria.TRANSFERENCIA_INTERNA,
+        Categoria.OTRO_EGRESO,
+    }
+    CATEGORIAS_OTRO = {Categoria.OTRO_INGRESO, Categoria.OTRO_EGRESO}
+
+    class Origen(models.TextChoices):
+        MANUAL = "MANUAL", "Manual"
+
+    movimiento = models.ForeignKey(
+        MovimientoBancario,
+        on_delete=models.PROTECT,
+        related_name="clasificaciones",
+    )
+    categoria = models.CharField(max_length=40, choices=Categoria.choices)
+    contraparte_normalizada = models.CharField(max_length=200, blank=True)
+    rut_contraparte_normalizado = models.CharField(max_length=20, blank=True)
+    observacion = models.TextField(blank=True)
+    activa = models.BooleanField(default=True)
+    origen = models.CharField(
+        max_length=20, choices=Origen.choices, default=Origen.MANUAL
+    )
+    clasificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="clasificaciones_movimiento",
+    )
+    clasificado_en = models.DateTimeField(default=timezone.now)
+    clasificacion_anterior = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reclasificaciones",
+    )
+
+    class Meta:
+        db_table = "adm_clasificacion_movimiento_bancario"
+        ordering = ["-clasificado_en", "-id"]
+        verbose_name = "Clasificación de movimiento bancario"
+        verbose_name_plural = "Clasificaciones de movimientos bancarios"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["movimiento"],
+                condition=Q(activa=True),
+                name="uniq_adm_clasificacion_activa",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["categoria"]),
+            models.Index(fields=["activa"]),
+        ]
+
+    def __str__(self):
+        estado = "activa" if self.activa else "histórica"
+        return f"{self.get_categoria_display()} ({estado}) ← mov {self.movimiento_id}"
+
+    @classmethod
+    def categorias_para_tipo(cls, tipo_movimiento: str):
+        if tipo_movimiento == MovimientoBancario.Tipo.INGRESO:
+            return [
+                (c.value, c.label)
+                for c in cls.Categoria
+                if c.value in cls.CATEGORIAS_INGRESO
+            ]
+        if tipo_movimiento == MovimientoBancario.Tipo.EGRESO:
+            return [
+                (c.value, c.label)
+                for c in cls.Categoria
+                if c.value in cls.CATEGORIAS_EGRESO
+            ]
+        return []
+
+    def clean(self):
+        if not self.movimiento_id:
+            return
+        tipo = self.movimiento.tipo
+        validas = {c for c, _ in self.categorias_para_tipo(tipo)}
+        if self.categoria and self.categoria not in validas:
+            raise ValidationError(
+                {
+                    "categoria": (
+                        f"La categoría {self.categoria} no es compatible "
+                        f"con un movimiento de tipo {tipo}."
+                    )
+                }
+            )
+        if self.categoria in self.CATEGORIAS_OTRO and not (
+            self.observacion or ""
+        ).strip():
+            raise ValidationError(
+                {"observacion": "Las categorías «OTRO» requieren observación."}
+            )
 
 
 class ConciliacionBancaria(ModeloAuditoria):
@@ -946,6 +1348,9 @@ class ResponsableRendicion(ModeloAuditoria):
     nombre = models.CharField(max_length=150)
     rut = models.CharField(max_length=20, blank=True)
     cargo = models.CharField(max_length=100, blank=True)
+    area = models.CharField(max_length=100, blank=True)
+    correo = models.EmailField(blank=True)
+    telefono = models.CharField(max_length=40, blank=True)
     activo = models.BooleanField(default=True)
     observaciones = models.TextField(blank=True)
 

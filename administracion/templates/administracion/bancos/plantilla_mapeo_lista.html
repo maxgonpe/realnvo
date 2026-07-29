@@ -1,0 +1,57 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Plantillas de mapeo{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B004</p>
+  <h1>Plantillas de mapeo bancario</h1>
+  <p>
+    Configuran cómo interpretar cartolas CSV/XLSX por banco (o cuenta).
+    <a href="{% url 'adm_plantilla_mapeo_crear' %}">+ Nueva plantilla</a>
+  </p>
+
+  <form method="get" style="display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar nombre, banco…" class="form-control" style="max-width:260px;">
+    <select name="estado" class="form-select" style="max-width:160px;">
+      <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+      <option value="activos" {% if estado == "activos" %}selected{% endif %}>Solo activas</option>
+      <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Solo inactivas</option>
+    </select>
+    <select name="banco" class="form-select" style="max-width:220px;">
+      <option value="">Todos los bancos</option>
+      {% for b in bancos %}
+      <option value="{{ b.pk }}" {% if banco_id == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.nombre }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  <table style="width:100%; border-collapse:collapse; background:#fff;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.5rem;">Nombre</th>
+        <th style="padding:.5rem;">Banco</th>
+        <th style="padding:.5rem;">Alcance</th>
+        <th style="padding:.5rem;">Formato</th>
+        <th style="padding:.5rem;">Versión</th>
+        <th style="padding:.5rem;">Campos</th>
+        <th style="padding:.5rem;">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in plantillas %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.5rem;"><a href="{% url 'adm_plantilla_mapeo_detalle' p.pk %}">{{ p.nombre }}</a></td>
+        <td style="padding:.5rem;">{{ p.banco.nombre }}</td>
+        <td style="padding:.5rem;">{% if p.cuenta_bancaria %}{{ p.cuenta_bancaria.numero_cuenta }}{% else %}Todas las cuentas{% endif %}</td>
+        <td style="padding:.5rem;">{{ p.get_formato_archivo_display }}</td>
+        <td style="padding:.5rem;">v{{ p.version }}</td>
+        <td style="padding:.5rem;">{{ p.total_campos }}</td>
+        <td style="padding:.5rem;">{% if p.activa %}Activa{% else %}Inactiva{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="padding:1rem;">No hay plantillas con ese filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

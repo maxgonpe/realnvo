@@ -1,0 +1,51 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Responsables{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">R003</p>
+  <h1>Responsables de rendición</h1>
+  <p>
+    Personas autorizadas a recibir fondos y crear rendiciones.
+    <a href="{% url 'adm_responsable_crear' %}">+ Nuevo responsable</a>
+  </p>
+
+  <form method="get" style="display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Buscar nombre, RUT, cargo…" class="form-control" style="max-width:260px;">
+    <select name="estado" class="form-select" style="max-width:160px;">
+      <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+      <option value="activos" {% if estado == "activos" %}selected{% endif %}>Solo activos</option>
+      <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Solo inactivos</option>
+    </select>
+    <button type="submit">Filtrar</button>
+  </form>
+
+  <table style="width:100%; border-collapse:collapse; background:#fff;">
+    <thead>
+      <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+        <th style="padding:.5rem;">Nombre</th>
+        <th style="padding:.5rem;">RUT</th>
+        <th style="padding:.5rem;">Cargo</th>
+        <th style="padding:.5rem;">Área</th>
+        <th style="padding:.5rem;">Usuario</th>
+        <th style="padding:.5rem;">Estado</th>
+        <th style="padding:.5rem;">Rendiciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in responsables %}
+      <tr style="border-bottom:1px solid #eef2f6;">
+        <td style="padding:.5rem;"><a href="{% url 'adm_responsable_detalle' r.pk %}">{{ r.nombre }}</a></td>
+        <td style="padding:.5rem;">{{ r.rut|default:"—" }}</td>
+        <td style="padding:.5rem;">{{ r.cargo|default:"—" }}</td>
+        <td style="padding:.5rem;">{{ r.area|default:"—" }}</td>
+        <td style="padding:.5rem;">{% if r.user %}{{ r.user.username }}{% else %}—{% endif %}</td>
+        <td style="padding:.5rem;">{% if r.activo %}Activo{% else %}Inactivo{% endif %}</td>
+        <td style="padding:.5rem;">{{ r.total_rendiciones }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="padding:1rem;">No hay responsables con ese filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

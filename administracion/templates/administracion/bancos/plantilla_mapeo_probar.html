@@ -1,0 +1,73 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}Probar — {{ plantilla.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge">B004</p>
+  <h1>Probar plantilla — {{ plantilla.nombre }} v{{ plantilla.version }}</h1>
+  <p>
+    <a href="{% url 'adm_plantilla_mapeo_detalle' plantilla.pk %}">← Detalle</a>
+  </p>
+
+  <form method="post" enctype="multipart/form-data" class="esqueleto" style="margin-top:1rem; max-width:640px;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul style="color:#a33;">{{ form.non_field_errors }}</ul>
+    {% endif %}
+    {% for field in form %}
+      <div style="margin-bottom:.85rem;">
+        <label for="{{ field.id_for_label }}" style="display:block; font-weight:600;">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.help_text %}<small style="color:#5c6b7a;">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}
+          <div style="color:#a33; font-size:.9rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit">Previsualizar</button>
+  </form>
+
+  {% if preview %}
+  <div class="esqueleto" style="margin-top:1.25rem;">
+    <h2>Columnas detectadas</h2>
+    <p>{{ preview.encabezados|join:", " }}</p>
+
+    {% if preview.errores %}
+    <h2>Errores</h2>
+    <ul style="color:#a33;">
+      {% for e in preview.errores %}
+      <li>Fila {{ e.fila }}: {{ e.mensaje }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h2>Vista previa ({{ preview.filas|length }} / {{ preview.total_leidas }})</h2>
+    <table style="width:100%; border-collapse:collapse; background:#fff;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid #d7dee6;">
+          <th style="padding:.4rem;">Fecha</th>
+          <th style="padding:.4rem;">Tipo</th>
+          <th style="padding:.4rem;">Monto</th>
+          <th style="padding:.4rem;">Descripción</th>
+          <th style="padding:.4rem;">Referencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in preview.filas %}
+        <tr style="border-bottom:1px solid #eef2f6;">
+          <td style="padding:.4rem;">{{ fila.fecha_operacion|default:"—" }}</td>
+          <td style="padding:.4rem;">{{ fila.tipo|default:"—" }}</td>
+          <td style="padding:.4rem;">{{ fila.monto|default:"—" }}</td>
+          <td style="padding:.4rem;">{{ fila.descripcion|default:"—" }}</td>
+          <td style="padding:.4rem;">{{ fila.referencia|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="padding:.5rem;">Sin filas transformadas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

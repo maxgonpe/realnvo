@@ -1,0 +1,159 @@
+{% comment %}
+A007 — Plantilla base del módulo Administración.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Administración{% endblock %} — Extintores Real</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5c6b7a;
+      --line: #d7dee6;
+      --bg: #f3f6f9;
+      --accent: #0b6e4f;
+      --vivo: #0b6e4f;
+      --vivo-bg: #e8f6ef;
+      --vivo-border: #6fbf98;
+      --parcial: #9a6b00;
+      --parcial-bg: #fff6e0;
+      --parcial-border: #e6c56a;
+      --esqueleto: #6b7785;
+      --esqueleto-bg: #f0f2f5;
+      --esqueleto-border: #c5ced8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #eef3f7 0%, var(--bg) 40%);
+      min-height: 100vh;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem 1rem;
+      align-items: center;
+      padding: .9rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+    }
+    nav a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: .95rem; }
+    nav a:hover { text-decoration: underline; }
+    nav .brand { color: var(--ink); font-size: 1.05rem; margin-right: .5rem; }
+    nav a.nav-vivo {
+      color: var(--vivo);
+      background: var(--vivo-bg);
+      border: 1px solid var(--vivo-border);
+      padding: .25rem .65rem;
+      border-radius: .35rem;
+    }
+    nav a.nav-parcial {
+      color: var(--parcial);
+      background: var(--parcial-bg);
+      border: 1px solid var(--parcial-border);
+      padding: .25rem .65rem;
+      border-radius: .35rem;
+    }
+    main { padding: 1.25rem; max-width: 1100px; margin: 0 auto; }
+    .badge {
+      display: inline-block;
+      font-size: .75rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid #9ecfb8;
+      background: #e8f6ef;
+      padding: .15rem .5rem;
+      border-radius: .25rem;
+    }
+    .badge-vivo { color: var(--vivo); border-color: var(--vivo-border); background: var(--vivo-bg); }
+    .badge-parcial { color: var(--parcial); border-color: var(--parcial-border); background: var(--parcial-bg); }
+    .badge-esqueleto { color: var(--esqueleto); border-color: var(--esqueleto-border); background: var(--esqueleto-bg); }
+    a.mod-vivo, .mod-vivo {
+      color: var(--vivo) !important;
+      font-weight: 700;
+      background: var(--vivo-bg);
+      border: 1px solid var(--vivo-border);
+      padding: .2rem .55rem;
+      border-radius: .3rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+    a.mod-parcial, .mod-parcial {
+      color: var(--parcial) !important;
+      font-weight: 600;
+      background: var(--parcial-bg);
+      border: 1px solid var(--parcial-border);
+      padding: .2rem .55rem;
+      border-radius: .3rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+    a.mod-esqueleto, .mod-esqueleto {
+      color: var(--esqueleto) !important;
+      background: var(--esqueleto-bg);
+      border: 1px solid var(--esqueleto-border);
+      padding: .2rem .55rem;
+      border-radius: .3rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-vivo {
+      display: inline-block;
+      margin-left: .35rem;
+      padding: .35rem .7rem;
+      background: var(--vivo);
+      color: #fff !important;
+      border-radius: .35rem;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: .9rem;
+    }
+    .btn-vivo:hover { filter: brightness(1.05); }
+    .leyenda-mods {
+      display: flex; flex-wrap: wrap; gap: .75rem; margin: .75rem 0 1.25rem;
+      font-size: .85rem; color: var(--muted);
+    }
+    .leyenda-mods span { display: inline-flex; align-items: center; gap: .35rem; }
+    .dot { width: .7rem; height: .7rem; border-radius: 50%; display: inline-block; }
+    .dot-vivo { background: var(--vivo); }
+    .dot-parcial { background: #d4a017; }
+    .dot-esqueleto { background: #9aa5b1; }
+    h1 { margin: .4rem 0 0.75rem; font-size: 1.6rem; }
+    h2 { margin-top: 1.5rem; font-size: 1.15rem; border-bottom: 1px solid var(--line); padding-bottom: .35rem; }
+    ul { padding-left: 1.2rem; }
+    li { margin: .45rem 0; }
+    .esqueleto { background: #fff; border: 1px solid var(--line); padding: 1rem 1.2rem; border-radius: .4rem; }
+    .esqueleto p { color: var(--muted); line-height: 1.45; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <a class="brand" href="{% url 'adm_panel' %}">Administración</a>
+    <a class="nav-parcial" href="{% url 'adm_rendicion_lista' %}">Rendiciones</a>
+    <a class="nav-vivo" href="{% url 'adm_banco_lista' %}">Bancos</a>
+    <a class="nav-vivo" href="{% url 'adm_cuenta_lista' %}">Cuentas</a>
+    <a class="nav-vivo" href="{% url 'adm_cartola_importar' %}">Cartolas</a>
+    <a class="nav-vivo" href="{% url 'adm_plantilla_mapeo_lista' %}">Plantillas</a>
+    <a class="nav-vivo" href="{% url 'adm_movimiento_lista' %}">Movimientos</a>
+    <a href="{% url 'adm_factura_lista' %}">Facturación</a>
+    <a href="{% url 'adm_operacion_factoring_lista' %}">Factoring</a>
+  </nav>
+  <main>
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

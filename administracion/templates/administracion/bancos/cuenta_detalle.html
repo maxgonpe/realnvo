@@ -1,0 +1,56 @@
+{% extends "administracion/base_adm.html" %}
+{% block title %}{{ cuenta.nombre }}{% endblock %}
+{% block content %}
+<section>
+  <p class="badge badge-vivo">B002</p>
+  <h1>{{ cuenta.nombre }}</h1>
+  <p>
+    <a href="{% url 'adm_cuenta_lista' %}">← Lista</a>
+    ·
+    <a href="{% url 'adm_cuenta_editar' cuenta.pk %}">Editar</a>
+    ·
+    <a href="{% url 'adm_banco_detalle' cuenta.banco_id %}">Banco</a>
+  </p>
+
+  <div class="esqueleto" style="margin-top:1rem;">
+    <h2>Identificación</h2>
+    <ul>
+      <li><strong>Banco:</strong> {{ cuenta.banco.nombre }}</li>
+      <li><strong>Número:</strong> <code>{{ cuenta.numero_cuenta }}</code></li>
+      <li><strong>Tipo:</strong> {{ cuenta.get_tipo_cuenta_display }}</li>
+      <li><strong>Moneda:</strong> {{ cuenta.moneda }}</li>
+      <li><strong>Titular:</strong> {{ cuenta.titular|default:"—" }}</li>
+      <li><strong>RUT titular:</strong> {{ cuenta.rut_titular|default:"—" }}</li>
+      <li><strong>Estado:</strong> {% if cuenta.activa %}Activa{% else %}Inactiva{% endif %}</li>
+    </ul>
+    {% if cuenta.observaciones %}
+    <p><strong>Observaciones:</strong> {{ cuenta.observaciones }}</p>
+    {% endif %}
+
+    <h2>Resumen operacional</h2>
+    <ul>
+      <li>Importaciones: {{ resumen.total_importaciones }}</li>
+      <li>Movimientos: {{ resumen.total_movimientos }}</li>
+      <li>Última cartola:
+        {% if resumen.ultima_cartola %}
+          {{ resumen.ultima_cartola }} ({{ resumen.ultima_cartola.get_estado_display }})
+        {% else %}
+          —
+        {% endif %}
+      </li>
+    </ul>
+
+    {% if cuenta.activa %}
+    <form method="post" action="{% url 'adm_cuenta_desactivar' cuenta.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Desactivar</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'adm_cuenta_activar' cuenta.pk %}" style="margin-top:1rem;">
+      {% csrf_token %}
+      <button type="submit">Activar</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

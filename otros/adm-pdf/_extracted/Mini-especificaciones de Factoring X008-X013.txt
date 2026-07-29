@@ -1,0 +1,3118 @@
+Bloque 12 — Mini-especificaciones funcionales y
+técnicas
+Factoring: X008 a X013
+
+1. Propósito del bloque
+Este bloque completa el módulo de factoring mediante el tratamiento de pagos directos erróneos,
+devoluciones, conciliaciones, reportes y pruebas integrales.
+Incluye:
+• Detección de pagos recibidos por Extintores Real para facturas cedidas.
+• Generación de alertas críticas.
+• Bloqueo del pago como abono válido de la factura.
+• Conservación del ingreso bancario real.
+• Creación de un incidente de pago directo.
+• Solicitud de devolución al cliente.
+• Aprobación y ejecución de la devolución.
+• Conciliación del egreso bancario.
+• Conciliación de anticipos y liquidaciones del factor.
+• Reportes operativos y financieros.
+• Pruebas del ciclo completo de factoring.
+Al finalizar este bloque, el sistema podrá responder:
+
+¿El cliente pagó por error a Extintores Real?
+¿Qué factura cedida está involucrada?
+¿Qué movimiento bancario originó el incidente?
+¿El ingreso fue conciliado?
+¿El dinero se devolvió al cliente?
+¿La devolución fue aprobada?
+¿Existe un egreso bancario asociado?
+¿La devolución está total o parcialmente conciliada?
+¿El factor pagó el anticipo?
+¿El factor liberó la liquidación pendiente?
+¿Qué operaciones están cedidas, en mora o con recurso?
+
+1
+
+2. Resumen del bloque
+Recurso
+
+Cobertura
+actual
+
+Resultado
+
+12 h
+
+Integraciones
+
+Parcial
+
+Incidente y alerta
+crítica
+
+Proceso de
+devolución al
+cliente
+
+6h
+
+Backend
+
+Parcial
+
+Solicitud, aprobación,
+egreso y cierre
+
+X010
+
+Conciliar
+devolución
+bancaria
+
+10 h
+
+Integraciones
+
+Alta, con
+ajustes
+
+Egreso enlazado al
+pago erróneo
+
+X011
+
+Conciliar
+liquidación del
+factor
+
+10 h
+
+Integraciones
+
+Alta, con
+ajustes
+
+Anticipos y
+liquidaciones
+enlazados con cartola
+
+X012
+
+Reportes de
+factoring
+
+6h
+
+Frontend
+
+Sin modelo
+adicional
+obligatorio
+
+Cedidas, mora,
+recaudadas, por
+liquidar y con recurso
+
+X013
+
+Pruebas de
+factoring
+
+12 h
+
+QA / Tester
+
+Pendiente
+
+Validación integral del
+módulo
+
+Código
+
+Actividad
+
+X008
+
+Detectar pago
+directo de
+factura cedida
+
+X009
+
+Horas
+
+El bloque suma 56 horas.
+Los resultados definidos por la Carta Gantt son:
+• X008: un ingreso en el banco de Extintores Real genera una alerta crítica y no salda el factoring.
+• X009: solicitud, aprobación, egreso y cierre de la devolución al cliente.
+• X010: el egreso queda enlazado con el pago erróneo y su devolución.
+• X011: anticipos y liquidaciones del factor quedan enlazados con la cartola.
+• X012: reportes de cedidas, en mora, recaudadas, por liquidar y con recurso.
+• X013: pruebas de mora, pago directo, devolución, recurso y liquidación.
+
+3. Secuencia funcional
+X008 Detectar pago directo
+→ X009 Solicitar y aprobar devolución
+→ X010 Ejecutar y conciliar devolución
+→ X011 Conciliar anticipos y liquidaciones
+→ X012 Reportar operaciones
+→ X013 Probar el módulo completo
+
+2
+
+4. Caso central del bloque
+4.1 Situación
+Una factura fue cedida a una empresa de factoring.
+El cliente debía pagar al factor, pero transfirió el dinero a una cuenta de Extintores Real.
+Ejemplo:
+
+Factura cedida:
+Cliente paga a Extintores Real:
+
+1.000.000 CLP
+1.000.000 CLP
+
+El depósito existe realmente en la cuenta bancaria de Extintores Real.
+Sin embargo:
+
+La factura no queda saldada frente al factoring.
+
+4.2 Tratamiento correcto
+Movimiento bancario de ingreso
+→ PagoCliente recibido por Extintores Real
+→ AplicacionPagoFactura marcada como PAGO_ERRONEO_FACTORING
+→ Incidente de pago directo
+→ Alerta crítica
+→ Solicitud de devolución al cliente
+→ Aprobación
+→ Transferencia de devolución
+→ Movimiento bancario de egreso
+→ Conciliación de la devolución
+→ Cierre del incidente
+
+4.3 Tratamientos incorrectos
+No se debe:
+
+Marcar la factura como pagada normalmente
+No se debe:
+
+3
+
+Marcar la operación de factoring como liquidada
+No se debe:
+
+Considerar el ingreso como pago del factor
+No se debe:
+
+Eliminar o excluir el movimiento bancario de ingreso
+No se debe:
+
+Crear directamente un egreso sin solicitud y aprobación
+
+5. Cobertura actual del modelo
+El modelo actual ya contiene piezas importantes para este proceso.
+AplicacionPagoFactura dispone del estado:
+
+PAGO_ERRONEO_FACTORING
+que permite diferenciar el pago recibido erróneamente de una aplicación válida sobre la factura.
+AlertaCobranza ya incluye:
+
+PAGO_DIRECTO_FACTURA_CEDIDA
+como tipo de alerta.
+DevolucionPagoCliente ya registra:
+• Pago de origen.
+• Aplicación relacionada.
+• Monto.
+• Motivo.
+• Estado.
+• Fecha de solicitud.
+• Fecha de finalización.
+• Observaciones.
+
+4
+
+AplicacionMovimientoBancario ya permite utilizar una devolución de pago como destino y exige
+un movimiento de egreso para ese destino.
+La cobertura es funcionalmente valiosa, pero todavía faltan:
+• Incidente estructurado.
+• Verificación del falso positivo.
+• Reserva del monto recibido.
+• Aprobación de la devolución.
+• Datos bancarios históricos del beneficiario.
+• Ejecución separada de la solicitud.
+• Devoluciones parciales.
+• Conciliación parcial.
+• Estados calculados.
+• Cierre del incidente.
+• Selectores y reportes integrales.
+
+6. Diferencia entre pago, aplicación e incidente
+6.1 PagoCliente
+Representa el dinero efectivamente recibido.
+
+PagoCliente.receptor = EXTINTORES_REAL
+Este pago puede estar conciliado con un movimiento bancario de ingreso.
+
+6.2 AplicacionPagoFactura
+Representa cómo se intentó relacionar el pago con una factura.
+En el caso erróneo:
+
+estado = PAGO_ERRONEO_FACTORING
+El estado actual ya permite registrar esta situación.
+Esta aplicación:
+• Reserva el monto involucrado.
+• No debe pagar la factura.
+• No debe reducir la deuda frente al factor.
+• Debe originar un incidente.
+
+5
+
+6.3 Incidente de pago directo
+Representa el proceso de excepción:
+
+Detectado
+→ verificado
+→ devolución solicitada
+→ devolución aprobada
+→ devolución ejecutada
+→ devolución conciliada
+→ cerrado
+Se recomienda crear un modelo específico.
+
+7. Modelo propuesto:
+IncidentePagoDirectoFactoring
+class IncidentePagoDirectoFactoring(ModeloAuditoria):
+class Estado(models.TextChoices):
+DETECTADO = "DETECTADO", "Detectado"
+EN_REVISION = "EN_REVISION", "En revisión"
+CONFIRMADO = "CONFIRMADO", "Confirmado"
+DEVOLUCION_SOLICITADA = (
+"DEVOLUCION_SOLICITADA",
+"Devolución solicitada",
+)
+DEVOLUCION_APROBADA = (
+"DEVOLUCION_APROBADA",
+"Devolución aprobada",
+)
+DEVOLUCION_PARCIAL = (
+"DEVOLUCION_PARCIAL",
+"Devolución parcial",
+)
+DEVUELTO = "DEVUELTO", "Devuelto"
+CONCILIADO = "CONCILIADO", "Conciliado"
+DESCARTADO = "DESCARTADO", "Descartado"
+ANULADO = "ANULADO", "Anulado"
+class OrigenDeteccion(models.TextChoices):
+APLICACION_MANUAL = (
+"APLICACION_MANUAL",
+"Aplicación manual",
+)
+CONCILIACION_BANCARIA = (
+"CONCILIACION_BANCARIA",
+
+6
+
+"Conciliación bancaria",
+)
+REGLA_AUTOMATICA = (
+"REGLA_AUTOMATICA",
+"Regla automática",
+)
+REVISION_COBRANZA = (
+"REVISION_COBRANZA",
+"Revisión de cobranza",
+)
+NOTIFICACION_FACTOR = (
+"NOTIFICACION_FACTOR",
+"Notificación del factor",
+)
+OTRO = "OTRO", "Otro"
+pago = models.ForeignKey(
+PagoCliente,
+on_delete=models.PROTECT,
+related_name="incidentes_factoring",
+)
+aplicacion_pago = models.OneToOneField(
+AplicacionPagoFactura,
+on_delete=models.PROTECT,
+related_name="incidente_pago_directo",
+)
+factura = models.ForeignKey(
+FacturaVenta,
+on_delete=models.PROTECT,
+related_name="incidentes_pago_directo",
+)
+operacion_factoring = models.ForeignKey(
+OperacionFactoring,
+on_delete=models.PROTECT,
+related_name="incidentes_pago_directo",
+)
+monto_afectado = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+estado = models.CharField(
+max_length=30,
+choices=Estado.choices,
+default=Estado.DETECTADO,
+)
+
+7
+
+origen_deteccion = models.CharField(
+max_length=30,
+choices=OrigenDeteccion.choices,
+)
+detectado_en = models.DateTimeField(
+default=timezone.now,
+)
+detectado_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="incidentes_factoring_detectados",
+)
+confirmado_en = models.DateTimeField(
+null=True,
+blank=True,
+)
+confirmado_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="incidentes_factoring_confirmados",
+)
+motivo_descarte = models.TextField(blank=True)
+observaciones = models.TextField(blank=True)
+
+8. Propiedades del incidente
+@property
+def monto_devuelto(self):
+total = self.devoluciones.exclude(
+estado=DevolucionPagoCliente.Estado.ANULADA
+).aggregate(
+total=Sum("monto")
+)["total"]
+return total or Decimal("0.00")
+No obstante, deben separarse:
+
+8
+
+Monto solicitado
+Monto aprobado
+Monto ejecutado
+Monto conciliado
+Por ello son preferibles propiedades específicas:
+
+@property
+def monto_solicitado(self):
+...
+@property
+def monto_aprobado(self):
+...
+@property
+def monto_ejecutado(self):
+...
+@property
+def monto_conciliado(self):
+...
+
+@property
+def saldo_por_devolver(self):
+return max(
+self.monto_afectado - self.monto_ejecutado,
+Decimal("0.00"),
+)
+
+@property
+def saldo_por_conciliar(self):
+return max(
+self.monto_ejecutado - self.monto_conciliado,
+Decimal("0.00"),
+)
+
+9. Ajuste de los cálculos de PagoCliente
+Actualmente PagoCliente.monto_aplicado suma todas las aplicaciones salvo las anuladas. Esto
+incluye las aplicaciones con estado PAGO_ERRONEO_FACTORING .
+Ese comportamiento reserva el monto para impedir que se aplique nuevamente, pero el nombre
+monto_aplicado puede resultar ambiguo.
+
+9
+
+Se recomienda diferenciar:
+
+@property
+def monto_aplicado_facturas(self):
+total = self.aplicaciones.filter(
+estado=AplicacionPagoFactura.Estado.APLICADA
+).aggregate(total=Sum("monto"))["total"]
+return total or Decimal("0.00")
+
+@property
+def monto_pago_erroneo_factoring(self):
+total = self.aplicaciones.filter(
+estado=(
+AplicacionPagoFactura
+.Estado
+.PAGO_ERRONEO_FACTORING
+)
+).aggregate(total=Sum("monto"))["total"]
+return total or Decimal("0.00")
+
+@property
+def monto_comprometido(self):
+return (
+self.monto_aplicado_facturas
++ self.monto_pago_erroneo_factoring
+)
+
+@property
+def saldo_libre(self):
+return max(
+self.monto - self.monto_comprometido,
+Decimal("0.00"),
+)
+Así se evita interpretar que el pago erróneo saldó una factura.
+
+X008 — Detectar pago directo de factura cedida
+1. Objetivo
+Detectar que un pago recibido por Extintores Real corresponde a una factura que ya fue cedida a
+factoring.
+
+10
+
+La detección debe producir:
+• Aplicación especial.
+• Incidente.
+• Alerta crítica.
+• Reserva del monto.
+• Bloqueo de aplicación ordinaria.
+• Trazabilidad completa.
+
+2. Puntos de detección
+El caso puede detectarse en varios momentos.
+
+Al aplicar un pago a una factura
+PagoCliente recibido por ER
+→ usuario selecciona factura cedida
+El backend debe impedir una aplicación normal.
+
+Durante la conciliación bancaria
+Movimiento bancario de ingreso
+→ referencia o monto coincide con factura cedida
+La regla puede sugerir el incidente.
+No debe crearlo como confirmado sin revisión, salvo una regla explícitamente autorizada.
+
+Durante la importación o identificación
+La descripción bancaria puede contener:
+• Número de factura.
+• RUT del cliente.
+• Orden de compra.
+• Referencia de pago.
+
+Por aviso del factor
+El factor puede informar que:
+• No recibió el pago.
+
+11
+
+• El cliente indicó haber pagado.
+• La transferencia fue enviada a Extintores Real.
+
+3. Reglas de detección
+Se considera candidato cuando:
+1. El pago fue recibido por Extintores Real.
+2. La factura tiene una operación de factoring activa.
+3. La operación no está cerrada ni anulada.
+4. El cliente del pago coincide con la factura.
+5. Existe saldo cedido pendiente.
+6. El monto es compatible.
+7. La fecha es posterior a la cesión.
+8. La referencia o evidencia permite asociar el pago.
+
+4. Detección exacta
+Ejemplo:
+
+Movimiento bancario:
+Cliente:
+Referencia:
+Factura 1050:
+Monto cedido pendiente:
+
+1.000.000 CLP
+Cliente A
+Factura 1050
+Cedida
+1.000.000 CLP
+
+Resultado:
+
+Coincidencia de alta confianza
+Se crea una propuesta de incidente o se deriva a confirmación.
+
+5. Detección parcial
+Ejemplo:
+
+Pago recibido:
+Factura cedida:
+
+600.000 CLP
+1.000.000 CLP
+
+Resultado:
+• Incidente por 600.000 CLP.
+
+12
+
+• El cliente mantiene 400.000 CLP pendientes frente al factor.
+• La devolución puede ser parcial o total respecto del pago recibido.
+
+6. Pago para varias facturas
+Ejemplo:
+
+Pago recibido:
+
+1.500.000 CLP
+
+Factura no cedida:
+Factura cedida:
+
+500.000 CLP
+1.000.000 CLP
+
+El sistema podrá crear:
+
+Aplicación válida:
+Aplicación errónea:
+
+500.000 CLP
+1.000.000 CLP
+
+Solo el importe relacionado con la factura cedida queda reservado para devolución.
+
+7. Estado de la aplicación
+Se crea:
+
+AplicacionPagoFactura(
+pago=pago,
+factura=factura,
+monto=monto_afectado,
+estado=PAGO_ERRONEO_FACTORING,
+)
+Esta aplicación:
+• No suma en FacturaVenta.monto_pagado .
+• No cambia la factura a pagada.
+• Sí reserva el monto del pago.
+• Se relaciona uno a uno con el incidente.
+FacturaVenta.monto_pagado actualmente solo suma aplicaciones en estado APLICADA , por lo
+que PAGO_ERRONEO_FACTORING no reduce el saldo de la factura.
+
+8. Estado de la factura
+La factura mantiene:
+
+13
+
+CEDIDA_FACTORING
+o el estado calculado equivalente.
+No debe pasar a:
+
+PAGADA
+
+9. Estado de la operación
+La operación de factoring continúa:
+
+POR_COBRAR_CLIENTE
+o:
+
+EN_MORA
+según la fecha.
+No pasa a:
+
+CLIENTE_PAGO_FACTOR
+porque el factor no recibió el dinero.
+
+10. Ingreso bancario
+El movimiento bancario de ingreso se concilia con:
+
+PagoCliente
+La conciliación es válida porque el dinero sí ingresó a Extintores Real.
+Debe mostrar una indicación:
+
+Ingreso conciliado — pendiente de devolución por factoring
+
+14
+
+Esto diferencia:
+• Conciliación bancaria del ingreso.
+• Regularización del incidente.
+
+11. Alerta crítica
+Se crea:
+
+AlertaCobranza.PAGO_DIRECTO_FACTURA_CEDIDA
+El tipo ya existe en el modelo actual.
+Datos recomendados:
+
+{
+"pago_id": 145,
+"movimiento_id": 908,
+"factura_id": 1050,
+"operacion_factoring_id": 54,
+"monto": "1000000.00",
+"empresa_factoring": "Factor A"
+}
+Severidad:
+
+CRITICA
+
+12. Clave de control
+PAGO_DIRECTO_FACTURA_CEDIDA:aplicacion:458
+La misma aplicación no debe generar alertas duplicadas.
+
+13. Confirmación y descarte
+Confirmar
+Cuando se verifica que el pago corresponde a la factura cedida:
+
+15
+
+DETECTADO
+→ CONFIRMADO
+
+Descartar
+Cuando se demuestra que:
+• La referencia era incorrecta.
+• El pago correspondía a otra factura.
+• La cesión todavía no era efectiva.
+• La operación había sido anulada.
+El descarte debe:
+• Registrar motivo.
+• Anular o corregir la aplicación especial.
+• Liberar el monto.
+• Resolver la alerta.
+• Conservar historial.
+
+14. Servicio
+services/factoring/pagos_directos.py
+
+@transaction.atomic
+def detectar_pago_directo_factoring(
+*,
+pago_id,
+factura_id,
+monto,
+origen,
+usuario,
+):
+pago = (
+PagoCliente.objects
+.select_for_update()
+.get(pk=pago_id)
+)
+factura = (
+FacturaVenta.objects
+.select_for_update()
+.select_related("operacion_factoring")
+.get(pk=factura_id)
+)
+# Validar pago.
+
+16
+
+# Validar factura cedida.
+# Validar cliente.
+# Validar monto.
+# Crear aplicación especial.
+# Crear incidente.
+# Crear alerta crítica.
+# Registrar evento y auditoría.
+Funciones:
+
+buscar_pagos_directos_candidatos()
+detectar_pago_directo_factoring()
+confirmar_incidente_pago_directo()
+descartar_incidente_pago_directo()
+recalcular_saldos_incidente()
+
+15. URLs
+/administracion/factoring/pagos-directos/
+/administracion/factoring/pagos-directos/detectar/
+/administracion/factoring/pagos-directos/<pk>/
+/administracion/factoring/pagos-directos/<pk>/confirmar/
+/administracion/factoring/pagos-directos/<pk>/descartar/
+/administracion/pagos/<pk>/factoring/
+/administracion/movimientos/<pk>/detectar-factoring/
+
+16. Vistas
+PagosDirectosFactoringListView
+PagoDirectoFactoringDetectarView
+PagoDirectoFactoringDetailView
+PagoDirectoFactoringConfirmarView
+PagoDirectoFactoringDescartarView
+
+17. Interfaz
+La pantalla de confirmación mostrará:
+
+17
+
+Concepto
+
+Información
+
+Movimiento
+
+Ingreso bancario
+
+Cliente
+
+Cliente A
+
+Factura
+
+1050
+
+Estado factura
+
+Cedida a factoring
+
+Empresa factor
+
+Factor A
+
+Pago recibido
+
+1.000.000 CLP
+
+Saldo cedido
+
+1.000.000 CLP
+
+Acción
+
+Crear incidente crítico
+
+Advertencia:
+
+Este ingreso no paga la obligación frente al factoring.
+El importe quedará reservado para devolución.
+
+18. Permisos
+detectar_pago_directo_factoring
+confirmar_pago_directo_factoring
+descartar_pago_directo_factoring
+view_incidentepagodirectofactoring
+
+19. Auditoría
+Registrar:
+• Pago.
+• Movimiento.
+• Factura.
+• Operación.
+• Monto.
+• Origen de detección.
+• Usuario.
+• Confirmación.
+• Descarte.
+• Estado anterior y nuevo.
+
+18
+
+20. Pruebas
+• Pago completo.
+• Pago parcial.
+• Pago combinado.
+• Factura no cedida.
+• Operación anulada.
+• Cliente incorrecto.
+• Fecha anterior a cesión.
+• Monto superior al pago.
+• Monto superior al saldo cedido.
+• Ingreso conciliado.
+• Factura no pagada.
+• Alerta crítica.
+• Idempotencia.
+• Descarte.
+• Concurrencia.
+
+21. Criterios de aceptación
+• El pago erróneo se detecta.
+• Se crea una aplicación especial.
+• La factura no queda pagada.
+• La operación no queda liquidada.
+• El ingreso bancario permanece conciliado.
+• El monto queda reservado.
+• Se crea una alerta crítica.
+• El incidente puede confirmarse o descartarse.
+• Existe trazabilidad completa.
+
+X009 — Proceso de devolución al cliente
+1. Objetivo
+Gestionar la devolución al cliente del dinero recibido por error para una factura cedida.
+La Carta Gantt define:
+
+Solicitud
+→ aprobación
+→ egreso
+→ cierre
+
+19
+
+2. Modelo existente
+DevolucionPagoCliente
+El modelo actual contiene una relación con el pago y, opcionalmente, con la aplicación que originó la
+devolución.
+Se recomienda ampliarlo para representar el ciclo completo.
+
+3. Estados propuestos
+class Estado(models.TextChoices):
+BORRADOR = "BORRADOR", "Borrador"
+SOLICITADA = "SOLICITADA", "Solicitada"
+EN_REVISION = "EN_REVISION", "En revisión"
+APROBADA = "APROBADA", "Aprobada"
+RECHAZADA = "RECHAZADA", "Rechazada"
+EN_PAGO = "EN_PAGO", "En proceso de pago"
+PARCIAL = "PARCIAL", "Pagada parcialmente"
+EJECUTADA = "EJECUTADA", "Ejecutada"
+CONCILIADA = "CONCILIADA", "Conciliada"
+ANULADA = "ANULADA", "Anulada"
+El estado actual COMPLETADA puede migrarse a CONCILIADA o mantenerse temporalmente para
+compatibilidad.
+
+4. Campos adicionales
+incidente_factoring = models.ForeignKey(
+IncidentePagoDirectoFactoring,
+on_delete=models.PROTECT,
+null=True,
+blank=True,
+related_name="devoluciones",
+)
+monto_solicitado = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+monto_aprobado = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+default=Decimal("0.00"),
+
+20
+
+)
+solicitada_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="devoluciones_cliente_solicitadas",
+)
+aprobada_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="devoluciones_cliente_aprobadas",
+)
+fecha_aprobacion = models.DateTimeField(
+null=True,
+blank=True,
+)
+fecha_ejecucion = models.DateTimeField(
+null=True,
+blank=True,
+)
+ejecutada_por = models.ForeignKey(
+settings.AUTH_USER_MODEL,
+on_delete=models.SET_NULL,
+null=True,
+blank=True,
+related_name="devoluciones_cliente_ejecutadas",
+)
+motivo_rechazo = models.TextField(blank=True)
+motivo_anulacion = models.TextField(blank=True)
+
+5. Snapshot del beneficiario
+La devolución debe conservar los datos utilizados para efectuar el pago:
+
+beneficiario_nombre = models.CharField(
+max_length=150,
+)
+beneficiario_rut = models.CharField(
+
+21
+
+max_length=20,
+)
+beneficiario_banco = models.CharField(
+max_length=150,
+blank=True,
+)
+beneficiario_tipo_cuenta = models.CharField(
+max_length=50,
+blank=True,
+)
+beneficiario_numero_cuenta = models.CharField(
+max_length=100,
+blank=True,
+)
+beneficiario_correo = models.EmailField(blank=True)
+Los cambios posteriores en los datos del cliente no deben modificar la devolución histórica.
+
+6. Validación del beneficiario
+Antes de aprobar:
+1. El beneficiario debe corresponder al cliente que realizó el pago.
+2. El RUT debe verificarse.
+3. La cuenta bancaria debe estar respaldada.
+4. Los datos deben confirmarse por un canal autorizado.
+5. No debe utilizarse automáticamente una cuenta indicada en un correo no verificado.
+6. La modificación de cuenta después de aprobar obliga a una nueva revisión.
+
+7. Monto máximo
+Monto acumulado aprobado para devolución
+≤ monto afectado del incidente
+También:
+
+Monto acumulado ejecutado
+≤ monto aprobado
+Y:
+
+22
+
+Monto acumulado conciliado
+≤ monto ejecutado
+
+8. Devolución parcial
+Ejemplo:
+
+Pago erróneo:
+Devolución aprobada 1:
+Devolución aprobada 2:
+
+1.000.000 CLP
+600.000 CLP
+400.000 CLP
+
+El incidente permanecerá abierto hasta completar el importe correspondiente.
+
+9. Segregación de funciones
+Se recomienda:
+
+Solicitante
+≠
+Aprobador
+Y, cuando la política lo exija:
+
+Aprobador
+≠
+Ejecutor
+El administrador técnico tampoco debe aprobar automáticamente operaciones financieras solo por
+tener acceso administrativo.
+
+10. Solicitud
+La solicitud debe incluir:
+• Incidente.
+• Pago de origen.
+• Aplicación errónea.
+• Cliente.
+• Monto.
+• Motivo.
+• Cuenta destino.
+
+23
+
+• Documentos.
+• Observaciones.
+
+11. Aprobación
+La aprobación debe comprobar:
+• Incidente confirmado.
+• Saldo disponible.
+• Beneficiario.
+• Evidencia.
+• Ausencia de devolución duplicada.
+• Usuario con permiso.
+• Segregación de funciones.
+
+12. Rechazo
+Un rechazo debe indicar:
+• Motivo.
+• Usuario.
+• Fecha.
+• Acción siguiente.
+El rechazo no descarta automáticamente el incidente.
+Puede ser necesario:
+• Corregir datos bancarios.
+• Solicitar nuevos documentos.
+• Cambiar el monto.
+• Escalar el caso.
+
+13. Ejecución
+La ejecución registra que se emitió la transferencia o pago.
+Debe guardar:
+• Fecha.
+• Monto.
+• Medio de pago.
+• Referencia.
+• Cuenta de origen.
+• Ejecutor.
+• Comprobante.
+
+24
+
+La ejecución todavía no equivale necesariamente a conciliación bancaria.
+
+14. Servicio
+services/factoring/devoluciones_cliente.py
+Funciones:
+
+crear_solicitud_devolucion()
+actualizar_borrador_devolucion()
+solicitar_devolucion()
+aprobar_devolucion()
+rechazar_devolucion()
+ejecutar_devolucion()
+anular_devolucion()
+actualizar_incidente()
+
+15. URLs
+/administracion/factoring/incidentes/<pk>/devoluciones/
+/administracion/factoring/incidentes/<pk>/devoluciones/nueva/
+/administracion/factoring/devoluciones/<pk>/
+/administracion/factoring/devoluciones/<pk>/editar/
+/administracion/factoring/devoluciones/<pk>/solicitar/
+/administracion/factoring/devoluciones/<pk>/aprobar/
+/administracion/factoring/devoluciones/<pk>/rechazar/
+/administracion/factoring/devoluciones/<pk>/ejecutar/
+/administracion/factoring/devoluciones/<pk>/anular/
+
+16. Vistas
+DevolucionClienteCreateView
+DevolucionClienteDetailView
+DevolucionClienteUpdateView
+DevolucionClienteSolicitarView
+DevolucionClienteAprobarView
+DevolucionClienteRechazarView
+DevolucionClienteEjecutarView
+DevolucionClienteAnularView
+
+25
+
+17. Permisos
+view_devolucionpagocliente
+add_devolucionpagocliente
+solicitar_devolucionpagocliente
+aprobar_devolucionpagocliente
+rechazar_devolucionpagocliente
+ejecutar_devolucionpagocliente
+anular_devolucionpagocliente
+
+18. Auditoría
+Registrar:
+• Incidente.
+• Pago de origen.
+• Cliente.
+• Monto solicitado.
+• Monto aprobado.
+• Beneficiario.
+• Cuenta enmascarada.
+• Solicitante.
+• Aprobador.
+• Ejecutor.
+• Fechas.
+• Estado anterior y nuevo.
+
+19. Pruebas
+• Solicitud completa.
+• Devolución parcial.
+• Exceso sobre incidente.
+• Cuenta bancaria incompleta.
+• Cambio de cuenta.
+• Aprobación.
+• Autoaprobación.
+• Rechazo.
+• Ejecución sin aprobación.
+• Varias devoluciones.
+• Anulación.
+• Operaciones simultáneas.
+
+26
+
+20. Criterios de aceptación
+• La devolución nace de un incidente confirmado.
+• Se conserva el pago de origen.
+• El monto no supera el incidente.
+• Se conservan los datos del beneficiario.
+• Solicitud, aprobación y ejecución están separadas.
+• Se admiten devoluciones parciales.
+• La ejecución queda preparada para conciliación.
+• Todas las decisiones quedan auditadas.
+
+X010 — Conciliar devolución bancaria
+1. Objetivo
+Vincular el egreso bancario de la devolución con:
+• La devolución aprobada.
+• El incidente.
+• El pago directo original.
+• La aplicación errónea.
+• La factura cedida.
+La Carta Gantt exige que el egreso quede enlazado al pago erróneo y a su devolución.
+
+2. Flujo bancario completo
+Movimiento bancario de ingreso
+→ PagoCliente
+→ Aplicación errónea
+→ Incidente
+→ DevolucionPagoCliente
+→ Movimiento bancario de egreso
+Las dos puntas deben permanecer visibles.
+
+3. Modelo puente
+Se reutiliza:
+
+AplicacionMovimientoBancario
+Con:
+
+27
+
+destino = DEVOLUCION_PAGO
+y:
+
+devolucion_pago = devolución correspondiente
+El destino y la FK ya existen en el modelo actual.
+
+4. Dirección bancaria
+La devolución requiere:
+
+MovimientoBancario.tipo = EGRESO
+La validación actual ya contempla que DEVOLUCION_PAGO debe utilizar un movimiento de egreso.
+
+5. Validación bilateral
+Se debe controlar:
+
+Suma aplicada al movimiento
+≤ monto del movimiento
+Y:
+
+Suma conciliada a la devolución
+≤ monto ejecutado de la devolución
+No basta con validar únicamente el movimiento.
+
+6. Conciliación parcial
+Ejemplo:
+
+Devolución ejecutada:
+Egreso bancario 1:
+Egreso bancario 2:
+
+1.000.000 CLP
+600.000 CLP
+400.000 CLP
+
+28
+
+Estado de devolución:
+
+EJECUTADA
+→ PARCIAL
+→ CONCILIADA
+
+7. Movimiento compartido
+Ejemplo:
+
+Transferencia bancaria:
+
+2.000.000 CLP
+
+Devolución cliente A:
+Devolución cliente B:
+Otro destino:
+
+1.000.000 CLP
+700.000 CLP
+300.000 CLP
+
+El movimiento puede distribuirse entre varios destinos sin superar su monto.
+
+8. Cálculos recomendados
+@property
+def monto_conciliado(self):
+total = self.aplicaciones_bancarias.filter(
+activa=True
+).aggregate(
+total=Sum("monto")
+)["total"]
+return total or Decimal("0.00")
+
+@property
+def saldo_por_conciliar(self):
+return max(
+self.monto - self.monto_conciliado,
+Decimal("0.00"),
+)
+Cuando se amplíe el modelo con monto_aprobado y monto_ejecutado , el saldo debe calcularse
+contra el monto efectivamente ejecutado.
+
+29
+
+9. Candidatos bancarios
+Los candidatos se buscarán por:
+• Tipo egreso.
+• Cuenta de origen.
+• Fecha.
+• Monto.
+• Referencia.
+• RUT o nombre del beneficiario.
+• Saldo disponible.
+• Período abierto.
+
+10. Confirmación
+Antes de conciliar se mostrará:
+Concepto
+
+Valor
+
+Pago erróneo recibido
+
+1.000.000 CLP
+
+Factura cedida
+
+1050
+
+Cliente
+
+Cliente A
+
+Devolución aprobada
+
+1.000.000 CLP
+
+Egreso seleccionado
+
+1.000.000 CLP
+
+Saldo posterior
+
+0 CLP
+
+11. Efectos de la conciliación completa
+Cuando:
+
+monto conciliado = monto ejecutado
+se actualiza:
+
+DevolucionPagoCliente.estado = CONCILIADA
+Si el incidente no tiene saldo adicional:
+
+IncidentePagoDirectoFactoring.estado = CONCILIADO
+
+30
+
+La alerta crítica puede resolverse.
+
+12. Estado de la factura
+La devolución al cliente:
+• No paga la factura cedida.
+• No reduce el saldo frente al factor.
+• No cierra la operación de factoring.
+El cliente todavía debe pagar al factor, salvo que exista otro mecanismo de regularización
+documentado.
+
+13. Reversa
+Si se reversa la aplicación bancaria:
+
+Devolución CONCILIADA
+→ EJECUTADA o PARCIAL
+Y:
+
+Incidente CONCILIADO
+→ DEVUELTO o DEVOLUCION_PARCIAL
+La reversa debe respetar el cierre bancario de B016–B017.
+
+14. Servicio
+services/factoring/conciliacion_devoluciones.py
+
+@transaction.atomic
+def conciliar_devolucion_cliente(
+*,
+devolucion_id,
+aplicaciones,
+usuario,
+):
+devolucion = (
+DevolucionPagoCliente.objects
+.select_for_update()
+.select_related(
+
+31
+
+"pago",
+"aplicacion_pago",
+"incidente_factoring",
+)
+.get(pk=devolucion_id)
+)
+# Validar estado.
+# Bloquear movimientos.
+# Validar egresos.
+# Validar saldos.
+# Crear aplicaciones.
+# Actualizar devolución.
+# Actualizar incidente.
+# Resolver alerta.
+# Registrar auditoría.
+Funciones:
+
+buscar_egresos_candidatos()
+conciliar_devolucion_cliente()
+actualizar_estado_devolucion()
+actualizar_estado_incidente()
+reversar_conciliacion_devolucion()
+
+15. URLs
+/administracion/factoring/devoluciones/<pk>/conciliar/
+/administracion/factoring/devoluciones/<pk>/conciliaciones/
+/administracion/factoring/devoluciones/<pk>/reversar-conciliacion/
+
+16. Vistas
+DevolucionClienteConciliarView
+DevolucionClienteConciliacionesView
+DevolucionClienteReversarConciliacionView
+
+32
+
+17. Permisos
+conciliar_devolucionpagocliente
+reversar_conciliacion_devolucionpagocliente
+
+18. Auditoría
+Registrar:
+• Devolución.
+• Incidente.
+• Pago original.
+• Movimiento de ingreso original.
+• Movimiento de egreso.
+• Monto.
+• Usuario.
+• Estado anterior y nuevo.
+• Reversa.
+
+19. Pruebas
+• Conciliación completa.
+• Conciliación parcial.
+• Varios egresos.
+• Movimiento compartido.
+• Movimiento de ingreso incorrecto.
+• Exceso sobre devolución.
+• Exceso sobre movimiento.
+• Devolución no aprobada.
+• Devolución anulada.
+• Período cerrado.
+• Reversa.
+• Concurrencia.
+
+20. Criterios de aceptación
+• El egreso se vincula a la devolución.
+• La devolución se vincula al pago original.
+• Solo se admiten egresos.
+• Se soportan conciliaciones parciales.
+• No se superan saldos.
+• El incidente se cierra únicamente al completar la regularización.
+• La factura continúa cedida.
+• Las reversas conservan historial.
+
+33
+
+X011 — Conciliar liquidación del factor
+1. Objetivo
+Conciliar los ingresos bancarios recibidos desde la empresa de factoring por:
+• Anticipo.
+• Liquidación.
+• Liberación de retención.
+• Ajustes a favor de Extintores Real.
+La Carta Gantt exige enlazar anticipos y liquidaciones con la cartola bancaria.
+
+2. Modelo utilizado
+FlujoFactoring
+El modelo ya permite flujos de anticipo, liquidación, comisión, retención y cobro con recurso.
+El puente bancario ya puede relacionar un movimiento con FlujoFactoring .
+
+3. Flujos que normalmente generan ingreso
+ANTICIPO
+LIQUIDACION
+LIBERACION_RETENCION
+AJUSTE_A_FAVOR
+LIBERACION_RETENCION puede incorporarse como nuevo tipo o registrarse como liquidación con
+subtipo.
+
+4. Flujos que no deben conciliarse como ingreso
+RETENCION
+La retención representa inicialmente dinero no entregado.
+Tampoco se concilia como ingreso:
+
+34
+
+COMISION DESCONTADA
+porque reduce el importe transferido, pero no constituye un movimiento separado.
+
+5. Anticipo
+Ejemplo:
+
+Monto cedido:
+Anticipo esperado:
+Ingreso bancario:
+Comisión descontada:
+
+1.000.000 CLP
+800.000 CLP
+780.000 CLP
+20.000 CLP
+
+El sistema debe permitir explicar:
+
+Anticipo bruto:
+Comisión descontada:
+Transferencia neta:
+
+800.000 CLP
+20.000 CLP
+780.000 CLP
+
+La operación contractual debe conservar ambos componentes.
+La aplicación bancaria se relacionará con el flujo que represente el importe neto efectivamente
+transferido o con una estructura de liquidación que muestre el desglose.
+
+6. Liquidación del factor
+Después de que el cliente paga al factor:
+
+Factor debe liquidar
+→ ingreso bancario
+→ aplicación a FlujoFactoring.LIQUIDACION
+La liquidación puede incluir:
+• Retención liberada.
+• Ajustes.
+• Comisiones pendientes.
+• Intereses.
+• Descuentos.
+El detalle debe conservarse mediante flujos separados o un documento de liquidación estructurado.
+
+35
+
+7. Pagos parciales
+Ejemplo:
+
+Liquidación esperada:
+Ingreso 1:
+Ingreso 2:
+
+200.000 CLP
+120.000 CLP
+80.000 CLP
+
+Estado:
+
+ESPERADO
+→ PARCIAL
+→ CONCILIADO
+
+8. Un ingreso para varias operaciones
+Ejemplo:
+
+Depósito del factor:
+
+5.000.000 CLP
+
+Operación A:
+Operación B:
+Operación C:
+
+1.500.000 CLP
+2.000.000 CLP
+1.500.000 CLP
+
+El movimiento se distribuye entre varios FlujoFactoring .
+
+9. Varios ingresos para un flujo
+También se admite:
+
+Flujo de liquidación
+← movimiento A
+← movimiento B
+El saldo se actualiza progresivamente.
+
+10. Dirección
+Anticipo y liquidación requieren:
+
+36
+
+MovimientoBancario.tipo = INGRESO
+Comisión pagada separadamente y cobro con recurso requieren normalmente:
+
+EGRESO
+La validación debe utilizar la dirección configurada en el flujo y no asumir que todo factoring es ingreso.
+
+11. Candidatos
+Los movimientos candidatos se buscarán por:
+• Cuenta.
+• Empresa de factoring.
+• RUT.
+• Fecha.
+• Monto.
+• Referencia de operación.
+• Número de factura.
+• Documento de liquidación.
+• Saldo disponible.
+
+12. Documento de liquidación
+Se recomienda crear:
+
+class DocumentoLiquidacionFactoring(ModeloAuditoria):
+operacion = models.ForeignKey(
+OperacionFactoring,
+on_delete=models.PROTECT,
+related_name="documentos_liquidacion",
+)
+empresa_factoring = models.ForeignKey(
+EmpresaFactoring,
+on_delete=models.PROTECT,
+related_name="documentos_liquidacion",
+)
+numero = models.CharField(
+max_length=120,
+blank=True,
+)
+fecha = models.DateField()
+
+37
+
+monto_bruto = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+comisiones = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+default=Decimal("0.00"),
+)
+intereses = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+default=Decimal("0.00"),
+)
+otros_descuentos = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+default=Decimal("0.00"),
+)
+monto_neto = models.DecimalField(
+max_digits=14,
+decimal_places=2,
+)
+referencia = models.CharField(
+max_length=120,
+blank=True,
+)
+datos = models.JSONField(
+default=dict,
+blank=True,
+)
+Validación:
+
+monto neto
+=
+monto bruto
+− comisiones
+− intereses
+− otros descuentos
+cuando el documento entregue ese desglose.
+
+38
+
+13. Estado de la operación
+Anticipo conciliado
+CEDIDA
+→ ANTICIPADA
+→ POR_COBRAR_CLIENTE
+
+Liquidación completa
+FACTOR_DEBE_LIQUIDAR
+→ LIQUIDADA
+
+Cierre
+La operación pasa a CERRADA solo si:
+• La factura quedó regularizada.
+• Los flujos requeridos están completados.
+• No hay saldo del factor.
+• No hay reclamos abiertos.
+• Las conciliaciones bancarias requeridas están completas.
+
+14. Diferencia de liquidación
+Ejemplo:
+
+Liquidación esperada:
+Liquidación recibida:
+Diferencia:
+
+180.000 CLP
+170.000 CLP
+10.000 CLP
+
+El sistema no debe cerrar automáticamente.
+Debe:
+• Mantener saldo.
+• Generar alerta.
+• Mostrar desglose.
+• Permitir registrar ajuste documentado.
+• Solicitar aclaración al factor.
+
+39
+
+15. Servicio
+services/factoring/conciliacion_fl_tujos.py
+Nombre recomendado sin error tipográfico:
+
+services/factoring/conciliacion_flujos.py
+Funciones:
+
+buscar_movimientos_factor()
+conciliar_anticipo()
+conciliar_liquidacion()
+conciliar_flujo_factoring()
+distribuir_movimiento_factor()
+actualizar_estado_flujo()
+actualizar_estado_operacion()
+registrar_documento_liquidacion()
+reversar_conciliacion_flujo()
+
+16. URLs
+/administracion/factoring/flujos/<pk>/conciliar/
+/administracion/factoring/flujos/<pk>/candidatos/
+/administracion/factoring/operaciones/<pk>/conciliar/
+/administracion/factoring/operaciones/<pk>/liquidaciones/
+/administracion/factoring/operaciones/<pk>/liquidaciones/nueva/
+
+17. Vistas
+FlujoFactoringConciliarView
+FlujoFactoringCandidatosView
+OperacionFactoringConciliarView
+DocumentoLiquidacionFactoringListView
+DocumentoLiquidacionFactoringCreateView
+
+40
+
+18. Permisos
+conciliar_flujofactoring
+registrar_documentoliquidacionfactoring
+reversar_conciliacion_flujofactoring
+
+19. Auditoría
+Registrar:
+• Operación.
+• Factor.
+• Flujo.
+• Tipo.
+• Monto esperado.
+• Monto conciliado.
+• Movimiento.
+• Documento.
+• Diferencia.
+• Usuario.
+• Reversa.
+
+20. Pruebas
+• Anticipo completo.
+• Anticipo parcial.
+• Liquidación completa.
+• Liquidación parcial.
+• Un movimiento para varias operaciones.
+• Varios movimientos para un flujo.
+• Comisión descontada.
+• Retención no bancaria.
+• Dirección incorrecta.
+• Diferencia.
+• Operación cerrable.
+• Reversa.
+• Período cerrado.
+• Concurrencia.
+
+21. Criterios de aceptación
+• Los anticipos se concilian con ingresos.
+• Las liquidaciones se concilian con ingresos.
+• Se admiten distribuciones parciales.
+
+41
+
+• Las retenciones no crean ingresos ficticios.
+• Las comisiones descontadas quedan explicadas.
+• Las diferencias permanecen abiertas.
+• Los estados se actualizan.
+• La operación solo se cierra cuando corresponde.
+
+X012 — Reportes de factoring
+1. Objetivo
+Proporcionar reportes operativos y financieros sobre las operaciones de factoring.
+La Carta Gantt solicita:
+
+Cedidas
+En mora
+Recaudadas
+Por liquidar
+Con recurso
+
+2. Definiciones operativas
+Cedidas
+Operaciones activas cuyo estado indica que la factura fue cedida y todavía no se ha cerrado.
+
+En mora
+Operaciones cuyo cliente no pagó al factor dentro del vencimiento y período de gracia.
+
+Recaudadas
+Operaciones donde el cliente pagó total o parcialmente al factor.
+“Recaudada” no significa necesariamente que Extintores Real recibió la liquidación final.
+
+Por liquidar
+Operaciones donde:
+
+42
+
+El cliente pagó al factor
+pero
+el factor todavía debe transferir fondos a Extintores Real
+
+Con recurso
+Operaciones:
+• Contractualmente con recurso.
+• En mora con riesgo de recurso.
+• Con reclamo notificado.
+• Con reclamo aceptado.
+• Con pago de recurso pendiente o ejecutado.
+
+3. Reportes iniciales
+3.1 Operaciones cedidas
+Columnas:
+• Factura.
+• Cliente.
+• Factor.
+• Fecha de cesión.
+• Vencimiento.
+• Monto cedido.
+• Anticipo.
+• Retención.
+• Estado.
+• Días hasta vencimiento.
+
+3.2 Operaciones en mora
+Columnas:
+• Factura.
+• Cliente.
+• Factor.
+• Fecha de vencimiento.
+• Días de mora.
+• Monto cedido.
+• Pagado al factor.
+• Saldo del cliente.
+• Condición de recurso.
+
+43
+
+• Alertas.
+
+3.3 Recaudación del factor
+Columnas:
+• Factura.
+• Cliente.
+• Fecha de pago.
+• Monto pagado al factor.
+• Saldo.
+• Evidencia.
+• Estado de liquidación del factor.
+
+3.4 Operaciones por liquidar
+Columnas:
+• Factor.
+• Factura.
+• Pago confirmado al factor.
+• Retención esperada.
+• Liquidación esperada.
+• Liquidación recibida.
+• Saldo pendiente.
+• Días pendientes.
+
+3.5 Operaciones con recurso
+Columnas:
+• Operación.
+• Factura.
+• Cliente.
+• Factor.
+• Monto reclamado.
+• Monto aceptado.
+• Monto pagado.
+• Estado del reclamo.
+• Fecha límite.
+• Saldo contra el cliente.
+
+44
+
+3.6 Pagos directos erróneos
+Columnas:
+• Movimiento de ingreso.
+• Pago.
+• Factura.
+• Cliente.
+• Factor.
+• Monto afectado.
+• Estado del incidente.
+• Monto devuelto.
+• Monto conciliado.
+• Saldo.
+
+3.7 Devoluciones
+Columnas:
+• Incidente.
+• Cliente.
+• Monto solicitado.
+• Monto aprobado.
+• Monto ejecutado.
+• Monto conciliado.
+• Estado.
+• Aprobador.
+• Egreso.
+
+3.8 Flujos
+Columnas:
+• Operación.
+• Tipo.
+• Naturaleza.
+• Dirección.
+• Esperado.
+• Ejecutado.
+• Conciliado.
+• Saldo.
+• Referencia.
+
+45
+
+4. Indicadores
+Monto total cedido
+Anticipos esperados
+Anticipos recibidos
+Comisiones
+Retenciones
+Liquidaciones esperadas
+Liquidaciones recibidas
+Saldo del factor
+Facturas en mora
+Monto en mora
+Pagos directos erróneos
+Monto pendiente de devolución
+Cobros con recurso
+
+5. Filtros
+• Empresa de factoring.
+• Cliente.
+• Estado.
+• Fecha de cesión.
+• Fecha de vencimiento.
+• Con o sin recurso.
+• En mora.
+• Pagada al factor.
+• Por liquidar.
+• Con pago directo.
+• Con devolución pendiente.
+• Con reclamo.
+• Moneda.
+• Cuenta bancaria.
+• Fecha de corte.
+
+6. Exportaciones
+Formatos:
+
+XLSX
+CSV
+PDF de resumen
+Excel recomendado:
+
+46
+
+Resumen
+Operaciones
+Flujos
+Pagos al factor
+Mora
+Liquidaciones
+Pagos directos
+Devoluciones
+Reclamos
+Alertas
+Filtros
+
+7. Fecha de corte
+Los reportes deberán aceptar una fecha de corte.
+Ejemplo:
+
+Estado de operaciones al 30 de septiembre de 2026
+Para reproducir el histórico se utilizarán:
+• Fechas de eventos.
+• Fechas de flujos.
+• Fechas de aplicaciones.
+• Fechas de anulaciones.
+• Fechas de conciliaciones.
+• Estados históricos.
+
+8. Selectores
+selectors/reportes_factoring.py
+Funciones:
+
+obtener_operaciones_cedidas()
+obtener_operaciones_en_mora()
+obtener_operaciones_recaudadas()
+obtener_operaciones_por_liquidar()
+obtener_operaciones_con_recurso()
+obtener_pagos_directos()
+obtener_devoluciones_factoring()
+
+47
+
+obtener_resumen_flujos()
+obtener_indicadores_factoring()
+
+9. Optimización
+Los reportes deben utilizar:
+• Anotaciones.
+• Sumas condicionadas.
+• select_related .
+• prefetch_related .
+• Fechas de corte.
+• Filtros en base de datos.
+No se debe consultar individualmente cada:
+• Pago.
+• Flujo.
+• Aplicación.
+• Alerta.
+• Evento.
+
+10. URLs
+/administracion/factoring/reportes/
+/administracion/factoring/reportes/cedidas/
+/administracion/factoring/reportes/mora/
+/administracion/factoring/reportes/recaudadas/
+/administracion/factoring/reportes/por-liquidar/
+/administracion/factoring/reportes/recurso/
+/administracion/factoring/reportes/pagos-directos/
+/administracion/factoring/reportes/devoluciones/
+/administracion/factoring/reportes/exportar/
+
+11. Vistas
+ReportesFactoringView
+FactoringCedidasReportView
+FactoringMoraReportView
+FactoringRecaudadasReportView
+FactoringPorLiquidarReportView
+FactoringRecursoReportView
+
+48
+
+PagosDirectosFactoringReportView
+DevolucionesFactoringReportView
+FactoringExportarView
+
+12. Permisos
+view_reportes_factoring
+exportar_reportes_factoring
+view_datos_financieros_factoring
+view_reclamos_recurso_factoring
+
+13. Seguridad
+• Las cuentas bancarias se muestran enmascaradas.
+• Los documentos se descargan de forma protegida.
+• Los reportes respetan el ámbito del usuario.
+• Los temporales se eliminan.
+• Los Excel neutralizan fórmulas.
+• Las exportaciones quedan auditadas.
+• Los datos históricos usan eventos y snapshots.
+
+14. Pruebas
+• Cedidas.
+• En mora.
+• Recaudadas parcialmente.
+• Recaudadas totalmente.
+• Por liquidar.
+• Con recurso.
+• Pago directo.
+• Devolución parcial.
+• Liquidación parcial.
+• Fecha de corte.
+• Filtros.
+• Totales.
+• Usuario sin permiso.
+• Volumen alto.
+• Excel seguro.
+
+49
+
+15. Criterios de aceptación
+• Los cinco reportes principales existen.
+• Las definiciones están claramente diferenciadas.
+• Recaudada no se confunde con liquidada.
+• Los pagos directos aparecen separadamente.
+• Los saldos coinciden con los modelos.
+• Los filtros son combinables.
+• Las exportaciones son seguras.
+• Los resultados coinciden con las pantallas operativas.
+
+X013 — Pruebas de factoring
+1. Objetivo
+Validar el módulo completo de factoring desde la cesión hasta la liquidación o el cobro con recurso.
+La Carta Gantt exige probar:
+
+Mora
+Pago directo
+Devolución
+Recurso
+Liquidación
+
+2. Niveles de prueba
+Unitarias
+• Montos cedibles.
+• Porcentajes.
+• Flujos.
+• Saldos.
+• Mora.
+• Diferencias.
+• Incidentes.
+• Devoluciones.
+• Liquidaciones.
+
+Servicios
+• Crear operación.
+• Cambiar estados.
+
+50
+
+• Confirmar pago al factor.
+• Detectar pago directo.
+• Aprobar devolución.
+• Conciliar devolución.
+• Conciliar liquidación.
+• Procesar recurso.
+
+Integración
+• Facturas.
+• Pagos.
+• Banco.
+• Cobranza.
+• Alertas.
+• Reportes.
+
+Seguridad
+• Permisos.
+• Segregación.
+• Descargas.
+• Datos bancarios.
+
+Concurrencia
+• Cesión.
+• Aplicaciones.
+• Devoluciones.
+• Conciliaciones.
+• Cierres.
+
+3. Escenarios funcionales mínimos
+Escenario 1 — Cesión normal con anticipo
+Factura emitida
+→ cesión
+→ anticipo
+→ conciliación bancaria
+→ cliente paga al factor
+→ liquidación
+→ cierre
+
+51
+
+Escenario 2 — Cesión sin anticipo
+Factura cedida
+→ por cobrar al cliente
+→ cliente paga al factor
+→ factor liquida
+
+Escenario 3 — Pago parcial al factor
+Monto cedido:
+Pago al factor:
+Saldo cliente:
+
+1.000.000 CLP
+600.000 CLP
+400.000 CLP
+
+La operación no debe pasar a liquidación completa.
+
+Escenario 4 — Mora
+Vencimiento superado
+→ saldo pendiente
+→ alerta
+→ gestión de cobranza
+
+Escenario 5 — Mora con pago posterior
+EN_MORA
+→ cliente paga al factor
+→ alerta resuelta
+→ factor debe liquidar
+
+Escenario 6 — Cobro con recurso
+Operación con recurso
+→ mora
+→ notificación
+→ aceptación
+→ egreso bancario
+→ conciliación
+
+52
+
+El pago de Extintores Real no marca al cliente como pagador.
+
+Escenario 7 — Reclamo sin recurso
+Resultado:
+• Registro como controversia.
+• Sin aceptación automática.
+• Revisión obligatoria.
+
+Escenario 8 — Pago directo completo
+Factura cedida:
+Ingreso en ER:
+
+1.000.000 CLP
+1.000.000 CLP
+
+Resultado:
+• Ingreso conciliado.
+• Aplicación errónea.
+• Factura no pagada.
+• Incidente.
+• Alerta crítica.
+
+Escenario 9 — Pago directo parcial
+Factura cedida:
+Ingreso en ER:
+
+1.000.000 CLP
+600.000 CLP
+
+Resultado:
+• Incidente por 600.000 CLP.
+• Saldo frente al factor: 1.000.000 CLP hasta que el factor reciba el pago.
+• Saldo reservado del pago: 600.000 CLP.
+
+Escenario 10 — Pago combinado
+Un pago cubre:
+• Una factura normal.
+• Una factura cedida.
+
+53
+
+Resultado:
+• Aplicación normal.
+• Aplicación especial.
+• Incidente solo por el monto cedido.
+
+Escenario 11 — Falso positivo
+Resultado:
+• Incidente descartado.
+• Motivo registrado.
+• Alerta resuelta.
+• Monto liberado.
+• Factura corregida cuando corresponda.
+
+Escenario 12 — Devolución completa
+Incidente:
+Devolución aprobada:
+Egreso conciliado:
+
+1.000.000 CLP
+1.000.000 CLP
+1.000.000 CLP
+
+Resultado:
+• Devolución conciliada.
+• Incidente cerrado.
+
+Escenario 13 — Devolución parcial
+Incidente:
+Egreso 1:
+Egreso 2:
+
+1.000.000 CLP
+600.000 CLP
+400.000 CLP
+
+Estados:
+
+APROBADA
+→ PARCIAL
+→ CONCILIADA
+
+54
+
+Escenario 14 — Varias devoluciones
+Un incidente se resuelve mediante dos solicitudes aprobadas.
+No se debe superar el monto afectado.
+
+Escenario 15 — Devolución excedida
+Resultado:
+• Operación rechazada.
+• Sin registros parciales.
+• Auditoría del intento.
+
+Escenario 16 — Autoaprobación
+El solicitante intenta aprobar su propia devolución.
+Resultado:
+• Denegado cuando la segregación está activa.
+
+Escenario 17 — Egreso incorrecto
+Se intenta conciliar una devolución con un ingreso.
+Resultado:
+• Rechazado.
+
+Escenario 18 — Anticipo completo
+Anticipo esperado:
+Ingreso conciliado:
+
+800.000 CLP
+800.000 CLP
+
+Resultado:
+• Flujo conciliado.
+• Operación anticipada.
+
+55
+
+Escenario 19 — Anticipo neto de comisión
+Anticipo bruto:
+Comisión:
+Ingreso:
+
+800.000 CLP
+20.000 CLP
+780.000 CLP
+
+Resultado:
+• Desglose consistente.
+• Comisión no tratada como egreso ficticio.
+
+Escenario 20 — Liquidación parcial
+Liquidación esperada:
+Ingreso recibido:
+
+180.000 CLP
+100.000 CLP
+
+Resultado:
+• Operación continúa por liquidar.
+• Saldo 80.000 CLP.
+• Alerta correspondiente.
+
+Escenario 21 — Liquidación completa
+Resultado:
+• Flujo conciliado.
+• Operación liquidada.
+• Cierre si no existen pendientes.
+
+Escenario 22 — Diferencia de liquidación
+Resultado:
+• Operación abierta.
+• Diferencia visible.
+• Alerta.
+• Sin cierre automático.
+
+Escenario 23 — Un ingreso para varias operaciones
+El depósito del factor se distribuye sin sobreaplicar el movimiento.
+
+56
+
+Escenario 24 — Varios ingresos para un flujo
+El flujo cambia:
+
+ESPERADO
+→ PARCIAL
+→ CONCILIADO
+
+Escenario 25 — Reversa de conciliación
+Resultado:
+• Movimiento recupera saldo.
+• Flujo recupera saldo.
+• Operación vuelve al estado correspondiente.
+• Historial conservado.
+
+4. Pruebas de estados
+Transiciones válidas:
+
+CEDIDA → ANTICIPADA
+CEDIDA → POR_COBRAR_CLIENTE
+ANTICIPADA → POR_COBRAR_CLIENTE
+POR_COBRAR_CLIENTE → EN_MORA
+POR_COBRAR_CLIENTE → CLIENTE_PAGO_FACTOR
+EN_MORA → CLIENTE_PAGO_FACTOR
+EN_MORA → COBRO_RECURSO
+CLIENTE_PAGO_FACTOR → FACTOR_DEBE_LIQUIDAR
+FACTOR_DEBE_LIQUIDAR → LIQUIDADA
+LIQUIDADA → CERRADA
+Transiciones inválidas:
+
+CEDIDA → CERRADA
+EN_MORA → LIQUIDADA
+COBRO_RECURSO → CLIENTE_PAGO_FACTOR sin regularización
+ANULADA → ANTICIPADA
+CERRADA → CEDIDA sin reapertura
+
+57
+
+5. Pruebas de integridad monetaria
+• Monto cedido positivo.
+• Monto cedido no supera saldo.
+• Anticipo no supera monto cedido.
+• Retención válida.
+• Comisión válida.
+• Aplicaciones no superan pago.
+• Incidentes no superan pago.
+• Devoluciones no superan incidente.
+• Egresos no superan devolución.
+• Aplicaciones no superan flujo.
+• Movimiento no se sobreaplica.
+• Saldos nunca negativos.
+
+6. Pruebas de concurrencia
+Dos cesiones de la misma factura
+Resultado:
+• Solo una operación activa.
+
+Dos incidentes sobre la misma aplicación
+Resultado:
+• Solo un incidente.
+
+Dos aprobaciones de devolución
+Resultado:
+• Una transición válida.
+
+Dos devoluciones sobre el mismo saldo
+Resultado:
+• No se supera el incidente.
+
+Dos conciliaciones del mismo egreso
+Resultado:
+• No se sobreaplica el movimiento.
+
+58
+
+Conciliación y reversa simultáneas
+Resultado:
+• Estado consistente.
+• Sin saldos negativos.
+
+Liquidación y cierre simultáneos
+Resultado:
+• La operación solo se cierra con saldos correctos.
+
+7. Pruebas de permisos
+Acción
+
+Cobranza
+
+Finanzas
+
+Aprobador
+
+Auditor
+
+Administrador
+
+Crear operación
+
+Según
+permiso
+
+Sí
+
+No
+
+No
+
+Sí
+
+Confirmar pago al
+factor
+
+Sí
+
+Sí
+
+No
+
+No
+
+Sí
+
+Detectar pago directo
+
+Sí
+
+Sí
+
+No
+
+No
+
+Sí
+
+Solicitar devolución
+
+Sí
+
+Sí
+
+No
+
+No
+
+Sí
+
+Aprobar devolución
+
+No
+
+Según
+política
+
+Sí
+
+No
+
+Sí
+
+Ejecutar devolución
+
+No
+
+Sí
+
+No
+
+No
+
+Sí
+
+Conciliar
+
+No
+
+Sí
+
+No
+
+No
+
+Sí
+
+Ver reclamos
+
+Sí
+
+Sí
+
+Sí
+
+Sí
+
+Sí
+
+Reabrir operación
+
+No
+
+Limitado
+
+No
+
+No
+
+Sí
+
+8. Pruebas de alertas
+• Mora.
+• Pago directo.
+• Factor sin liquidar.
+• Reclamo con recurso.
+• Devolución pendiente.
+• Conciliación pendiente.
+• Diferencia de liquidación.
+• Idempotencia.
+• Cambio de severidad.
+
+59
+
+• Resolución.
+• Reaparición.
+• Permisos.
+
+9. Pruebas de reportes
+• Cedidas.
+• En mora.
+• Recaudadas.
+• Por liquidar.
+• Con recurso.
+• Pagos directos.
+• Devoluciones.
+• Flujos.
+• Fecha de corte.
+• Totales.
+• Filtros.
+• Exportaciones.
+• Seguridad.
+• Volumen alto.
+
+10. Fábricas de prueba
+EmpresaFactoringFactory
+ContactoEmpresaFactoringFactory
+ConvenioFactoringFactory
+OperacionFactoringFactory
+EventoFactoringFactory
+FlujoFactoringFactory
+DocumentoLiquidacionFactoringFactory
+PagoClienteFactorFactory
+IncidentePagoDirectoFactoringFactory
+DevolucionPagoClienteFactory
+ReclamoRecursoFactoringFactory
+AlertaCobranzaFactoringFactory
+MovimientoBancarioFactory
+AplicacionMovimientoBancarioFactory
+
+11. Estructura de pruebas
+tests/factoring/
+├── test_empresas.py
+
+60
+
+├── test_convenios.py
+├── test_operaciones.py
+├── test_estados.py
+├── test_eventos.py
+├── test_flujos.py
+├── test_pagos_factor.py
+├── test_mora.py
+├── test_recurso.py
+├── test_pagos_directos.py
+├── test_incidentes.py
+├── test_devoluciones.py
+├── test_conciliacion_devoluciones.py
+├── test_conciliacion_liquidaciones.py
+├── test_reportes.py
+├── test_alertas.py
+├── test_permisos.py
+├── test_auditoria.py
+└── test_concurrencia.py
+
+12. Criterios de aceptación
+X013 se considerará terminada cuando:
+• Las cesiones válidas funcionan.
+• Las cesiones inválidas se rechazan.
+• Los estados se controlan.
+• Los eventos se conservan.
+• La mora se detecta.
+• Los pagos al factor se registran.
+• Los pagos directos se detectan.
+• Las facturas cedidas no se saldan por error.
+• Los ingresos erróneos permanecen conciliados.
+• Las devoluciones respetan el workflow.
+• Los egresos se concilian correctamente.
+• Los anticipos se concilian.
+• Las liquidaciones se concilian.
+• Las diferencias permanecen abiertas.
+• Los cobros con recurso son trazables.
+• Los reportes coinciden con los modelos.
+• Los permisos se respetan.
+• Las operaciones concurrentes son seguras.
+• Las transacciones revierten completamente ante error.
+
+61
+
+13. Estructura de archivos del bloque
+administracion/
+├── models/
+│
+
+└── factoring.py
+
+│
+├── forms/
+│
+
+├── pagos_directos_factoring.py
+
+│
+
+├── devoluciones_cliente.py
+
+│
+
+├── conciliacion_devoluciones.py
+
+│
+
+├── conciliacion_flujos.py
+
+│
+
+└── reportes_factoring.py
+
+│
+├── views/
+│
+
+├── pagos_directos_factoring.py
+
+│
+
+├── devoluciones_cliente.py
+
+│
+
+├── conciliacion_devoluciones.py
+
+│
+
+├── conciliacion_flujos.py
+
+│
+
+└── reportes_factoring.py
+
+│
+├── services/factoring/
+│
+
+├── pagos_directos.py
+
+│
+
+├── devoluciones_cliente.py
+
+│
+
+├── conciliacion_devoluciones.py
+
+│
+
+├── conciliacion_flujos.py
+
+│
+
+└── reportes/
+
+│
+
+├── datos.py
+
+│
+
+├── factoring_xlsx.py
+
+│
+
+├── factoring_csv.py
+
+│
+
+└── resumen_pdf.py
+
+│
+├── selectors/
+│
+
+├── pagos_directos_factoring.py
+
+│
+
+├── devoluciones_cliente.py
+
+│
+
+├── conciliacion_factoring.py
+
+│
+
+└── reportes_factoring.py
+
+│
+├── templates/administracion/factoring/
+│
+
+├── pagos_directos/
+
+│
+
+├── devoluciones/
+
+│
+
+├── conciliacion/
+
+│
+
+└── reportes/
+
+│
+├── static/administracion/js/
+│
+
+├── pagos_directos_factoring.js
+
+│
+
+├── devoluciones_factoring.js
+
+│
+
+└── conciliacion_factoring.js
+
+62
+
+│
+└── tests/factoring/
+
+14. Migraciones previstas
+Migración 1 — Incidentes
+Crear:
+
+IncidentePagoDirectoFactoring
+Agregar restricciones para:
+• Una aplicación errónea por incidente.
+• Monto positivo.
+• Relaciones consistentes.
+
+Migración 2 — PagoCliente
+Agregar o documentar propiedades separadas para:
+
+monto aplicado válido
+monto reservado por factoring
+monto comprometido
+saldo libre
+No necesariamente requiere nuevos campos persistentes.
+
+Migración 3 — Devoluciones
+Ampliar DevolucionPagoCliente con:
+
+incidente
+estados nuevos
+monto solicitado
+monto aprobado
+usuarios del workflow
+fechas
+beneficiario snapshot
+motivos de rechazo y anulación
+
+63
+
+Migrar:
+
+COMPLETADA
+→ CONCILIADA
+cuando exista evidencia bancaria, o a EJECUTADA cuando todavía no exista conciliación.
+
+Migración 4 — Liquidación del factor
+Crear:
+
+DocumentoLiquidacionFactoring
+Agregar, cuando corresponda:
+
+LIBERACION_RETENCION
+AJUSTE_A_FAVOR
+a los tipos de flujo.
+
+Migración 5 — Alertas
+Relacionar opcionalmente AlertaCobranza con:
+
+IncidentePagoDirectoFactoring
+DevolucionPagoCliente
+ReclamoRecursoFactoring
+FlujoFactoring
+O almacenar esas referencias en un campo estructurado mientras se evita ampliar excesivamente el
+modelo.
+
+15. Índices recomendados
+IncidentePagoDirectoFactoring
+models.Index(
+fields=["estado", "-detectado_en"],
+)
+
+64
+
+models.Index(
+fields=["operacion_factoring", "estado"],
+)
+models.Index(
+fields=["factura", "estado"],
+)
+models.Index(
+fields=["pago", "estado"],
+)
+
+DevolucionPagoCliente
+models.Index(
+fields=["estado", "-fecha_solicitud"],
+)
+models.Index(
+fields=["incidente_factoring", "estado"],
+)
+models.Index(
+fields=["pago", "estado"],
+)
+
+DocumentoLiquidacionFactoring
+models.Index(
+fields=["empresa_factoring", "-fecha"],
+)
+models.Index(
+fields=["operacion", "-fecha"],
+)
+models.Index(
+fields=["referencia"],
+)
+
+OperacionFactoring
+models.Index(
+fields=["estado", "fecha_vencimiento"],
+)
+
+65
+
+models.Index(
+fields=["empresa_factoring", "estado"],
+)
+models.Index(
+fields=["con_recurso", "estado"],
+)
+
+16. Definición de terminado del bloque
+X008–X013 se considerará terminado cuando:
+• El sistema detecta pagos directos sobre facturas cedidas.
+• La detección genera un incidente.
+• Se crea una alerta crítica.
+• La factura no queda pagada.
+• La operación no queda liquidada.
+• El ingreso bancario se conserva.
+• El monto erróneo queda reservado.
+• El incidente puede confirmarse y descartarse.
+• Se puede solicitar una devolución.
+• La devolución requiere aprobación.
+• Los datos bancarios quedan congelados.
+• Se puede ejecutar una devolución.
+• Se permiten devoluciones parciales.
+• El egreso se concilia con la devolución.
+• El egreso se vincula al pago original.
+• Los incidentes solo se cierran al regularizarse.
+• Los anticipos del factor se concilian.
+• Las liquidaciones del factor se concilian.
+• Los descuentos no producen movimientos ficticios.
+• Las diferencias quedan abiertas.
+• Existen reportes de factoring.
+• Las pruebas de mora pasan.
+• Las pruebas de pago directo pasan.
+• Las pruebas de devolución pasan.
+• Las pruebas de recurso pasan.
+• Las pruebas de liquidación pasan.
+• Las acciones quedan auditadas.
+
+17. Riesgos del bloque
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Marcar la factura cedida como pagada
+
+Crítico
+
+Estado especial de aplicación
+
+66
+
+Riesgo
+
+Impacto
+
+Tratamiento
+
+Resolver factoring por ingreso propio
+
+Crítico
+
+Mantener operación abierta
+
+Eliminar el ingreso erróneo
+
+Alto
+
+Conciliar con PagoCliente
+
+Reutilizar el dinero en otra factura
+
+Alto
+
+Reservar monto
+
+Generar varios incidentes
+
+Alto
+
+One-to-one y clave de control
+
+Devolver más de lo recibido
+
+Crítico
+
+Control por incidente
+
+Devolver a una cuenta incorrecta
+
+Crítico
+
+Validación y snapshot
+
+Solicitante aprueba devolución
+
+Alto
+
+Segregación
+
+Ejecutar sin aprobación
+
+Alto
+
+Máquina de estados
+
+Marcar ejecutado como conciliado
+
+Alto
+
+Estados separados
+
+Conciliar devolución con ingreso
+
+Crítico
+
+Exigir egreso
+
+Sobreaplicar el egreso
+
+Alto
+
+Validación bilateral
+
+Cerrar incidente parcialmente devuelto
+
+Alto
+
+Control de saldo
+
+Conciliar retención como ingreso
+
+Alto
+
+Naturaleza no bancaria
+
+Confundir pago del cliente con liquidación del factor
+
+Crítico
+
+Flujos separados
+
+Cerrar con diferencia
+
+Alto
+
+Mantener saldo y alerta
+
+Reporte “recaudado” ambiguo
+
+Medio/alto
+
+Definición explícita
+
+Reversa deja estados incoherentes
+
+Alto
+
+Servicio transaccional
+
+Operaciones simultáneas
+
+Alto
+
+select_for_update()
+
+Datos históricos modificados
+
+Alto
+
+Snapshots y eventos
+
+18. Resultado consolidado del módulo Factoring
+Al finalizar X001–X013 existirá el ciclo completo:
+
+Empresa de factoring
+→ convenio
+→ cesión de factura
+→ anticipo
+→ cobranza al cliente
+├── cliente paga al factor
+│
+
+→ factor liquida
+
+│
+
+→ conciliación
+
+│
+
+→ cierre
+
+├── cliente entra en mora
+│
+
+→ seguimiento
+
+67
+
+│
+
+→ cobro con recurso
+
+│
+
+→ egreso
+
+│
+
+→ conciliación
+
+└── cliente paga por error a Extintores Real
+→ ingreso conciliado
+→ incidente crítico
+→ devolución al cliente
+→ egreso conciliado
+→ incidente cerrado
+Con este bloque quedan documentados todos los módulos funcionales principales:
+
+Transversal
+Banco y conciliación
+Facturación y cobranza
+Rendiciones
+Factoring
+Los últimos bloques del proyecto corresponden a:
+
+Q001 — Pruebas end-to-end y aceptación
+Q002 — Documentación técnica, despliegue y cierre
+
+68
+
+
