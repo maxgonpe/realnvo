@@ -54,4 +54,11 @@ urlpatterns = [
         views.guardar_tipos,
         name="guardar_tipos",
     ),
+
+    # ESP008
+    path(
+        "ruta/<int:ruta_id>/",
+        views.detalle_ruta,
+        name="detalle_ruta",
+    ),
 ]

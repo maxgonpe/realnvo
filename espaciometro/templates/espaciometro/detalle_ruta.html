@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {{ detalle.nombre_ruta }} — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+            padding: 30px;
+        }
+
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+
+        .small {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+
+        /* ==============================================================
+           BOTONES
+           ============================================================== */
+
+        .nav {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        /* ==============================================================
+           CARD
+           ============================================================== */
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .metric-label {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .metric-value {
+            font-size: 25px;
+
+            font-weight: 700;
+
+            margin-top: 4px;
+        }
+
+
+        /* ==============================================================
+           BREADCRUMB
+           ============================================================== */
+
+        .breadcrumb {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            align-items: center;
+
+            gap: 6px;
+
+            margin:
+                15px 0 25px;
+
+            font-size: 14px;
+        }
+
+
+        .breadcrumb a {
+            color: #1d4ed8;
+
+            text-decoration: none;
+        }
+
+
+        .breadcrumb-separator {
+            color: #9ca3af;
+        }
+
+
+        /* ==============================================================
+           TABLAS
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: top;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        .directory-link {
+            color: #1d4ed8;
+
+            text-decoration: none;
+
+            font-weight: 700;
+        }
+
+
+        /* ==============================================================
+           BARRA
+           ============================================================== */
+
+        .bar {
+            width: 100%;
+
+            height: 8px;
+
+            background: #e5e7eb;
+
+            border-radius: 5px;
+
+            overflow: hidden;
+
+            margin-top: 5px;
+        }
+
+
+        .bar-value {
+            height: 100%;
+
+            background: #4b5563;
+        }
+
+
+        /* ==============================================================
+           ESTADOS
+           ============================================================== */
+
+        .ok {
+            color: #15803d;
+
+            font-weight: 700;
+        }
+
+
+        .warning {
+            color: #a16207;
+
+            font-weight: 700;
+        }
+
+
+        .error {
+            color: #b91c1c;
+
+            font-weight: 700;
+        }
+
+
+        .error-box {
+            border-left:
+                5px solid #b91c1c;
+        }
+
+
+        /* ==============================================================
+           TIPOS
+           ============================================================== */
+
+        .types-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(170px, 1fr)
+                );
+
+            gap: 12px;
+        }
+
+
+        .type-card {
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 9px;
+
+            padding: 14px;
+        }
+
+
+        .type-name {
+            font-weight: 700;
+        }
+
+
+        .type-count {
+            font-size: 22px;
+
+            font-weight: 700;
+
+            margin-top: 5px;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:configurar_rutas' %}"
+        >
+            Configurar rutas
+        </a>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <h1>
+
+        {{ detalle.nombre_ruta }}
+
+    </h1>
+
+
+    <div class="small">
+
+        Categoría:
+
+        <strong>
+            {{ detalle.categoria }}
+        </strong>
+
+    </div>
+
+
+    <div class="path">
+
+        Raíz monitorizada:
+
+        {{ detalle.raiz }}
+
+    </div>
+
+
+
+    <!-- ================================================================
+         ERROR
+         ================================================================ -->
+
+    {% if detalle.error %}
+
+
+        <div
+            class="card error-box"
+            style="margin-top: 25px;"
+        >
+
+            <strong class="error">
+                No fue posible abrir esta ubicación.
+            </strong>
+
+
+            <p>
+                {{ detalle.error }}
+            </p>
+
+
+            <a
+                class="button"
+                href="{% url 'espaciometro:detalle_ruta' detalle.ruta_id %}"
+            >
+                Volver a la raíz
+            </a>
+
+        </div>
+
+
+    {% else %}
+
+
+
+        <!-- ============================================================
+             BREADCRUMB
+             ============================================================ -->
+
+        <div class="breadcrumb">
+
+
+            {% for parte in detalle.breadcrumbs %}
+
+
+                {% if not forloop.first %}
+
+                    <span class="breadcrumb-separator">
+                        /
+                    </span>
+
+                {% endif %}
+
+
+                {% if parte.subruta %}
+
+                    <a
+                        href="{% url 'espaciometro:detalle_ruta' detalle.ruta_id %}?sub={{ parte.subruta|urlencode }}"
+                    >
+                        {{ parte.nombre }}
+                    </a>
+
+                {% else %}
+
+                    <a
+                        href="{% url 'espaciometro:detalle_ruta' detalle.ruta_id %}"
+                    >
+                        {{ parte.nombre }}
+                    </a>
+
+                {% endif %}
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+
+        <!-- ============================================================
+             RESUMEN
+             ============================================================ -->
+
+        <div class="grid">
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Espacio
+                </div>
+
+                <div class="metric-value">
+                    {{ detalle.total_legible }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Archivos totales
+                </div>
+
+                <div class="metric-value">
+                    {{ detalle.total_archivos }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Subdirectorios
+                </div>
+
+                <div class="metric-value">
+                    {{ detalle.total_directorios }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Archivos en este nivel
+                </div>
+
+                <div class="metric-value">
+                    {{ detalle.archivos_directos }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Carpetas en este nivel
+                </div>
+
+                <div class="metric-value">
+                    {{ detalle.directorios_directos }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Inaccesibles
+                </div>
+
+                <div class="metric-value">
+
+                    {% if detalle.inaccesibles %}
+
+                        <span class="warning">
+                            {{ detalle.inaccesibles }}
+                        </span>
+
+                    {% else %}
+
+                        <span class="ok">
+                            0
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ============================================================
+             MAYOR ARCHIVO
+             ============================================================ -->
+
+        {% if detalle.archivo_mas_grande %}
+
+
+            <div
+                class="card"
+                style="margin-top: 18px;"
+            >
+
+                <div class="metric-label">
+
+                    Mayor archivo dentro de esta ubicación
+
+                </div>
+
+
+                <div
+                    style="
+                        font-size: 18px;
+                        font-weight: 700;
+                        margin-top: 5px;
+                    "
+                >
+
+                    {{ detalle.archivo_mas_grande.nombre }}
+
+                    —
+
+                    {{ detalle.archivo_mas_grande.total_legible }}
+
+                </div>
+
+
+                <div class="path">
+
+                    {{ detalle.archivo_mas_grande.ruta }}
+
+                </div>
+
+            </div>
+
+
+        {% endif %}
+
+
+
+        <!-- ============================================================
+             SUBDIRECTORIOS
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Subdirectorios
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Directorio</th>
+
+                            <th>Espacio</th>
+
+                            <th>Archivos</th>
+
+                            <th>Subdirectorios</th>
+
+                            <th>Contenido principal</th>
+
+                            <th>Estado</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for directorio in detalle.subdirectorios %}
+
+
+                        <tr>
+
+
+                            <td>
+
+                                <a
+                                    class="directory-link"
+
+                                    href="{% url 'espaciometro:detalle_ruta' detalle.ruta_id %}?sub={{ directorio.subruta|urlencode }}"
+                                >
+
+                                    {{ directorio.nombre }}
+
+                                </a>
+
+
+                                <div class="path">
+
+                                    {{ directorio.subruta }}
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ directorio.total_legible }}
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                {{ directorio.total_archivos }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ directorio.total_directorios }}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if directorio.tipo_principal %}
+
+                                    <strong>
+
+                                        {{ directorio.tipo_principal.nombre }}
+
+                                    </strong>
+
+
+                                    <div class="small">
+
+                                        {{ directorio.tipo_principal.cantidad }}
+                                        archivos
+
+                                    </div>
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if directorio.inaccesibles %}
+
+                                    <span class="warning">
+
+                                        {{ directorio.inaccesibles }}
+                                        inaccesible(s)
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="ok">
+                                        Normal
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <tr>
+
+                            <td colspan="6">
+
+                                No existen subdirectorios
+                                en este nivel.
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ============================================================
+             TIPOS DE ARCHIVOS
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Composición de esta ubicación
+            </h2>
+
+
+            <div class="types-grid">
+
+
+            {% for tipo in detalle.tipos %}
+
+
+                <div class="card type-card">
+
+
+                    <div class="type-name">
+
+                        {{ tipo.nombre }}
+
+                    </div>
+
+
+                    <div class="type-count">
+
+                        {{ tipo.cantidad }}
+
+                    </div>
+
+
+                    <div class="small">
+
+                        {{ tipo.total_legible }}
+
+                    </div>
+
+
+                </div>
+
+
+            {% empty %}
+
+
+                <div class="card">
+
+                    No se detectaron archivos.
+
+                </div>
+
+
+            {% endfor %}
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ============================================================
+             ARCHIVOS DIRECTOS
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Archivos en este nivel
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Archivo</th>
+
+                            <th>Tipo</th>
+
+                            <th>Extensión</th>
+
+                            <th>Tamaño</th>
+
+                            <th>Modificado</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for archivo in detalle.archivos %}
+
+
+                        <tr>
+
+
+                            <td>
+
+                                <strong>
+
+                                    {{ archivo.nombre }}
+
+                                </strong>
+
+
+                                <div class="path">
+
+                                    {{ archivo.ruta }}
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                {{ archivo.categoria }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ archivo.extension }}
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+
+                                    {{ archivo.total_legible }}
+
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                {{ archivo.modificado|date:"d/m/Y H:i:s" }}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <tr>
+
+                            <td colspan="5">
+
+                                No existen archivos
+                                directamente en este nivel.
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+
+            {% if detalle.archivos_directos_ocultos %}
+
+
+                <div
+                    class="small"
+                    style="margin-top: 10px;"
+                >
+
+                    Este nivel contiene
+
+                    {{ detalle.archivos_directos }}
+
+                    archivos directos.
+
+                    Se muestran los
+
+                    {{ detalle.archivos_directos_mostrados }}
+
+                    de mayor tamaño.
+
+                    Los restantes
+
+                    {{ detalle.archivos_directos_ocultos }}
+
+                    se abordarán mediante el inventario
+                    completo de ESP010.
+
+                </div>
+
+
+            {% endif %}
+
+
+        </div>
+
+
+
+        <!-- ============================================================
+             PIE
+             ============================================================ -->
+
+        <div
+            class="small"
+            style="margin-top: 25px;"
+        >
+
+            Análisis completado en
+
+            {{ detalle.duracion_ms }} ms.
+
+            ESP008 es exclusivamente de lectura.
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+</body>
+
+</html>

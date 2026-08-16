@@ -31,17 +31,16 @@
                 sans-serif;
 
             background: #f3f4f6;
+
             color: #1f2937;
         }
 
 
-        /* ==============================================================
-           ESTRUCTURA GENERAL
-           ============================================================== */
-
         .page {
-            max-width: 1450px;
+            max-width: 1500px;
+
             margin: 0 auto;
+
             padding: 30px;
         }
 
@@ -53,26 +52,15 @@
         }
 
 
-        h1 {
-            margin-bottom: 4px;
-        }
-
-
-        h2 {
-            margin-bottom: 15px;
-        }
-
-
         .subtitle {
             color: #6b7280;
-            margin-bottom: 5px;
         }
 
 
-        .measurement-time {
+        .small {
             color: #6b7280;
+
             font-size: 13px;
-            margin-bottom: 25px;
         }
 
 
@@ -82,59 +70,54 @@
 
 
         /* ==============================================================
-           NAVEGACIÓN
+           BOTONES
            ============================================================== */
 
         .actions {
             display: flex;
+
             flex-wrap: wrap;
+
             gap: 10px;
 
-            margin-top: 18px;
-            margin-bottom: 25px;
+            margin-top: 20px;
         }
 
 
-        .button,
-        button.button {
+        .button {
             display: inline-block;
-
-            border: 0;
-            border-radius: 7px;
 
             padding: 10px 16px;
 
+            border: 0;
+
+            border-radius: 7px;
+
             background: #374151;
+
             color: white;
 
             text-decoration: none;
 
-            font-size: 14px;
             font-weight: 600;
 
             cursor: pointer;
         }
 
 
-        .button:hover,
-        button.button:hover {
+        .button:hover {
             background: #1f2937;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
         }
 
 
         /* ==============================================================
            TARJETAS
            ============================================================== */
-
-        .grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(auto-fit, minmax(210px, 1fr));
-
-            gap: 18px;
-        }
-
 
         .card {
             background: white;
@@ -144,54 +127,294 @@
             padding: 20px;
 
             box-shadow:
-                0 1px 3px rgba(0, 0, 0, 0.08);
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(210px, 1fr)
+                );
+
+            gap: 18px;
         }
 
 
         .metric-label {
             color: #6b7280;
-            font-size: 14px;
-        }
 
-
-        .metric-value {
-            font-size: 26px;
-            font-weight: 700;
-
-            margin-top: 5px;
-        }
-
-
-        .small {
-            color: #6b7280;
             font-size: 13px;
         }
 
 
-        .path {
-            color: #6b7280;
+        .metric-value {
+            font-size: 27px;
 
-            font-size: 12px;
+            font-weight: 700;
 
-            word-break: break-all;
+            margin-top: 4px;
         }
 
 
         /* ==============================================================
-           MENSAJES
+           ESTADO GENERAL
            ============================================================== */
 
-        .message {
+        .status-card {
+            margin-top: 25px;
+
+            display: grid;
+
+            grid-template-columns:
+                minmax(220px, 0.8fr)
+                minmax(300px, 2fr);
+
+            gap: 25px;
+
+            align-items: center;
+        }
+
+
+        .status-main {
+            text-align: center;
+
+            padding: 20px;
+        }
+
+
+        .status-label {
+            font-size: 13px;
+
+            color: #6b7280;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+
+        .status-value {
+            font-size: 38px;
+
+            font-weight: 800;
+
+            margin-top: 8px;
+        }
+
+
+        .status-NORMAL {
+            color: #15803d;
+        }
+
+
+        .status-ATENCION {
+            color: #a16207;
+        }
+
+
+        .status-CRITICO {
+            color: #b91c1c;
+        }
+
+
+        /* ==============================================================
+           GAUGE
+           ============================================================== */
+
+        .gauge-container {
+            text-align: center;
+        }
+
+
+        .gauge {
+            position: relative;
+
+            width: 300px;
+
+            max-width: 100%;
+
+            height: 150px;
+
+            margin: 20px auto 0;
+
+            overflow: hidden;
+        }
+
+
+        .gauge-background {
+            position: absolute;
+
+            width: 300px;
+
+            height: 300px;
+
+            border-radius: 50%;
+
+            background:
+                conic-gradient(
+                    from 270deg,
+                    #d1d5db 0deg,
+                    #d1d5db 180deg,
+                    transparent 180deg
+                );
+        }
+
+
+        .gauge-mask {
+            position: absolute;
+
+            left: 45px;
+
+            top: 45px;
+
+            width: 210px;
+
+            height: 210px;
+
+            border-radius: 50%;
+
             background: white;
+        }
+
+
+        .needle {
+            position: absolute;
+
+            left: 50%;
+
+            bottom: 0;
+
+            width: 4px;
+
+            height: 115px;
+
+            background: #111827;
+
+            transform-origin:
+                50% 100%;
+
+            transform:
+                rotate(
+                    {{ disco.angulo_gauge|default:"0" }}deg
+                );
+
+            border-radius: 4px;
+        }
+
+
+        .needle-center {
+            position: absolute;
+
+            left: 50%;
+
+            bottom: -9px;
+
+            width: 20px;
+
+            height: 20px;
+
+            margin-left: -10px;
+
+            border-radius: 50%;
+
+            background: #111827;
+        }
+
+
+        .gauge-value {
+            font-size: 35px;
+
+            font-weight: 800;
+
+            margin-top: 12px;
+        }
+
+
+        /* ==============================================================
+           PRINCIPALES CONSUMIDORES
+           ============================================================== */
+
+        .consumer {
+            margin-bottom: 18px;
+        }
+
+
+        .consumer-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 6px;
+        }
+
+
+        .bar {
+            width: 100%;
+
+            height: 10px;
+
+            border-radius: 6px;
+
+            overflow: hidden;
+
+            background: #e5e7eb;
+        }
+
+
+        .bar-value {
+            height: 100%;
+
+            background: #4b5563;
+
+            border-radius: 6px;
+        }
+
+
+        /* ==============================================================
+           TIPOS DE INTERÉS
+           ============================================================== */
+
+        .interest-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 14px;
+        }
+
+
+        .interest-card {
+            border:
+                1px solid #e5e7eb;
 
             border-radius: 10px;
 
-            padding: 14px 18px;
+            padding: 15px;
+        }
 
-            margin-bottom: 10px;
 
-            box-shadow:
-                0 1px 3px rgba(0, 0, 0, 0.08);
+        .interest-name {
+            font-weight: 700;
+
+            margin-bottom: 6px;
+        }
+
+
+        .interest-number {
+            font-size: 25px;
+
+            font-weight: 700;
         }
 
 
@@ -206,6 +429,7 @@
 
         table {
             width: 100%;
+
             border-collapse: collapse;
         }
 
@@ -215,9 +439,11 @@
             padding: 12px;
 
             text-align: left;
+
             vertical-align: top;
 
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom:
+                1px solid #e5e7eb;
         }
 
 
@@ -237,179 +463,60 @@
         }
 
 
-        /* ==============================================================
-           ESTADOS
-           ============================================================== */
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
 
         .ok {
             color: #15803d;
-            font-weight: 600;
+
+            font-weight: 700;
         }
 
 
         .warning {
             color: #a16207;
-            font-weight: 600;
+
+            font-weight: 700;
         }
 
 
         .error {
             color: #b91c1c;
-            font-weight: 600;
-        }
 
-
-        /* ==============================================================
-           GAUGE
-           ============================================================== */
-
-        .gauge-card {
-            text-align: center;
-        }
-
-
-        .gauge-container {
-            width: 300px;
-            max-width: 100%;
-
-            margin:
-                25px auto
-                5px auto;
-        }
-
-
-        .gauge {
-            position: relative;
-
-            width: 300px;
-            max-width: 100%;
-            height: 150px;
-
-            margin: 0 auto;
-
-            overflow: hidden;
-        }
-
-
-        .gauge-background {
-            position: absolute;
-
-            width: 300px;
-            height: 300px;
-
-            max-width: 100%;
-
-            border-radius: 50%;
-
-            background:
-                conic-gradient(
-                    from 270deg,
-                    #d1d5db 0deg,
-                    #d1d5db 180deg,
-                    transparent 180deg
-                );
-        }
-
-
-        .gauge-mask {
-            position: absolute;
-
-            left: 45px;
-            top: 45px;
-
-            width: 210px;
-            height: 210px;
-
-            border-radius: 50%;
-
-            background: white;
-        }
-
-
-        .needle {
-            position: absolute;
-
-            left: 50%;
-            bottom: 0;
-
-            width: 4px;
-            height: 115px;
-
-            background: #111827;
-
-            transform-origin:
-                50% 100%;
-
-            transform:
-                rotate({{ disco.angulo_gauge|default:"0" }}deg);
-
-            border-radius: 4px;
-        }
-
-
-        .needle-center {
-            position: absolute;
-
-            left: 50%;
-            bottom: -9px;
-
-            width: 20px;
-            height: 20px;
-
-            margin-left: -10px;
-
-            border-radius: 50%;
-
-            background: #111827;
-        }
-
-
-        .gauge-value {
-            margin-top: 12px;
-
-            font-size: 34px;
             font-weight: 700;
         }
 
 
-        .gauge-caption {
-            color: #6b7280;
+        /* ==============================================================
+           MENSAJES
+           ============================================================== */
+
+        .message {
+            margin-bottom: 12px;
         }
 
 
         /* ==============================================================
-           BD
+           DETAILS TÉCNICO
            ============================================================== */
 
-        .database-grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(auto-fit, minmax(270px, 1fr));
-
-            gap: 18px;
+        details {
+            margin-top: 30px;
         }
 
 
-        .database-row {
-            margin-top: 8px;
-        }
+        summary {
+            cursor: pointer;
 
+            font-weight: 700;
 
-        /* ==============================================================
-           PIE
-           ============================================================== */
-
-        .footer {
-            margin-top: 35px;
-
-            padding-top: 20px;
-
-            border-top: 1px solid #d1d5db;
-
-            color: #6b7280;
-
-            font-size: 13px;
+            padding: 15px 0;
         }
 
 
@@ -417,21 +524,17 @@
            RESPONSIVE
            ============================================================== */
 
-        @media (max-width: 700px) {
+        @media (
+            max-width: 800px
+        ) {
 
             .page {
                 padding: 15px;
             }
 
 
-            th,
-            td {
-                padding: 9px;
-            }
-
-
-            .metric-value {
-                font-size: 22px;
+            .status-card {
+                grid-template-columns: 1fr;
             }
 
         }
@@ -455,8 +558,10 @@
 
         {% for message in messages %}
 
-            <div class="message">
+            <div class="card message">
+
                 {{ message }}
+
             </div>
 
         {% endfor %}
@@ -476,7 +581,7 @@
 
     <div class="subtitle">
 
-        Estado actual del almacenamiento de
+        Control operativo del almacenamiento de
 
         <strong>
             {{ hostname }}
@@ -485,44 +590,693 @@
     </div>
 
 
-    <div class="measurement-time">
+    <div class="small">
 
-        Medición en vivo:
+        Lectura en vivo:
 
         {{ generado_en|date:"d/m/Y H:i:s" }}
 
     </div>
 
 
+
+    <!-- ================================================================
+         NAVEGACIÓN PRINCIPAL
+         ================================================================ -->
+
     <div class="actions">
 
-    <a
-        class="button"
-        href="{% url 'espaciometro:estructura' %}"
-    >
-        Explorar estructura del proyecto
-    </a>
+        <a
+            class="button"
+            href="{% url 'espaciometro:estructura' %}"
+        >
+            Explorar estructura
+        </a>
 
-    <a
-        class="button"
-        href="{% url 'espaciometro:configurar_rutas' %}"
-    >
-        Configurar rutas monitorizadas
-    </a>
 
-    <a
-        class="button"
-        href="{% url 'espaciometro:configurar_tipos' %}"
-    >
-        Configurar tipos de archivo
-    </a>
+        <a
+            class="button"
+            href="{% url 'espaciometro:configurar_rutas' %}"
+        >
+            Configurar rutas
+        </a>
 
-</div>
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:configurar_tipos' %}"
+        >
+            Tipos de archivo
+        </a>
+
+    </div>
 
 
 
     <!-- ================================================================
-         ESP004 — MEDICIONES HISTÓRICAS
+         ESP007 — ESTADO GENERAL
+         ================================================================ -->
+
+    <div class="card status-card">
+
+
+        <div class="status-main">
+
+            <div class="status-label">
+                Estado general
+            </div>
+
+
+            <div
+                class="
+                    status-value
+                    status-{{ operativo.estado.codigo }}
+                "
+            >
+
+                {{ operativo.estado.texto }}
+
+            </div>
+
+
+            <div
+                class="small"
+                style="margin-top: 8px;"
+            >
+
+                {{ operativo.estado.descripcion }}
+
+            </div>
+
+        </div>
+
+
+
+        <div class="grid">
+
+
+            <div>
+
+                <div class="metric-label">
+                    Disco utilizado
+                </div>
+
+                <div class="metric-value">
+                    {{ disco.porcentaje_usado }} %
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="metric-label">
+                    Área monitorizada
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas_legible }}
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="metric-label">
+                    Rutas monitorizadas
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas }}
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="metric-label">
+                    Rutas con problemas
+                </div>
+
+                <div class="metric-value">
+
+                    {% if operativo.rutas_con_error %}
+
+                        <span class="warning">
+                            {{ operativo.rutas_con_error }}
+                        </span>
+
+                    {% else %}
+
+                        <span class="ok">
+                            0
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="metric-label">
+                    Tipos de interés
+                </div>
+
+                <div class="metric-value">
+                    {{ operativo.total_tipos_interes }}
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="metric-label">
+                    Extensiones priorizadas
+                </div>
+
+                <div class="metric-value">
+                    {{ operativo.total_extensiones_interes }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CAPACIDAD + CONSUMIDORES
+         ================================================================ -->
+
+    <div
+        class="grid section"
+        style="
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(350px, 1fr)
+                );
+        "
+    >
+
+
+        <!-- GAUGE -->
+
+        <div class="card gauge-container">
+
+            <h2>
+                Capacidad del servidor
+            </h2>
+
+
+            <div class="gauge">
+
+                <div class="gauge-background"></div>
+
+                <div class="gauge-mask"></div>
+
+                <div class="needle"></div>
+
+                <div class="needle-center"></div>
+
+            </div>
+
+
+            <div class="gauge-value">
+                {{ disco.porcentaje_usado }} %
+            </div>
+
+
+            <div class="small">
+                espacio utilizado
+            </div>
+
+
+            <div
+                class="grid"
+                style="margin-top: 25px;"
+            >
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Total
+                    </div>
+
+                    <strong>
+                        {{ disco.total_legible }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Utilizado
+                    </div>
+
+                    <strong>
+                        {{ disco.usado_legible }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Disponible
+                    </div>
+
+                    <strong>
+                        {{ disco.libre_legible }}
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- PRINCIPALES CONSUMIDORES -->
+
+        <div class="card">
+
+            <h2>
+                Principales consumidores
+            </h2>
+
+
+            {% for ruta in operativo.principales_consumidores %}
+
+                <div class="consumer">
+
+
+                    <div class="consumer-header">
+
+                        <strong>
+                            {{ ruta.nombre }}
+                        </strong>
+
+
+                        <span>
+                            {{ ruta.total_legible }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="bar">
+
+                        <div
+                            class="bar-value"
+
+                            style="
+                                width:
+                                {{ ruta.porcentaje_monitorizado }}%;
+                            "
+                        ></div>
+
+                    </div>
+
+
+                    <div class="small">
+
+                        {{ ruta.porcentaje_monitorizado }} %
+                        del área monitorizada
+
+                    </div>
+
+
+                </div>
+
+
+            {% empty %}
+
+                No existen rutas monitorizadas.
+
+            {% endfor %}
+
+
+            {% if operativo.principal_consumidor %}
+
+                <div
+                    class="small"
+                    style="margin-top: 20px;"
+                >
+
+                    Mayor consumidor:
+
+                    <strong>
+                        {{ operativo.principal_consumidor.nombre }}
+                    </strong>
+
+                    —
+
+                    {{ operativo.principal_consumidor.total_legible }}
+
+                </div>
+
+            {% endif %}
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CONTENIDO DE INTERÉS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Contenido de interés
+        </h2>
+
+
+        {% if operativo.tipos_interes %}
+
+
+            <div class="interest-grid">
+
+
+                {% for tipo in operativo.tipos_interes %}
+
+
+                    <div class="card interest-card">
+
+
+                        <div class="interest-name">
+
+                            {{ tipo.nombre }}
+
+                        </div>
+
+
+                        {% if tipo.conteo_disponible %}
+
+                            <div class="interest-number">
+
+                                {{ tipo.archivos }}
+
+                            </div>
+
+
+                            <div class="small">
+
+                                archivos detectados
+                                en las rutas donde
+                                esta categoría es prioritaria
+
+                            </div>
+
+
+                        {% else %}
+
+
+                            <div
+                                class="interest-number"
+                                style="font-size: 18px;"
+                            >
+
+                                Configurado
+
+                            </div>
+
+
+                            <div class="small">
+
+                                Conteo específico
+                                disponible en una etapa posterior.
+
+                            </div>
+
+
+                        {% endif %}
+
+
+                        <div
+                            class="small"
+                            style="margin-top: 10px;"
+                        >
+
+                            {{ tipo.rutas }}
+                            ruta(s) interesadas
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="card">
+
+                Todavía no existen tipos de archivo
+                configurados como prioritarios.
+
+                <div style="margin-top: 15px;">
+
+                    <a
+                        class="button"
+                        href="{% url 'espaciometro:configurar_tipos' %}"
+                    >
+                        Configurar tipos
+                    </a>
+
+                </div>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+
+    <!-- ================================================================
+         RUTAS MONITORIZADAS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Rutas monitorizadas
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ruta</th>
+
+                        <th>Espacio</th>
+
+                        <th>Participación</th>
+
+                        <th>Archivos</th>
+
+                        <th>Interés especial</th>
+
+                        <th>Estado</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for ruta in operativo.rutas %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                        {% if ruta.ruta_id %}
+
+                            <a
+                                href="{% url 'espaciometro:detalle_ruta' ruta.ruta_id %}"
+                                style="
+                                    color: #1d4ed8;
+                                    text-decoration: none;
+                                    font-weight: 700;
+                                "
+                            >
+                                {{ ruta.nombre }}
+                            </a>
+
+                        {% else %}
+
+                            <strong>
+                                {{ ruta.nombre }}
+                            </strong>
+
+                        {% endif %}
+
+
+                        <div class="path">
+
+                            {{ ruta.ruta_resuelta }}
+
+                        </div>
+
+
+                        {% if ruta.ruta_id %}
+
+                            <div
+                                class="small"
+                                style="margin-top: 4px;"
+                            >
+
+                                Ver detalle →
+
+                            </div>
+
+                        {% endif %}
+
+                    </td>
+
+
+                        <td>
+
+                            <strong>
+                                {{ ruta.total_legible }}
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ ruta.porcentaje_monitorizado }} %
+
+                        </td>
+
+
+                        <td>
+
+                            {{ ruta.total_archivos }}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if ruta.tipos_interes_display %}
+
+                                {% for tipo in ruta.tipos_interes_display %}
+
+                                    {{ tipo }}
+
+                                    {% if not forloop.last %}
+                                        ·
+                                    {% endif %}
+
+                                {% endfor %}
+
+                            {% else %}
+
+                                <span class="small">
+                                    Sin prioridad específica
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if ruta.tiene_problema %}
+
+                                <span class="warning">
+                                    Revisar
+                                </span>
+
+                            {% else %}
+
+                                <span class="ok">
+                                    Normal
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            No existen rutas monitorizadas.
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         ESP004 — HISTÓRICO
          ================================================================ -->
 
     <div class="section">
@@ -533,11 +1287,6 @@
 
 
         <div class="card">
-
-            <p>
-                Registre una fotografía del estado actual del
-                servidor, las rutas monitorizadas y la base de datos.
-            </p>
 
 
             <form
@@ -558,85 +1307,90 @@
             </form>
 
 
+
             {% if ultima_medicion %}
 
-                <div style="margin-top: 20px;">
+                <div
+                    style="margin-top: 18px;"
+                >
 
-                    <div class="metric-label">
-                        Última medición registrada
-                    </div>
+                    Última medición:
 
-
-                    <div
-                        style="
-                            font-size: 19px;
-                            font-weight: 700;
-                            margin-top: 5px;
-                        "
-                    >
+                    <strong>
 
                         #{{ ultima_medicion.id }}
 
-                        —
+                    </strong>
 
-                        {{ ultima_medicion.iniciada_en|date:"d/m/Y H:i:s" }}
+                    —
 
-                        —
+                    {{ ultima_medicion.iniciada_en|date:"d/m/Y H:i:s" }}
 
-                        {% if ultima_medicion.estado == "COMPLETADA" %}
+                    —
 
-                            <span class="ok">
-                                {{ ultima_medicion.get_estado_display }}
-                            </span>
 
-                        {% elif ultima_medicion.estado == "PARCIAL" %}
+                    {% if ultima_medicion.estado == "COMPLETADA" %}
 
-                            <span class="warning">
-                                {{ ultima_medicion.get_estado_display }}
-                            </span>
-
-                        {% else %}
+                        <span class="ok">
 
                             {{ ultima_medicion.get_estado_display }}
 
-                        {% endif %}
+                        </span>
 
-                    </div>
 
-                </div>
+                    {% elif ultima_medicion.estado == "PARCIAL" %}
 
-            {% else %}
+                        <span class="warning">
 
-                <div
-                    class="small"
-                    style="margin-top: 20px;"
-                >
-                    Todavía no existen mediciones históricas.
+                            {{ ultima_medicion.get_estado_display }}
+
+                        </span>
+
+
+                    {% else %}
+
+                        <span class="error">
+
+                            {{ ultima_medicion.get_estado_display }}
+
+                        </span>
+
+                    {% endif %}
+
+
                 </div>
 
             {% endif %}
 
+
         </div>
+
 
 
         {% if ultimas_mediciones %}
 
+
             <div
                 class="card table-wrapper"
-                style="margin-top: 18px;"
+                style="margin-top: 15px;"
             >
 
+
                 <table>
+
 
                     <thead>
 
                         <tr>
 
                             <th>ID</th>
+
                             <th>Inicio</th>
+
                             <th>Fin</th>
+
                             <th>Estado</th>
-                            <th>Servidor</th>
+
                             <th>Resultado</th>
 
                         </tr>
@@ -649,17 +1403,21 @@
 
                     {% for medicion in ultimas_mediciones %}
 
+
                         <tr>
 
+
                             <td>
-                                <strong>
-                                    #{{ medicion.id }}
-                                </strong>
+
+                                #{{ medicion.id }}
+
                             </td>
 
 
                             <td>
+
                                 {{ medicion.iniciada_en|date:"d/m/Y H:i:s" }}
+
                             </td>
 
 
@@ -680,68 +1438,150 @@
 
                             <td>
 
-                                {% if medicion.estado == "COMPLETADA" %}
-
-                                    <span class="ok">
-                                        {{ medicion.get_estado_display }}
-                                    </span>
-
-                                {% elif medicion.estado == "PARCIAL" %}
-
-                                    <span class="warning">
-                                        {{ medicion.get_estado_display }}
-                                    </span>
-
-                                {% elif medicion.estado == "ERROR" %}
-
-                                    <span class="error">
-                                        {{ medicion.get_estado_display }}
-                                    </span>
-
-                                {% else %}
-
-                                    {{ medicion.get_estado_display }}
-
-                                {% endif %}
+                                {{ medicion.get_estado_display }}
 
                             </td>
 
 
                             <td>
-                                {{ medicion.hostname }}
-                            </td>
 
-
-                            <td>
                                 {{ medicion.observaciones|default:"-" }}
+
                             </td>
+
 
                         </tr>
+
 
                     {% endfor %}
 
 
                     </tbody>
 
+
                 </table>
+
 
             </div>
 
+
         {% endif %}
+
 
     </div>
 
 
 
     <!-- ================================================================
-         ESP001 — ENTORNO AUTODETECTADO
+         BASE DE DATOS
          ================================================================ -->
 
     <div class="section">
 
         <h2>
-            Entorno detectado
+            Base de datos
         </h2>
+
+
+        <div class="grid">
+
+
+        {% for bd in bases_datos %}
+
+
+            <div class="card">
+
+
+                <h3>
+                    {{ bd.alias }}
+                </h3>
+
+
+                <div>
+                    Motor:
+                    <strong>
+                        {{ bd.vendor }}
+                    </strong>
+                </div>
+
+
+                <div style="margin-top: 8px;">
+
+                    Tamaño:
+
+                    <strong>
+                        {{ bd.total_legible }}
+                    </strong>
+
+                </div>
+
+
+                <div style="margin-top: 8px;">
+
+                    Tablas:
+
+                    <strong>
+                        {{ bd.total_tablas }}
+                    </strong>
+
+                </div>
+
+
+                <div
+                    class="path"
+                    style="margin-top: 8px;"
+                >
+
+                    {{ bd.nombre }}
+
+                </div>
+
+
+                {% if bd.error %}
+
+                    <div
+                        class="error"
+                        style="margin-top: 10px;"
+                    >
+
+                        {{ bd.error }}
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+        {% empty %}
+
+
+            <div class="card">
+
+                No se detectaron bases de datos.
+
+            </div>
+
+
+        {% endfor %}
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         INFORMACIÓN TÉCNICA
+         ================================================================ -->
+
+    <details>
+
+        <summary>
+            Información técnica del entorno
+        </summary>
 
 
         <div class="grid">
@@ -812,42 +1652,33 @@
                     {{ entorno.apps_instaladas }}
                 </div>
 
-                <div class="small">
-                    Aplicaciones instaladas
-                </div>
-
             </div>
 
 
         </div>
 
-    </div>
 
+        <div
+            class="card table-wrapper"
+            style="margin-top: 15px;"
+        >
 
-
-    <!-- ================================================================
-         DIRECTORIOS DJANGO DETECTADOS
-         ================================================================ -->
-
-    <div class="section">
-
-        <h2>
-            Directorios detectados
-        </h2>
-
-
-        <div class="card table-wrapper">
 
             <table>
+
 
                 <thead>
 
                     <tr>
 
                         <th>Tipo</th>
+
                         <th>Ruta</th>
+
                         <th>Existe</th>
+
                         <th>Lectura</th>
+
                         <th>Escritura</th>
 
                     </tr>
@@ -861,167 +1692,73 @@
                     <tr>
 
                         <td>
-                            <strong>
-                                BASE_DIR
-                            </strong>
+                            BASE_DIR
                         </td>
-
 
                         <td class="path">
                             {{ entorno.rutas.base_dir.ruta }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.base_dir.existe %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                <span class="error">No</span>
-                            {% endif %}
-
+                            {{ entorno.rutas.base_dir.existe|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.base_dir.lectura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                <span class="error">No</span>
-                            {% endif %}
-
+                            {{ entorno.rutas.base_dir.lectura|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.base_dir.escritura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.base_dir.escritura|yesno:"Sí,No" }}
                         </td>
 
                     </tr>
 
 
-
                     <tr>
 
                         <td>
-                            <strong>
-                                MEDIA_ROOT
-                            </strong>
+                            MEDIA_ROOT
                         </td>
-
 
                         <td class="path">
-
-                            {% if entorno.rutas.media_root.configurada %}
-
-                                {{ entorno.rutas.media_root.ruta }}
-
-                            {% else %}
-
-                                No configurado
-
-                            {% endif %}
-
+                            {{ entorno.rutas.media_root.ruta }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.media_root.existe %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.media_root.existe|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.media_root.lectura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.media_root.lectura|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.media_root.escritura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.media_root.escritura|yesno:"Sí,No" }}
                         </td>
 
                     </tr>
 
 
-
                     <tr>
 
                         <td>
-                            <strong>
-                                STATIC_ROOT
-                            </strong>
+                            STATIC_ROOT
                         </td>
-
 
                         <td class="path">
-
-                            {% if entorno.rutas.static_root.configurada %}
-
-                                {{ entorno.rutas.static_root.ruta }}
-
-                            {% else %}
-
-                                No configurado
-
-                            {% endif %}
-
+                            {{ entorno.rutas.static_root.ruta }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.static_root.existe %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.static_root.existe|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.static_root.lectura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.static_root.lectura|yesno:"Sí,No" }}
                         </td>
 
-
                         <td>
-
-                            {% if entorno.rutas.static_root.escritura %}
-                                <span class="ok">Sí</span>
-                            {% else %}
-                                No
-                            {% endif %}
-
+                            {{ entorno.rutas.static_root.escritura|yesno:"Sí,No" }}
                         </td>
 
                     </tr>
@@ -1029,525 +1766,31 @@
 
                 </tbody>
 
-            </table>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ================================================================
-         CAPACIDAD DEL SERVIDOR
-         ================================================================ -->
-
-    <div class="section">
-
-        <h2>
-            Capacidad del servidor
-        </h2>
-
-
-        <div class="card gauge-card">
-
-
-            <div class="gauge-container">
-
-                <div class="gauge">
-
-                    <div class="gauge-background"></div>
-
-                    <div class="gauge-mask"></div>
-
-                    <div class="needle"></div>
-
-                    <div class="needle-center"></div>
-
-                </div>
-
-
-                <div class="gauge-value">
-                    {{ disco.porcentaje_usado }} %
-                </div>
-
-
-                <div class="gauge-caption">
-                    espacio utilizado
-                </div>
-
-            </div>
-
-
-            <div
-                class="grid"
-                style="margin-top: 30px;"
-            >
-
-
-                <div>
-
-                    <div class="metric-label">
-                        Capacidad total
-                    </div>
-
-                    <div class="metric-value">
-                        {{ disco.total_legible }}
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="metric-label">
-                        Utilizado
-                    </div>
-
-                    <div class="metric-value">
-                        {{ disco.usado_legible }}
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="metric-label">
-                        Disponible
-                    </div>
-
-                    <div class="metric-value">
-                        {{ disco.libre_legible }}
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="metric-label">
-                        Espacio disponible
-                    </div>
-
-                    <div class="metric-value">
-
-                        {% if disco.porcentaje_disponible != None %}
-
-                            {{ disco.porcentaje_disponible }} %
-
-                        {% else %}
-
-                            {{ disco.porcentaje_libre }} %
-
-                        {% endif %}
-
-                    </div>
-
-                </div>
-
-
-            </div>
-
-
-            <div
-                class="small"
-                style="margin-top: 20px;"
-            >
-
-                Filesystem donde se encuentra:
-
-                <strong>
-                    {{ disco.ruta_base }}
-                </strong>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ================================================================
-         RESUMEN RUTAS MONITORIZADAS
-         ================================================================ -->
-
-    <div class="section">
-
-        <h2>
-            Resumen de rutas monitorizadas
-        </h2>
-
-
-        <div class="grid">
-
-
-            <div class="card">
-
-                <div class="metric-label">
-                    Rutas analizadas
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_rutas }}
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="metric-label">
-                    Espacio detectado
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_rutas_legible }}
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="metric-label">
-                    Archivos
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_archivos }}
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="metric-label">
-                    Imágenes
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_imagenes }}
-                </div>
-
-            </div>
-
-
-            <div class="card">
-
-                <div class="metric-label">
-                    PDF
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_pdf }}
-                </div>
-
-            </div>
-
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ================================================================
-         USO POR DIRECTORIO
-         ================================================================ -->
-
-    <div class="section">
-
-        <h2>
-            Uso por directorio
-        </h2>
-
-
-        <div class="card table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>Ruta</th>
-                        <th>Espacio</th>
-                        <th>Archivos</th>
-                        <th>Imágenes</th>
-                        <th>PDF</th>
-                        <th>Directorios</th>
-                        <th>Más antiguo</th>
-                        <th>Más reciente</th>
-                        <th>Mayor archivo</th>
-                        <th>Escaneo</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-
-                {% for ruta in rutas %}
-
-                    <tr>
-
-
-                        <td>
-
-                            <strong>
-                                {{ ruta.nombre }}
-                            </strong>
-
-                            <div class="path">
-                                {{ ruta.ruta_resuelta }}
-                            </div>
-
-                        </td>
-
-
-                        <td>
-
-                            <strong>
-                                {{ ruta.total_legible }}
-                            </strong>
-
-                        </td>
-
-
-                        <td>
-                            {{ ruta.total_archivos }}
-                        </td>
-
-
-                        <td>
-                            {{ ruta.total_imagenes }}
-                        </td>
-
-
-                        <td>
-                            {{ ruta.total_pdf }}
-                        </td>
-
-
-                        <td>
-                            {{ ruta.total_directorios }}
-                        </td>
-
-
-                        <td>
-
-                            {% if ruta.archivo_mas_antiguo %}
-
-                                {{ ruta.archivo_mas_antiguo.fecha|date:"d/m/Y" }}
-
-                                <div class="path">
-                                    {{ ruta.archivo_mas_antiguo.ruta }}
-                                </div>
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            {% if ruta.archivo_mas_reciente %}
-
-                                {{ ruta.archivo_mas_reciente.fecha|date:"d/m/Y" }}
-
-                                <div class="path">
-                                    {{ ruta.archivo_mas_reciente.ruta }}
-                                </div>
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-
-                            {% if ruta.archivo_mas_grande %}
-
-                                <strong>
-
-                                    {% if ruta.archivo_mas_grande_legible %}
-                                        {{ ruta.archivo_mas_grande_legible }}
-                                    {% else %}
-                                        {{ ruta.archivo_mas_grande_bytes }}
-                                    {% endif %}
-
-                                </strong>
-
-                                <div class="path">
-                                    {{ ruta.archivo_mas_grande }}
-                                </div>
-
-                            {% else %}
-
-                                -
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td>
-                            {{ ruta.duracion_ms }} ms
-                        </td>
-
-
-                    </tr>
-
-
-                {% empty %}
-
-                    <tr>
-
-                        <td colspan="10">
-                            No existen rutas monitorizadas.
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-
-                </tbody>
 
             </table>
 
-        </div>
-
-    </div>
-
-
-
-    <!-- ================================================================
-         BASE DE DATOS
-         ================================================================ -->
-
-    <div class="section">
-
-        <h2>
-            Base de datos
-        </h2>
-
-
-        <div class="database-grid">
-
-
-        {% for bd in bases_datos %}
-
-            <div class="card">
-
-
-                <h3>
-                    {{ bd.alias }}
-                </h3>
-
-
-                <div class="database-row">
-
-                    <strong>
-                        Motor:
-                    </strong>
-
-                    {{ bd.vendor }}
-
-                </div>
-
-
-                <div class="database-row">
-
-                    <strong>
-                        Base:
-                    </strong>
-
-                    <span class="path">
-                        {{ bd.nombre }}
-                    </span>
-
-                </div>
-
-
-                <div class="database-row">
-
-                    <strong>
-                        Tablas:
-                    </strong>
-
-                    {{ bd.total_tablas }}
-
-                </div>
-
-
-                <div class="database-row">
-
-                    <strong>
-                        Tamaño:
-                    </strong>
-
-                    {{ bd.total_legible }}
-
-                </div>
-
-
-                {% if bd.error %}
-
-                    <div
-                        class="error"
-                        style="margin-top: 12px;"
-                    >
-                        {{ bd.error }}
-                    </div>
-
-                {% endif %}
-
-
-            </div>
-
-
-        {% empty %}
-
-            <div class="card">
-
-                No se detectaron bases de datos.
-
-            </div>
-
-        {% endfor %}
-
 
         </div>
 
-    </div>
+
+    </details>
 
 
 
-    <!-- ================================================================
-         PIE
-         ================================================================ -->
+    <div
+        class="small"
+        style="
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #d1d5db;
+        "
+    >
 
-    <div class="footer">
+        Espaciómetro continúa operando en modo seguro.
 
-        Espaciómetro opera actualmente en modo seguro.
+        Esta etapa solamente analiza y presenta información.
 
-        La exploración y las mediciones históricas solamente leen
-        información del filesystem y de la base de datos.
-
-        No eliminan, mueven ni modifican archivos o registros.
+        No mueve, elimina ni modifica archivos o registros.
 
     </div>
 

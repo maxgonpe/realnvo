@@ -1,13 +1,26 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
 from django.views.decorators.http import require_POST
 
+from .dashboard_ops import (
+    construir_dashboard_operativo,
+)
+from .directory_detail import (
+    analizar_detalle_directorio,
+)
 from .filetype_selector import (
     guardar_selector_tipos,
     obtener_selector_tipos,
 )
-from .models import EjecucionMedicion
+from .models import (
+    EjecucionMedicion,
+    RutaMonitoreada,
+)
 from .route_selector import (
     guardar_seleccion_rutas,
     obtener_selector_rutas,
@@ -18,7 +31,7 @@ from .structure import analizar_estructura_proyecto
 
 
 # =============================================================================
-# DASHBOARD
+# DASHBOARD — ESP007
 # =============================================================================
 
 
@@ -29,16 +42,38 @@ def dashboard(request):
         obtener_dashboard_espaciometro()
     )
 
-    datos["ultima_medicion"] = (
+
+    ultima_medicion = (
         EjecucionMedicion.objects
         .order_by("-iniciada_en")
         .first()
     )
 
-    datos["ultimas_mediciones"] = (
+
+    datos[
+        "ultima_medicion"
+    ] = ultima_medicion
+
+
+    datos[
+        "ultimas_mediciones"
+    ] = (
         EjecucionMedicion.objects
         .order_by("-iniciada_en")[:5]
     )
+
+
+    datos[
+        "operativo"
+    ] = (
+        construir_dashboard_operativo(
+            datos,
+            ultima_medicion=(
+                ultima_medicion
+            ),
+        )
+    )
+
 
     return render(
         request,
@@ -58,6 +93,7 @@ def estructura(request):
     datos = (
         analizar_estructura_proyecto()
     )
+
 
     return render(
         request,
@@ -142,6 +178,7 @@ def configurar_rutas(request):
         obtener_selector_rutas()
     )
 
+
     return render(
         request,
         "espaciometro/rutas.html",
@@ -162,11 +199,15 @@ def guardar_rutas(request):
     )
 
 
-    if resultado["error"]:
+    if resultado[
+        "error"
+    ]:
 
         messages.error(
             request,
-            resultado["error"],
+            resultado[
+                "error"
+            ],
         )
 
 
@@ -210,10 +251,6 @@ def guardar_rutas(request):
 
 @login_required
 def configurar_tipos(request):
-    """
-    Configuración de tipos y extensiones
-    de interés por ruta.
-    """
 
     datos = (
         obtener_selector_tipos()
@@ -232,9 +269,6 @@ def configurar_tipos(request):
 @login_required
 @require_POST
 def guardar_tipos(request):
-    """
-    Guarda la configuración ESP006.
-    """
 
     resultado = (
         guardar_selector_tipos(
@@ -257,4 +291,50 @@ def guardar_tipos(request):
 
     return redirect(
         "espaciometro:configurar_tipos"
+    )
+
+
+# =============================================================================
+# ESP008 — DETALLE DE DIRECTORIO
+# =============================================================================
+
+
+@login_required
+def detalle_ruta(
+    request,
+    ruta_id,
+):
+    """
+    Navegación segura dentro de una RutaMonitoreada.
+    """
+
+    ruta = get_object_or_404(
+        RutaMonitoreada,
+        pk=ruta_id,
+    )
+
+
+    subruta = (
+        request.GET.get(
+            "sub",
+            "",
+        )
+    )
+
+
+    datos = (
+        analizar_detalle_directorio(
+            ruta,
+            subruta=subruta,
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/detalle_ruta.html",
+        {
+            "detalle": datos,
+            "ruta_monitoreada": ruta,
+        },
     )
