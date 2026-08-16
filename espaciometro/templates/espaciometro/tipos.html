@@ -53,17 +53,19 @@
 
         .subtitle {
             color: #6b7280;
-
             margin-bottom: 25px;
         }
 
 
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
         .nav {
             display: flex;
+            flex-wrap: wrap;
 
             gap: 10px;
-
-            flex-wrap: wrap;
 
             margin-bottom: 25px;
         }
@@ -74,12 +76,11 @@
 
             border: 0;
 
-            padding: 10px 16px;
-
             border-radius: 7px;
 
-            background: #374151;
+            padding: 10px 16px;
 
+            background: #374151;
             color: white;
 
             text-decoration: none;
@@ -99,6 +100,16 @@
             background: #6b7280;
         }
 
+
+        .button-small {
+            padding: 5px 9px;
+            font-size: 11px;
+        }
+
+
+        /* ==============================================================
+           TARJETAS
+           ============================================================== */
 
         .card {
             background: white;
@@ -120,39 +131,65 @@
         }
 
 
+        .info-box {
+            border-left:
+                5px solid #2563eb;
+        }
+
+
+        /* ==============================================================
+           RUTA
+           ============================================================== */
+
         .route-header {
             display: flex;
 
             justify-content: space-between;
 
+            align-items: flex-start;
+
             gap: 20px;
 
             flex-wrap: wrap;
 
-            border-bottom:
-                1px solid #e5e7eb;
-
             padding-bottom: 15px;
 
             margin-bottom: 20px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+        }
+
+
+        .route-header h2 {
+            margin-bottom: 4px;
         }
 
 
         .route-path {
             color: #6b7280;
-
             font-size: 13px;
-
-            margin-top: 4px;
         }
 
 
         .route-category {
             color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .route-summary {
+            margin-top: 8px;
+
+            color: #6b7280;
 
             font-size: 13px;
         }
 
+
+        /* ==============================================================
+           TIPOS
+           ============================================================== */
 
         .types-grid {
             display: grid;
@@ -160,10 +197,10 @@
             grid-template-columns:
                 repeat(
                     auto-fit,
-                    minmax(260px, 1fr)
+                    minmax(270px, 1fr)
                 );
 
-            gap: 14px;
+            gap: 15px;
         }
 
 
@@ -171,20 +208,18 @@
             border:
                 1px solid #e5e7eb;
 
-            border-radius: 9px;
+            border-radius: 10px;
 
             padding: 15px;
         }
 
 
-        .type-title {
+        .type-header {
             display: flex;
 
             align-items: center;
 
             gap: 9px;
-
-            font-weight: 700;
         }
 
 
@@ -196,14 +231,33 @@
         }
 
 
+        .type-name {
+            font-weight: 700;
+        }
+
+
         .description {
             color: #6b7280;
 
             font-size: 12px;
 
-            margin-top: 7px;
+            min-height: 35px;
 
-            min-height: 32px;
+            margin-top: 8px;
+        }
+
+
+        /* ==============================================================
+           EXTENSIONES
+           ============================================================== */
+
+        .extension-actions {
+            display: flex;
+
+            gap: 5px;
+
+            margin-top: 10px;
+            margin-bottom: 8px;
         }
 
 
@@ -212,9 +266,9 @@
 
             flex-wrap: wrap;
 
-            gap: 7px;
+            gap: 6px;
 
-            margin-top: 12px;
+            margin-top: 8px;
         }
 
 
@@ -247,30 +301,32 @@
         }
 
 
-        .info-box {
-            border-left:
-                5px solid #2563eb;
-        }
-
+        /* ==============================================================
+           ACCIONES FINALES
+           ============================================================== */
 
         .actions {
             position: sticky;
 
             bottom: 0;
 
-            background:
-                rgba(243, 244, 246, 0.96);
-
-            padding:
-                15px 0;
-
             display: flex;
-
-            gap: 10px;
 
             align-items: center;
 
+            gap: 12px;
+
             flex-wrap: wrap;
+
+            padding: 15px 0;
+
+            background:
+                rgba(
+                    243,
+                    244,
+                    246,
+                    0.96
+                );
         }
 
 
@@ -336,6 +392,14 @@
             Configurar rutas
         </a>
 
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:estructura' %}"
+        >
+            Ver estructura
+        </a>
+
     </div>
 
 
@@ -351,8 +415,8 @@
 
     <div class="subtitle">
 
-        Defina qué clases de archivos requieren
-        mayor atención dentro de cada ruta monitorizada.
+        Defina qué tipos y extensiones requieren
+        atención especial dentro de cada ruta monitorizada.
 
     </div>
 
@@ -365,32 +429,34 @@
     <div class="card info-box">
 
         <strong>
-            ¿Qué significa seleccionar un tipo?
+            Esta selección no limita el escaneo.
         </strong>
 
 
         <p>
 
-            La selección
-
-            <strong>
-                no excluye archivos del análisis general.
-            </strong>
-
-            Solamente indica qué tipos deben recibir
-            atención especial en los futuros paneles,
-            históricos y operaciones de mantenimiento.
+            Espaciómetro seguirá contabilizando todos
+            los archivos de cada ruta.
 
         </p>
 
 
-        <p class="small">
+        <p>
 
-            Si una ruta no tiene ningún tipo marcado,
-            Espaciómetro continuará analizándola completa,
-            pero sin una prioridad específica.
+            Las selecciones realizadas aquí indican
+            únicamente qué contenido tendrá especial
+            interés para futuros paneles, históricos
+            y operaciones de mantenimiento.
 
         </p>
+
+
+        <div class="small">
+
+            Monitorizar un archivo tampoco significa
+            autorizar su eliminación.
+
+        </div>
 
     </div>
 
@@ -415,10 +481,11 @@
 
 
                 <!-- ====================================================
-                     CABECERA RUTA
+                     CABECERA DE RUTA
                      ==================================================== -->
 
                 <div class="route-header">
+
 
                     <div>
 
@@ -436,15 +503,39 @@
                     </div>
 
 
-                    <div class="route-category">
+                    <div>
 
-                        Categoría:
+                        <div class="route-category">
 
-                        <strong>
-                            {{ ruta.categoria }}
-                        </strong>
+                            Categoría:
+
+                            <strong>
+                                {{ ruta.categoria }}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="route-summary">
+
+                            Tipos seleccionados:
+
+                            <strong>
+                                {{ ruta.total_tipos }}
+                            </strong>
+
+                            ·
+
+                            Extensiones:
+
+                            <strong>
+                                {{ ruta.total_extensiones }}
+                            </strong>
+
+                        </div>
 
                     </div>
+
 
                 </div>
 
@@ -463,18 +554,18 @@
                         <div class="type-card">
 
 
-                            <label class="type-title">
+                            <label class="type-header">
 
                                 <input
                                     class="type-checkbox"
+
                                     type="checkbox"
 
                                     name="tipos_{{ ruta.id }}"
 
                                     value="{{ tipo.codigo }}"
 
-                                    data-route="{{ ruta.id }}"
-                                    data-type="{{ tipo.codigo }}"
+                                    id="tipo_{{ ruta.id }}_{{ tipo.codigo }}"
 
                                     onchange="
                                         cambiarTipo(
@@ -490,7 +581,11 @@
                                 >
 
 
-                                {{ tipo.nombre }}
+                                <span class="type-name">
+
+                                    {{ tipo.nombre }}
+
+                                </span>
 
                             </label>
 
@@ -507,10 +602,56 @@
                             {% if tipo.extensiones %}
 
 
-                                <div
-                                    class="extensions"
-                                    id="ext_{{ ruta.id }}_{{ tipo.codigo }}"
-                                >
+                                <div class="extension-actions">
+
+
+                                    <button
+                                        type="button"
+
+                                        class="
+                                            button
+                                            button-secondary
+                                            button-small
+                                        "
+
+                                        onclick="
+                                            marcarExtensiones(
+                                                '{{ ruta.id }}',
+                                                '{{ tipo.codigo }}',
+                                                true
+                                            )
+                                        "
+                                    >
+                                        Todas
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+
+                                        class="
+                                            button
+                                            button-secondary
+                                            button-small
+                                        "
+
+                                        onclick="
+                                            marcarExtensiones(
+                                                '{{ ruta.id }}',
+                                                '{{ tipo.codigo }}',
+                                                false
+                                            )
+                                        "
+                                    >
+                                        Ninguna
+                                    </button>
+
+
+                                </div>
+
+
+
+                                <div class="extensions">
 
 
                                     {% for extension in tipo.extensiones %}
@@ -518,12 +659,11 @@
 
                                         <label class="extension">
 
+
                                             <input
                                                 type="checkbox"
 
                                                 class="
-                                                    extension-checkbox
-                                                    extension-route-{{ ruta.id }}
                                                     extension-type-{{ ruta.id }}-{{ tipo.codigo }}
                                                 "
 
@@ -543,6 +683,7 @@
 
                                             {{ extension.valor }}
 
+
                                         </label>
 
 
@@ -560,8 +701,7 @@
                                     style="margin-top: 12px;"
                                 >
 
-                                    Esta categoría no depende
-                                    de una lista fija de extensiones.
+                                    Sin extensiones específicas.
 
                                 </div>
 
@@ -578,24 +718,60 @@
                 </div>
 
 
+
+                <!-- ====================================================
+                     ACCIONES DE LA RUTA
+                     ==================================================== -->
+
                 <div
-                    class="small"
-                    style="margin-top: 18px;"
+                    style="
+                        margin-top: 18px;
+                        display: flex;
+                        gap: 8px;
+                        flex-wrap: wrap;
+                    "
                 >
 
-                    Actualmente:
 
-                    <strong>
-                        {{ ruta.total_tipos }}
-                    </strong>
+                    <button
+                        type="button"
 
-                    tipos y
+                        class="
+                            button
+                            button-secondary
+                            button-small
+                        "
 
-                    <strong>
-                        {{ ruta.total_extensiones }}
-                    </strong>
+                        onclick="
+                            marcarTiposRuta(
+                                '{{ ruta.id }}',
+                                true
+                            )
+                        "
+                    >
+                        Marcar todos los tipos
+                    </button>
 
-                    extensiones seleccionadas.
+
+                    <button
+                        type="button"
+
+                        class="
+                            button
+                            button-secondary
+                            button-small
+                        "
+
+                        onclick="
+                            marcarTiposRuta(
+                                '{{ ruta.id }}',
+                                false
+                            )
+                        "
+                    >
+                        Limpiar esta ruta
+                    </button>
+
 
                 </div>
 
@@ -610,7 +786,10 @@
 
                 No existen rutas monitorizadas activas.
 
-                Primero configure al menos una ruta.
+                <br><br>
+
+                Configure primero al menos una ruta
+                desde ESP005.
 
             </div>
 
@@ -622,11 +801,8 @@
         {% if selector.rutas %}
 
 
-            <!-- ========================================================
-                 ACCIONES
-                 ======================================================== -->
-
             <div class="actions">
+
 
                 <button
                     class="button"
@@ -638,10 +814,10 @@
 
                 <span class="small">
 
-                    Los cambios solamente afectan
-                    la configuración de monitorización.
+                    Ningún archivo será modificado.
 
                 </span>
+
 
             </div>
 
@@ -657,6 +833,11 @@
 
 
 <script>
+
+
+    /* ================================================================
+       ACTIVAR / DESACTIVAR UN TIPO
+       ================================================================ */
 
     function cambiarTipo(
         rutaId,
@@ -684,12 +865,6 @@
                     !activo;
 
 
-                /*
-                 * Si se desmarca la categoría,
-                 * también quitamos la selección
-                 * de sus extensiones.
-                 */
-
                 if (!activo) {
 
                     elemento.checked =
@@ -701,6 +876,121 @@
         );
 
     }
+
+
+
+    /* ================================================================
+       MARCAR EXTENSIONES DE UN TIPO
+       ================================================================ */
+
+    function marcarExtensiones(
+        rutaId,
+        tipoCodigo,
+        valor
+    ) {
+
+        const tipo =
+            document.getElementById(
+                "tipo_" +
+                rutaId +
+                "_" +
+                tipoCodigo
+            );
+
+
+        /*
+         * Si el usuario pulsa "Todas",
+         * activamos también la categoría.
+         */
+
+        if (valor && tipo) {
+
+            tipo.checked = true;
+
+            cambiarTipo(
+                rutaId,
+                tipoCodigo,
+                true
+            );
+
+        }
+
+
+        const selector =
+            ".extension-type-" +
+            rutaId +
+            "-" +
+            tipoCodigo;
+
+
+        const extensiones =
+            document.querySelectorAll(
+                selector
+            );
+
+
+        extensiones.forEach(
+            function(elemento) {
+
+                if (!elemento.disabled) {
+
+                    elemento.checked =
+                        valor;
+
+                }
+
+            }
+        );
+
+    }
+
+
+
+    /* ================================================================
+       MARCAR / LIMPIAR TODOS LOS TIPOS DE UNA RUTA
+       ================================================================ */
+
+    function marcarTiposRuta(
+        rutaId,
+        valor
+    ) {
+
+        const tipos =
+            document.querySelectorAll(
+                '[id^="tipo_' +
+                rutaId +
+                '_"]'
+            );
+
+
+        tipos.forEach(
+            function(tipo) {
+
+                tipo.checked =
+                    valor;
+
+
+                const partes =
+                    tipo.id.split("_");
+
+
+                const codigo =
+                    partes
+                    .slice(2)
+                    .join("_");
+
+
+                cambiarTipo(
+                    rutaId,
+                    codigo,
+                    valor
+                );
+
+            }
+        );
+
+    }
+
 
 </script>
 

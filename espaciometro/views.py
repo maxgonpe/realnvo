@@ -172,17 +172,29 @@ def guardar_rutas(request):
 
     else:
 
+        texto = (
+            "Configuración guardada. "
+            f"Creadas: {resultado['creadas']}. "
+            f"Activadas: {resultado['activadas']}. "
+            f"Desactivadas: {resultado['desactivadas']}."
+        )
+
+
+        if resultado.get(
+            "activas_sin_ruta"
+        ):
+
+            texto += (
+                " Advertencia: "
+                f"{resultado['activas_sin_ruta']} "
+                "ruta(s) problemática(s) "
+                "permanecen activas."
+            )
+
+
         messages.success(
             request,
-            (
-                "Configuración guardada. "
-                f"Creadas: "
-                f"{resultado['creadas']}. "
-                f"Activadas: "
-                f"{resultado['activadas']}. "
-                f"Desactivadas: "
-                f"{resultado['desactivadas']}."
-            ),
+            texto,
         )
 
 
@@ -199,13 +211,14 @@ def guardar_rutas(request):
 @login_required
 def configurar_tipos(request):
     """
-    Selección de categorías y extensiones
-    de interés por RutaMonitoreada.
+    Configuración de tipos y extensiones
+    de interés por ruta.
     """
 
     datos = (
         obtener_selector_tipos()
     )
+
 
     return render(
         request,
@@ -220,7 +233,7 @@ def configurar_tipos(request):
 @require_POST
 def guardar_tipos(request):
     """
-    Guarda preferencias ESP006.
+    Guarda la configuración ESP006.
     """
 
     resultado = (

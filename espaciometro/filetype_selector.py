@@ -16,127 +16,101 @@ from .models import RutaMonitoreada
 
 
 # =============================================================================
-# DEFINICIÓN DE TIPOS DISPONIBLES
+# CATÁLOGO ESP006
 # =============================================================================
 
 
-TIPOS_ARCHIVO = [
+TIPOS_ARCHIVO = (
     {
         "codigo": "imagen",
         "nombre": "Imágenes",
         "descripcion": (
-            "Fotografías, capturas e imágenes "
-            "utilizadas por el sistema."
+            "Fotografías, capturas, firmas, evidencias "
+            "y otras imágenes."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_IMAGEN
-        ),
+        "extensiones": EXTENSIONES_IMAGEN,
     },
-
     {
         "codigo": "pdf",
         "nombre": "PDF",
         "descripcion": (
-            "Documentos PDF almacenados "
-            "por el sistema."
+            "Documentos y comprobantes almacenados "
+            "en formato PDF."
         ),
-        "extensiones": [
-            ".pdf",
-        ],
+        "extensiones": {".pdf"},
     },
-
     {
         "codigo": "documento",
         "nombre": "Documentos",
         "descripcion": (
-            "Documentos de texto y archivos "
+            "Documentos de texto y formatos "
             "de oficina."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_DOCUMENTO
-        ),
+        "extensiones": EXTENSIONES_DOCUMENTO,
     },
-
     {
         "codigo": "planilla",
         "nombre": "Planillas",
         "descripcion": (
-            "Planillas y archivos tabulares."
+            "Planillas de cálculo y archivos "
+            "tabulares."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_PLANILLA
-        ),
+        "extensiones": EXTENSIONES_PLANILLA,
     },
-
-    {
-        "codigo": "video",
-        "nombre": "Videos",
-        "descripcion": (
-            "Archivos de video."
-        ),
-        "extensiones": sorted(
-            EXTENSIONES_VIDEO
-        ),
-    },
-
     {
         "codigo": "audio",
         "nombre": "Audio",
         "descripcion": (
-            "Grabaciones y archivos de audio."
+            "Grabaciones y otros archivos "
+            "de audio."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_AUDIO
-        ),
+        "extensiones": EXTENSIONES_AUDIO,
     },
-
+    {
+        "codigo": "video",
+        "nombre": "Videos",
+        "descripcion": (
+            "Grabaciones y archivos de video."
+        ),
+        "extensiones": EXTENSIONES_VIDEO,
+    },
     {
         "codigo": "comprimido",
         "nombre": "Comprimidos",
         "descripcion": (
-            "ZIP, TAR, RAR y otros "
-            "archivos comprimidos."
+            "ZIP, TAR, RAR y otros paquetes "
+            "comprimidos."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_COMPRIMIDO
-        ),
+        "extensiones": EXTENSIONES_COMPRIMIDO,
     },
-
     {
         "codigo": "temporal",
         "nombre": "Temporales",
         "descripcion": (
-            "Archivos temporales o "
-            "potencialmente prescindibles."
+            "Archivos temporales que podrán ser "
+            "especialmente interesantes para "
+            "mantenimiento futuro."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_TEMPORAL
-        ),
+        "extensiones": EXTENSIONES_TEMPORAL,
     },
-
     {
         "codigo": "base_datos",
-        "nombre": "Bases de datos",
+        "nombre": "Archivos de base de datos",
         "descripcion": (
-            "Archivos físicos de base de datos."
+            "SQLite y otros archivos físicos "
+            "de base de datos."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_BASE_DATOS
-        ),
+        "extensiones": EXTENSIONES_BASE_DATOS,
     },
-
     {
         "codigo": "codigo",
         "nombre": "Código fuente",
         "descripcion": (
-            "Código y recursos utilizados "
-            "por la aplicación."
+            "Python, JavaScript, CSS, HTML y "
+            "otros archivos de programación."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_CODIGO
-        ),
+        "extensiones": EXTENSIONES_CODIGO,
     },
-
     {
         "codigo": "configuracion",
         "nombre": "Configuración",
@@ -144,21 +118,18 @@ TIPOS_ARCHIVO = [
             "JSON, YAML, XML, INI y otros "
             "archivos de configuración."
         ),
-        "extensiones": sorted(
-            EXTENSIONES_CONFIGURACION
-        ),
+        "extensiones": EXTENSIONES_CONFIGURACION,
     },
-
     {
         "codigo": "otro",
         "nombre": "Otros",
         "descripcion": (
-            "Archivos que no pertenecen "
-            "a las categorías anteriores."
+            "Archivos que no pertenecen a las "
+            "categorías anteriores."
         ),
-        "extensiones": [],
+        "extensiones": set(),
     },
-]
+)
 
 
 # =============================================================================
@@ -166,15 +137,17 @@ TIPOS_ARCHIVO = [
 # =============================================================================
 
 
-def _normalizar_extension(
-    extension: str,
-) -> str:
+def _normalizar_extension(extension: str) -> str:
+    """
+    Normaliza una extensión:
 
-    extension = (
-        str(extension)
-        .strip()
-        .lower()
-    )
+        JPG  -> .jpg
+        .PDF -> .pdf
+    """
+
+    extension = str(
+        extension or ""
+    ).strip().lower()
 
     if not extension:
         return ""
@@ -185,7 +158,25 @@ def _normalizar_extension(
     return extension
 
 
-def _tipos_validos() -> set[str]:
+def _lista_json(valor) -> list:
+    """
+    Garantiza una lista aunque un registro antiguo
+    contenga None u otro valor inesperado.
+    """
+
+    if isinstance(valor, list):
+        return valor
+
+    if isinstance(valor, tuple):
+        return list(valor)
+
+    if isinstance(valor, set):
+        return list(valor)
+
+    return []
+
+
+def _catalogo_tipos_validos() -> set[str]:
 
     return {
         tipo["codigo"]
@@ -193,7 +184,16 @@ def _tipos_validos() -> set[str]:
     }
 
 
-def _extensiones_por_tipo() -> dict:
+def _catalogo_extensiones() -> dict[str, set[str]]:
+    """
+    Devuelve:
+
+        {
+            "imagen": {".jpg", ".png", ...},
+            "pdf": {".pdf"},
+            ...
+        }
+    """
 
     resultado = {}
 
@@ -207,24 +207,23 @@ def _extensiones_por_tipo() -> dict:
             )
             for extension
             in tipo["extensiones"]
+            if extension
         }
 
     return resultado
 
 
 # =============================================================================
-# OBTENER CONFIGURACIÓN
+# SELECTOR
 # =============================================================================
 
 
 def obtener_selector_tipos() -> dict:
     """
-    Construye la información necesaria para ESP006.
+    Obtiene la configuración ESP006 para todas
+    las RutaMonitoreada activas.
 
-    Solamente muestra RutaMonitoreada activas.
-
-    Una lista vacía de tipos significa:
-    sin prioridad especial.
+    No modifica datos.
     """
 
     rutas = (
@@ -238,78 +237,79 @@ def obtener_selector_tipos() -> dict:
 
     for ruta in rutas:
 
-        tipos_seleccionados = set(
-            ruta.tipos_interes
-            or []
+        tipos_guardados = set(
+            _lista_json(
+                ruta.tipos_interes
+            )
         )
 
-        extensiones_seleccionadas = {
+        extensiones_guardadas = {
             _normalizar_extension(
                 extension
             )
             for extension
-            in (
+            in _lista_json(
                 ruta.extensiones_interes
-                or []
             )
             if extension
         }
 
 
-        tipos = []
+        tipos_resultado = []
 
 
-        for definicion in TIPOS_ARCHIVO:
+        for tipo in TIPOS_ARCHIVO:
 
-            codigo = definicion[
+            codigo = tipo[
                 "codigo"
             ]
 
-            extensiones = []
+
+            extensiones_resultado = []
 
 
-            for extension in definicion[
-                "extensiones"
-            ]:
+            for extension in sorted(
+                tipo["extensiones"]
+            ):
 
-                extension_normalizada = (
+                extension = (
                     _normalizar_extension(
                         extension
                     )
                 )
 
-                extensiones.append(
+                extensiones_resultado.append(
                     {
-                        "valor": (
-                            extension_normalizada
-                        ),
+                        "valor": extension,
 
                         "seleccionada": (
-                            extension_normalizada
-                            in extensiones_seleccionadas
+                            extension
+                            in extensiones_guardadas
                         ),
                     }
                 )
 
 
-            tipos.append(
+            tipos_resultado.append(
                 {
                     "codigo": codigo,
 
-                    "nombre": definicion[
+                    "nombre": tipo[
                         "nombre"
                     ],
 
-                    "descripcion": definicion[
+                    "descripcion": tipo[
                         "descripcion"
                     ],
 
                     "seleccionado": (
                         codigo
-                        in tipos_seleccionados
+                        in tipos_guardados
                     ),
 
-                    "extensiones": extensiones,
+                    "extensiones": (
+                        extensiones_resultado
+                    ),
                 }
             )
 
@@ -326,14 +326,16 @@ def obtener_selector_tipos() -> dict:
                     ruta.get_categoria_display()
                 ),
 
-                "tipos": tipos,
+                "tipos": (
+                    tipos_resultado
+                ),
 
                 "total_tipos": len(
-                    tipos_seleccionados
+                    tipos_guardados
                 ),
 
                 "total_extensiones": len(
-                    extensiones_seleccionadas
+                    extensiones_guardadas
                 ),
             }
         )
@@ -349,27 +351,29 @@ def obtener_selector_tipos() -> dict:
 
 
 # =============================================================================
-# GUARDAR CONFIGURACIÓN
+# GUARDAR
 # =============================================================================
 
 
-def guardar_selector_tipos(
-    post,
-) -> dict:
+def guardar_selector_tipos(post) -> dict:
     """
-    Guarda tipos/extensiones de interés.
+    Guarda la configuración ESP006.
 
-    No modifica archivos.
-    No modifica patrones_incluir/excluir.
-    No toca rutas inactivas.
+    Reglas:
+
+    - solamente trabaja sobre rutas activas;
+    - no modifica patrones_incluir;
+    - no modifica patrones_excluir;
+    - no modifica archivos físicos;
+    - no concede permisos de mantenimiento.
     """
 
     tipos_validos = (
-        _tipos_validos()
+        _catalogo_tipos_validos()
     )
 
-    extensiones_por_tipo = (
-        _extensiones_por_tipo()
+    catalogo_extensiones = (
+        _catalogo_extensiones()
     )
 
 
@@ -387,25 +391,26 @@ def guardar_selector_tipos(
 
     for ruta in rutas:
 
-        # =============================================================
-        # TIPOS
-        # =============================================================
+        # =====================================================================
+        # TIPOS SELECCIONADOS
+        # =====================================================================
 
-        tipos_seleccionados = set(
+        tipos_recibidos = set(
             post.getlist(
                 f"tipos_{ruta.pk}"
             )
         )
 
 
-        tipos_seleccionados &= (
-            tipos_validos
+        tipos_seleccionados = (
+            tipos_recibidos
+            & tipos_validos
         )
 
 
-        # =============================================================
-        # EXTENSIONES
-        # =============================================================
+        # =====================================================================
+        # EXTENSIONES RECIBIDAS
+        # =====================================================================
 
         extensiones_recibidas = {
             _normalizar_extension(
@@ -419,18 +424,21 @@ def guardar_selector_tipos(
         }
 
 
-        # Solamente admitimos extensiones
-        # pertenecientes a categorías seleccionadas.
+        # =====================================================================
+        # EXTENSIONES PERMITIDAS
+        # =====================================================================
+        #
+        # Solo se conservan extensiones pertenecientes
+        # a categorías que están seleccionadas.
+        # =====================================================================
 
         extensiones_permitidas = set()
 
 
-        for codigo in (
-            tipos_seleccionados
-        ):
+        for codigo in tipos_seleccionados:
 
             extensiones_permitidas |= (
-                extensiones_por_tipo.get(
+                catalogo_extensiones.get(
                     codigo,
                     set(),
                 )
@@ -443,9 +451,14 @@ def guardar_selector_tipos(
         )
 
 
+        # =====================================================================
+        # NORMALIZAR PARA JSON
+        # =====================================================================
+
         nuevos_tipos = sorted(
             tipos_seleccionados
         )
+
 
         nuevas_extensiones = sorted(
             extensiones_seleccionadas
@@ -453,15 +466,27 @@ def guardar_selector_tipos(
 
 
         anteriores_tipos = sorted(
-            ruta.tipos_interes
-            or []
+            _lista_json(
+                ruta.tipos_interes
+            )
         )
+
 
         anteriores_extensiones = sorted(
-            ruta.extensiones_interes
-            or []
+            _normalizar_extension(
+                extension
+            )
+            for extension
+            in _lista_json(
+                ruta.extensiones_interes
+            )
+            if extension
         )
 
+
+        # =====================================================================
+        # SIN CAMBIOS
+        # =====================================================================
 
         if (
             anteriores_tipos
@@ -475,6 +500,10 @@ def guardar_selector_tipos(
 
             continue
 
+
+        # =====================================================================
+        # GUARDAR
+        # =====================================================================
 
         ruta.tipos_interes = (
             nuevos_tipos
