@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -10,19 +12,17 @@
 
     <title>Espaciómetro</title>
 
-    <p>
-    <a href="{% url 'espaciometro:estructura' %}">
-        Explorar estructura completa del proyecto
-    </a>
-</p>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
 
+
         body {
             margin: 0;
+
             font-family:
                 system-ui,
                 -apple-system,
@@ -34,682 +34,807 @@
             color: #1f2937;
         }
 
+
+        /* ==============================================================
+           ESTRUCTURA GENERAL
+           ============================================================== */
+
         .page {
-            max-width: 1400px;
+            max-width: 1450px;
             margin: 0 auto;
             padding: 30px;
         }
 
-        .header {
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+        }
+
+
+        h1 {
+            margin-bottom: 4px;
+        }
+
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+
+        .measurement-time {
+            color: #6b7280;
+            font-size: 13px;
             margin-bottom: 25px;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 32px;
+
+        .section {
+            margin-top: 30px;
         }
 
-        .subtitle {
-            margin-top: 5px;
-            color: #6b7280;
+
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+
+            margin-top: 18px;
+            margin-bottom: 25px;
         }
+
+
+        .button,
+        button.button {
+            display: inline-block;
+
+            border: 0;
+            border-radius: 7px;
+
+            padding: 10px 16px;
+
+            background: #374151;
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .button:hover,
+        button.button:hover {
+            background: #1f2937;
+        }
+
+
+        /* ==============================================================
+           TARJETAS
+           ============================================================== */
 
         .grid {
             display: grid;
+
             grid-template-columns:
-                repeat(auto-fit, minmax(230px, 1fr));
+                repeat(auto-fit, minmax(210px, 1fr));
+
             gap: 18px;
         }
 
+
         .card {
             background: white;
+
             border-radius: 12px;
+
             padding: 20px;
+
             box-shadow:
                 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
-        .card h2,
-        .card h3 {
-            margin-top: 0;
-        }
 
         .metric-label {
             color: #6b7280;
             font-size: 14px;
         }
 
+
         .metric-value {
+            font-size: 26px;
+            font-weight: 700;
+
             margin-top: 5px;
-            font-size: 27px;
-            font-weight: 700;
         }
 
-        .section {
-            margin-top: 30px;
-        }
-
-        /* ===============================================================
-           GAUGE
-           =============================================================== */
-
-        .gauge-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 270px;
-        }
-
-        .gauge {
-            position: relative;
-            width: 320px;
-            height: 180px;
-        }
-
-        .gauge-background {
-            position: absolute;
-
-            left: 0;
-            top: 0;
-
-            width: 320px;
-            height: 320px;
-
-            border-radius: 50%;
-
-            background:
-                conic-gradient(
-                    from 270deg,
-                    #22c55e 0deg,
-                    #22c55e 54deg,
-                    #eab308 108deg,
-                    #ef4444 180deg,
-                    #e5e7eb 180deg,
-                    #e5e7eb 360deg
-                );
-
-            overflow: hidden;
-        }
-
-        .gauge-mask {
-            position: absolute;
-
-            width: 220px;
-            height: 220px;
-
-            border-radius: 50%;
-
-            background: white;
-
-            left: 50px;
-            top: 50px;
-        }
-
-        .needle {
-            position: absolute;
-
-            width: 5px;
-            height: 125px;
-
-            background: #111827;
-
-            left: 50%;
-            bottom: 20px;
-
-            transform-origin: 50% 100%;
-
-            border-radius: 3px;
-
-            z-index: 5;
-        }
-
-        .needle-center {
-            position: absolute;
-
-            width: 22px;
-            height: 22px;
-
-            border-radius: 50%;
-
-            background: #111827;
-
-            left: 50%;
-            bottom: 9px;
-
-            transform: translateX(-50%);
-
-            z-index: 6;
-        }
-
-        .gauge-value {
-            position: absolute;
-
-            width: 100%;
-
-            left: 0;
-            bottom: -40px;
-
-            text-align: center;
-
-            font-size: 31px;
-            font-weight: 700;
-        }
-
-        .gauge-caption {
-            position: absolute;
-
-            width: 100%;
-
-            left: 0;
-            bottom: -65px;
-
-            text-align: center;
-
-            color: #6b7280;
-        }
-
-        /* ===============================================================
-           TABLA
-           =============================================================== */
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #f9fafb;
-            font-size: 13px;
-            color: #4b5563;
-        }
-
-        .path {
-            max-width: 350px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .ok {
-            color: #15803d;
-        }
-
-        .error {
-            color: #b91c1c;
-        }
 
         .small {
             color: #6b7280;
             font-size: 13px;
         }
 
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+
+        /* ==============================================================
+           MENSAJES
+           ============================================================== */
+
+        .message {
+            background: white;
+
+            border-radius: 10px;
+
+            padding: 14px 18px;
+
+            margin-bottom: 10px;
+
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* ==============================================================
+           TABLAS
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 12px;
+
+            text-align: left;
+            vertical-align: top;
+
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        /* ==============================================================
+           ESTADOS
+           ============================================================== */
+
+        .ok {
+            color: #15803d;
+            font-weight: 600;
+        }
+
+
+        .warning {
+            color: #a16207;
+            font-weight: 600;
+        }
+
+
+        .error {
+            color: #b91c1c;
+            font-weight: 600;
+        }
+
+
+        /* ==============================================================
+           GAUGE
+           ============================================================== */
+
+        .gauge-card {
+            text-align: center;
+        }
+
+
+        .gauge-container {
+            width: 300px;
+            max-width: 100%;
+
+            margin:
+                25px auto
+                5px auto;
+        }
+
+
+        .gauge {
+            position: relative;
+
+            width: 300px;
+            max-width: 100%;
+            height: 150px;
+
+            margin: 0 auto;
+
+            overflow: hidden;
+        }
+
+
+        .gauge-background {
+            position: absolute;
+
+            width: 300px;
+            height: 300px;
+
+            max-width: 100%;
+
+            border-radius: 50%;
+
+            background:
+                conic-gradient(
+                    from 270deg,
+                    #d1d5db 0deg,
+                    #d1d5db 180deg,
+                    transparent 180deg
+                );
+        }
+
+
+        .gauge-mask {
+            position: absolute;
+
+            left: 45px;
+            top: 45px;
+
+            width: 210px;
+            height: 210px;
+
+            border-radius: 50%;
+
+            background: white;
+        }
+
+
+        .needle {
+            position: absolute;
+
+            left: 50%;
+            bottom: 0;
+
+            width: 4px;
+            height: 115px;
+
+            background: #111827;
+
+            transform-origin:
+                50% 100%;
+
+            transform:
+                rotate({{ disco.angulo_gauge|default:"0" }}deg);
+
+            border-radius: 4px;
+        }
+
+
+        .needle-center {
+            position: absolute;
+
+            left: 50%;
+            bottom: -9px;
+
+            width: 20px;
+            height: 20px;
+
+            margin-left: -10px;
+
+            border-radius: 50%;
+
+            background: #111827;
+        }
+
+
+        .gauge-value {
+            margin-top: 12px;
+
+            font-size: 34px;
+            font-weight: 700;
+        }
+
+
+        .gauge-caption {
+            color: #6b7280;
+        }
+
+
+        /* ==============================================================
+           BD
+           ============================================================== */
+
         .database-grid {
             display: grid;
 
             grid-template-columns:
-                repeat(auto-fit, minmax(260px, 1fr));
+                repeat(auto-fit, minmax(270px, 1fr));
 
             gap: 18px;
         }
 
-        @media (max-width: 600px) {
+
+        .database-row {
+            margin-top: 8px;
+        }
+
+
+        /* ==============================================================
+           PIE
+           ============================================================== */
+
+        .footer {
+            margin-top: 35px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #d1d5db;
+
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        /* ==============================================================
+           RESPONSIVE
+           ============================================================== */
+
+        @media (max-width: 700px) {
+
             .page {
                 padding: 15px;
             }
 
-            .gauge {
-                transform: scale(0.85);
+
+            th,
+            td {
+                padding: 9px;
             }
+
+
+            .metric-value {
+                font-size: 22px;
+            }
+
         }
+
     </style>
+
 </head>
 
 
 <body>
 
+
 <div class="page">
+
+
+    <!-- ================================================================
+         MENSAJES
+         ================================================================ -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
 
     <!-- ================================================================
          CABECERA
          ================================================================ -->
 
-    <div class="header">
+    <h1>
+        Espaciómetro
+    </h1>
 
-        <h1>Espaciómetro</h1>
 
-        <div class="subtitle">
-            Estado actual del almacenamiento de {{ hostname }}
-        </div>
+    <div class="subtitle">
 
-        <div class="small">
-            Medición:
-            {{ generado_en|date:"d/m/Y H:i:s" }}
-        </div>
+        Estado actual del almacenamiento de
+
+        <strong>
+            {{ hostname }}
+        </strong>
 
     </div>
 
 
+    <div class="measurement-time">
+
+        Medición en vivo:
+
+        {{ generado_en|date:"d/m/Y H:i:s" }}
+
+    </div>
+
+
+    <div class="actions">
+
+    <a
+        class="button"
+        href="{% url 'espaciometro:estructura' %}"
+    >
+        Explorar estructura del proyecto
+    </a>
+
+    <a
+        class="button"
+        href="{% url 'espaciometro:configurar_rutas' %}"
+    >
+        Configurar rutas monitorizadas
+    </a>
+
+    <a
+        class="button"
+        href="{% url 'espaciometro:configurar_tipos' %}"
+    >
+        Configurar tipos de archivo
+    </a>
+
+</div>
+
+
+
     <!-- ================================================================
-         DISCO
+         ESP004 — MEDICIONES HISTÓRICAS
          ================================================================ -->
 
-    <!-- ================================================================
-     ENTORNO AUTODETECTADO — ESP001
-     ================================================================ -->
+    <div class="section">
 
-<div class="section">
-
-    <h2>Entorno detectado</h2>
-
-    <div class="grid">
-
-        <div class="card">
-
-            <div class="metric-label">
-                Proyecto Django
-            </div>
-
-            <div class="metric-value">
-                {{ entorno.proyecto.nombre }}
-            </div>
-
-            <div class="small">
-                {{ entorno.proyecto.settings_module }}
-            </div>
-
-        </div>
+        <h2>
+            Mediciones históricas
+        </h2>
 
 
         <div class="card">
 
-            <div class="metric-label">
-                Servidor
-            </div>
-
-            <div class="metric-value">
-                {{ entorno.sistema.hostname }}
-            </div>
-
-            <div class="small">
-                {{ entorno.sistema.sistema_operativo }}
-                {{ entorno.sistema.release }}
-            </div>
-
-        </div>
+            <p>
+                Registre una fotografía del estado actual del
+                servidor, las rutas monitorizadas y la base de datos.
+            </p>
 
 
-        <div class="card">
+            <form
+                method="post"
+                action="{% url 'espaciometro:ejecutar_medicion' %}"
+            >
 
-            <div class="metric-label">
-                Python
-            </div>
-
-            <div class="metric-value">
-                {{ entorno.sistema.python }}
-            </div>
-
-            <div class="small">
-                Django {{ entorno.sistema.django }}
-            </div>
-
-        </div>
+                {% csrf_token %}
 
 
-        <div class="card">
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Registrar medición actual
+                </button>
 
-            <div class="metric-label">
-                Aplicaciones Django
-            </div>
-
-            <div class="metric-value">
-                {{ entorno.apps_instaladas }}
-            </div>
-
-            <div class="small">
-                Aplicaciones instaladas
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="section">
-
-    <h2>Directorios detectados</h2>
-
-    <div class="card table-wrapper">
-
-        <table>
-
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Ruta</th>
-                    <th>Existe</th>
-                    <th>Lectura</th>
-                    <th>Escritura</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <tr>
-
-                    <td>
-                        <strong>BASE_DIR</strong>
-                    </td>
-
-                    <td class="path">
-                        {{ entorno.rutas.base_dir.ruta }}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.base_dir.existe %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            <span class="error">No</span>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.base_dir.lectura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            <span class="error">No</span>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.base_dir.escritura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                </tr>
+            </form>
 
 
-                <tr>
+            {% if ultima_medicion %}
 
-                    <td>
-                        <strong>MEDIA_ROOT</strong>
-                    </td>
+                <div style="margin-top: 20px;">
 
-                    <td class="path">
-                        {% if entorno.rutas.media_root.configurada %}
-                            {{ entorno.rutas.media_root.ruta }}
-                        {% else %}
-                            No configurado
-                        {% endif %}
-                    </td>
+                    <div class="metric-label">
+                        Última medición registrada
+                    </div>
 
-                    <td>
-                        {% if entorno.rutas.media_root.existe %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.media_root.lectura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.media_root.escritura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        <strong>STATIC_ROOT</strong>
-                    </td>
-
-                    <td class="path">
-                        {% if entorno.rutas.static_root.configurada %}
-                            {{ entorno.rutas.static_root.ruta }}
-                        {% else %}
-                            No configurado
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.static_root.existe %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.static_root.lectura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if entorno.rutas.static_root.escritura %}
-                            <span class="ok">Sí</span>
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-</div>
-
-
-
-    <div class="card">
-
-        <h2>Capacidad del servidor</h2>
-
-        <div class="grid">
-
-            <div class="gauge-wrapper">
-
-                <div class="gauge">
-
-                    <div class="gauge-background"></div>
-
-                    <div class="gauge-mask"></div>
 
                     <div
-                        class="needle"
                         style="
-                            transform:
-                            translateX(-50%)
-                            rotate({{ disco.angulo_gauge }}deg);
+                            font-size: 19px;
+                            font-weight: 700;
+                            margin-top: 5px;
                         "
-                    ></div>
+                    >
 
-                    <div class="needle-center"></div>
+                        #{{ ultima_medicion.id }}
 
-                    <div class="gauge-value">
-                        {{ disco.porcentaje_usado }} %
-                    </div>
+                        —
 
-                    <div class="gauge-caption">
-                        espacio utilizado
-                    </div>
+                        {{ ultima_medicion.iniciada_en|date:"d/m/Y H:i:s" }}
 
-                </div>
+                        —
 
-            </div>
+                        {% if ultima_medicion.estado == "COMPLETADA" %}
 
+                            <span class="ok">
+                                {{ ultima_medicion.get_estado_display }}
+                            </span>
 
-            <div>
+                        {% elif ultima_medicion.estado == "PARCIAL" %}
 
-                <div class="grid">
+                            <span class="warning">
+                                {{ ultima_medicion.get_estado_display }}
+                            </span>
 
-                    <div>
-                        <div class="metric-label">
-                            Capacidad total
-                        </div>
+                        {% else %}
 
-                        <div class="metric-value">
-                            {{ disco.total_legible }}
-                        </div>
-                    </div>
+                            {{ ultima_medicion.get_estado_display }}
 
+                        {% endif %}
 
-                    <div>
-                        <div class="metric-label">
-                            Utilizado
-                        </div>
-
-                        <div class="metric-value">
-                            {{ disco.usado_legible }}
-                        </div>
-                    </div>
-
-
-                    <div>
-                        <div class="metric-label">
-                            Disponible
-                        </div>
-
-                        <div class="metric-value">
-                            {{ disco.libre_legible }}
-                        </div>
-                    </div>
-
-
-                    <div>
-                        <div class="metric-label">
-                            Espacio libre
-                        </div>
-
-                        <div class="metric-value">
-                            {{ disco.porcentaje_disponible }} %
-                        </div>
                     </div>
 
                 </div>
 
-                <p class="small">
-                    Filesystem donde se encuentra:
-                    {{ disco.ruta_base }}
-                </p>
+            {% else %}
 
-            </div>
+                <div
+                    class="small"
+                    style="margin-top: 20px;"
+                >
+                    Todavía no existen mediciones históricas.
+                </div>
+
+            {% endif %}
 
         </div>
+
+
+        {% if ultimas_mediciones %}
+
+            <div
+                class="card table-wrapper"
+                style="margin-top: 18px;"
+            >
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Estado</th>
+                            <th>Servidor</th>
+                            <th>Resultado</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for medicion in ultimas_mediciones %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    #{{ medicion.id }}
+                                </strong>
+                            </td>
+
+
+                            <td>
+                                {{ medicion.iniciada_en|date:"d/m/Y H:i:s" }}
+                            </td>
+
+
+                            <td>
+
+                                {% if medicion.finalizada_en %}
+
+                                    {{ medicion.finalizada_en|date:"d/m/Y H:i:s" }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if medicion.estado == "COMPLETADA" %}
+
+                                    <span class="ok">
+                                        {{ medicion.get_estado_display }}
+                                    </span>
+
+                                {% elif medicion.estado == "PARCIAL" %}
+
+                                    <span class="warning">
+                                        {{ medicion.get_estado_display }}
+                                    </span>
+
+                                {% elif medicion.estado == "ERROR" %}
+
+                                    <span class="error">
+                                        {{ medicion.get_estado_display }}
+                                    </span>
+
+                                {% else %}
+
+                                    {{ medicion.get_estado_display }}
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+                                {{ medicion.hostname }}
+                            </td>
+
+
+                            <td>
+                                {{ medicion.observaciones|default:"-" }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% endif %}
 
     </div>
 
 
+
     <!-- ================================================================
-         RESUMEN
+         ESP001 — ENTORNO AUTODETECTADO
          ================================================================ -->
 
     <div class="section">
 
-        <h2>Resumen de rutas monitorizadas</h2>
+        <h2>
+            Entorno detectado
+        </h2>
+
 
         <div class="grid">
 
+
             <div class="card">
+
                 <div class="metric-label">
-                    Rutas analizadas
+                    Proyecto Django
                 </div>
 
                 <div class="metric-value">
-                    {{ resumen.total_rutas }}
+                    {{ entorno.proyecto.nombre }}
                 </div>
+
+                <div class="small">
+                    {{ entorno.proyecto.settings_module }}
+                </div>
+
             </div>
 
 
             <div class="card">
+
                 <div class="metric-label">
-                    Espacio detectado
+                    Servidor
                 </div>
 
                 <div class="metric-value">
-                    {{ resumen.total_rutas_legible }}
+                    {{ entorno.sistema.hostname }}
                 </div>
+
+                <div class="small">
+
+                    {{ entorno.sistema.sistema_operativo }}
+
+                    {{ entorno.sistema.release }}
+
+                </div>
+
             </div>
 
 
             <div class="card">
+
                 <div class="metric-label">
-                    Archivos
+                    Python
                 </div>
 
                 <div class="metric-value">
-                    {{ resumen.total_archivos }}
+                    {{ entorno.sistema.python }}
                 </div>
+
+                <div class="small">
+                    Django {{ entorno.sistema.django }}
+                </div>
+
             </div>
 
 
             <div class="card">
+
                 <div class="metric-label">
-                    Imágenes
+                    Aplicaciones Django
                 </div>
 
                 <div class="metric-value">
-                    {{ resumen.total_imagenes }}
+                    {{ entorno.apps_instaladas }}
                 </div>
+
+                <div class="small">
+                    Aplicaciones instaladas
+                </div>
+
             </div>
 
-
-            <div class="card">
-                <div class="metric-label">
-                    PDF
-                </div>
-
-                <div class="metric-value">
-                    {{ resumen.total_pdf }}
-                </div>
-            </div>
 
         </div>
 
     </div>
 
 
+
     <!-- ================================================================
-         RUTAS
+         DIRECTORIOS DJANGO DETECTADOS
          ================================================================ -->
 
     <div class="section">
 
-        <h2>Uso por directorio</h2>
+        <h2>
+            Directorios detectados
+        </h2>
+
 
         <div class="card table-wrapper">
 
@@ -718,8 +843,436 @@
                 <thead>
 
                     <tr>
+
+                        <th>Tipo</th>
                         <th>Ruta</th>
-                        <th>Categoría</th>
+                        <th>Existe</th>
+                        <th>Lectura</th>
+                        <th>Escritura</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                BASE_DIR
+                            </strong>
+                        </td>
+
+
+                        <td class="path">
+                            {{ entorno.rutas.base_dir.ruta }}
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.base_dir.existe %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                <span class="error">No</span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.base_dir.lectura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                <span class="error">No</span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.base_dir.escritura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                MEDIA_ROOT
+                            </strong>
+                        </td>
+
+
+                        <td class="path">
+
+                            {% if entorno.rutas.media_root.configurada %}
+
+                                {{ entorno.rutas.media_root.ruta }}
+
+                            {% else %}
+
+                                No configurado
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.media_root.existe %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.media_root.lectura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.media_root.escritura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                STATIC_ROOT
+                            </strong>
+                        </td>
+
+
+                        <td class="path">
+
+                            {% if entorno.rutas.static_root.configurada %}
+
+                                {{ entorno.rutas.static_root.ruta }}
+
+                            {% else %}
+
+                                No configurado
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.static_root.existe %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.static_root.lectura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if entorno.rutas.static_root.escritura %}
+                                <span class="ok">Sí</span>
+                            {% else %}
+                                No
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CAPACIDAD DEL SERVIDOR
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Capacidad del servidor
+        </h2>
+
+
+        <div class="card gauge-card">
+
+
+            <div class="gauge-container">
+
+                <div class="gauge">
+
+                    <div class="gauge-background"></div>
+
+                    <div class="gauge-mask"></div>
+
+                    <div class="needle"></div>
+
+                    <div class="needle-center"></div>
+
+                </div>
+
+
+                <div class="gauge-value">
+                    {{ disco.porcentaje_usado }} %
+                </div>
+
+
+                <div class="gauge-caption">
+                    espacio utilizado
+                </div>
+
+            </div>
+
+
+            <div
+                class="grid"
+                style="margin-top: 30px;"
+            >
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Capacidad total
+                    </div>
+
+                    <div class="metric-value">
+                        {{ disco.total_legible }}
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Utilizado
+                    </div>
+
+                    <div class="metric-value">
+                        {{ disco.usado_legible }}
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Disponible
+                    </div>
+
+                    <div class="metric-value">
+                        {{ disco.libre_legible }}
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="metric-label">
+                        Espacio disponible
+                    </div>
+
+                    <div class="metric-value">
+
+                        {% if disco.porcentaje_disponible != None %}
+
+                            {{ disco.porcentaje_disponible }} %
+
+                        {% else %}
+
+                            {{ disco.porcentaje_libre }} %
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div
+                class="small"
+                style="margin-top: 20px;"
+            >
+
+                Filesystem donde se encuentra:
+
+                <strong>
+                    {{ disco.ruta_base }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         RESUMEN RUTAS MONITORIZADAS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Resumen de rutas monitorizadas
+        </h2>
+
+
+        <div class="grid">
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Rutas analizadas
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Espacio detectado
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas_legible }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Archivos
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_archivos }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Imágenes
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_imagenes }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    PDF
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_pdf }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         USO POR DIRECTORIO
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Uso por directorio
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ruta</th>
                         <th>Espacio</th>
                         <th>Archivos</th>
                         <th>Imágenes</th>
@@ -729,6 +1282,7 @@
                         <th>Más reciente</th>
                         <th>Mayor archivo</th>
                         <th>Escaneo</th>
+
                     </tr>
 
                 </thead>
@@ -736,9 +1290,11 @@
 
                 <tbody>
 
+
                 {% for ruta in rutas %}
 
                     <tr>
+
 
                         <td>
 
@@ -746,31 +1302,19 @@
                                 {{ ruta.nombre }}
                             </strong>
 
-                            <div
-                                class="small path"
-                                title="{{ ruta.ruta_resuelta }}"
-                            >
+                            <div class="path">
                                 {{ ruta.ruta_resuelta }}
                             </div>
 
-                            {% if ruta.error %}
-                                <div class="error">
-                                    {{ ruta.error }}
-                                </div>
-                            {% endif %}
-
                         </td>
 
 
                         <td>
-                            {{ ruta.categoria }}
-                        </td>
 
-
-                        <td>
                             <strong>
                                 {{ ruta.total_legible }}
                             </strong>
+
                         </td>
 
 
@@ -800,10 +1344,7 @@
 
                                 {{ ruta.archivo_mas_antiguo.fecha|date:"d/m/Y" }}
 
-                                <div
-                                    class="small path"
-                                    title="{{ ruta.archivo_mas_antiguo.ruta }}"
-                                >
+                                <div class="path">
                                     {{ ruta.archivo_mas_antiguo.ruta }}
                                 </div>
 
@@ -822,10 +1363,7 @@
 
                                 {{ ruta.archivo_mas_reciente.fecha|date:"d/m/Y" }}
 
-                                <div
-                                    class="small path"
-                                    title="{{ ruta.archivo_mas_reciente.ruta }}"
-                                >
+                                <div class="path">
                                     {{ ruta.archivo_mas_reciente.ruta }}
                                 </div>
 
@@ -840,16 +1378,25 @@
 
                         <td>
 
-                            {{ ruta.archivo_mas_grande_legible }}
-
                             {% if ruta.archivo_mas_grande %}
 
-                                <div
-                                    class="small path"
-                                    title="{{ ruta.archivo_mas_grande }}"
-                                >
+                                <strong>
+
+                                    {% if ruta.archivo_mas_grande_legible %}
+                                        {{ ruta.archivo_mas_grande_legible }}
+                                    {% else %}
+                                        {{ ruta.archivo_mas_grande_bytes }}
+                                    {% endif %}
+
+                                </strong>
+
+                                <div class="path">
                                     {{ ruta.archivo_mas_grande }}
                                 </div>
+
+                            {% else %}
+
+                                -
 
                             {% endif %}
 
@@ -858,28 +1405,24 @@
 
                         <td>
                             {{ ruta.duracion_ms }} ms
-
-                            {% if ruta.archivos_inaccesibles %}
-
-                                <div class="error">
-                                    {{ ruta.archivos_inaccesibles }}
-                                    inaccesibles
-                                </div>
-
-                            {% endif %}
                         </td>
 
+
                     </tr>
+
 
                 {% empty %}
 
                     <tr>
-                        <td colspan="11">
-                            No existen rutas activas configuradas.
+
+                        <td colspan="10">
+                            No existen rutas monitorizadas.
                         </td>
+
                     </tr>
 
                 {% endfor %}
+
 
                 </tbody>
 
@@ -890,84 +1433,128 @@
     </div>
 
 
+
     <!-- ================================================================
          BASE DE DATOS
          ================================================================ -->
 
     <div class="section">
 
-        <h2>Base de datos</h2>
+        <h2>
+            Base de datos
+        </h2>
+
 
         <div class="database-grid">
+
 
         {% for bd in bases_datos %}
 
             <div class="card">
 
+
                 <h3>
                     {{ bd.alias }}
                 </h3>
 
-                <p>
-                    <strong>Motor:</strong>
+
+                <div class="database-row">
+
+                    <strong>
+                        Motor:
+                    </strong>
+
                     {{ bd.vendor }}
-                </p>
 
-                <p>
-                    <strong>Base:</strong>
-                    {{ bd.nombre }}
-                </p>
+                </div>
 
-                <p>
-                    <strong>Tablas:</strong>
 
-                    {% if bd.total_tablas != None %}
-                        {{ bd.total_tablas }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </p>
+                <div class="database-row">
 
-                <p>
-                    <strong>Tamaño:</strong>
+                    <strong>
+                        Base:
+                    </strong>
+
+                    <span class="path">
+                        {{ bd.nombre }}
+                    </span>
+
+                </div>
+
+
+                <div class="database-row">
+
+                    <strong>
+                        Tablas:
+                    </strong>
+
+                    {{ bd.total_tablas }}
+
+                </div>
+
+
+                <div class="database-row">
+
+                    <strong>
+                        Tamaño:
+                    </strong>
+
                     {{ bd.total_legible }}
-                </p>
+
+                </div>
+
 
                 {% if bd.error %}
 
-                    <p class="error">
+                    <div
+                        class="error"
+                        style="margin-top: 12px;"
+                    >
                         {{ bd.error }}
-                    </p>
+                    </div>
 
                 {% endif %}
 
+
             </div>
+
 
         {% empty %}
 
             <div class="card">
-                No se detectaron conexiones de base de datos.
+
+                No se detectaron bases de datos.
+
             </div>
 
         {% endfor %}
+
 
         </div>
 
     </div>
 
 
+
     <!-- ================================================================
          PIE
          ================================================================ -->
 
-    <div class="section small">
+    <div class="footer">
 
-        Esta primera versión del Espaciómetro es solamente de lectura.
-        No mueve, elimina ni modifica archivos o registros.
+        Espaciómetro opera actualmente en modo seguro.
+
+        La exploración y las mediciones históricas solamente leen
+        información del filesystem y de la base de datos.
+
+        No eliminan, mueven ni modifican archivos o registros.
 
     </div>
 
+
 </div>
 
+
 </body>
+
 </html>

@@ -110,6 +110,24 @@ class RutaMonitoreada(models.Model):
         ),
     )
 
+    tipos_interes = models.JSONField(
+    default=list,
+    blank=True,
+    help_text=(
+        "Categorías de archivo que requieren "
+        "monitorización especial."
+        ),
+    )
+
+    extensiones_interes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=(
+            "Extensiones específicas que requieren "
+            "monitorización especial."
+        ),
+    )
+
     activa = models.BooleanField(default=True)
 
     visible_dashboard = models.BooleanField(

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Rutas monitorizadas — Espaciómetro</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            border: 0;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .button:hover {
+            background: #1f2937;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+
+        .message {
+            margin-bottom: 15px;
+        }
+
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 12px;
+
+            text-align: left;
+            vertical-align: middle;
+
+            border-bottom:
+                1px solid #e5e7eb;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            margin-top: 3px;
+        }
+
+
+        .small {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .monitor-checkbox {
+            width: 20px;
+            height: 20px;
+
+            cursor: pointer;
+        }
+
+
+        select {
+            min-width: 170px;
+
+            padding: 7px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 6px;
+
+            background: white;
+        }
+
+
+        .status-active {
+            color: #15803d;
+
+            font-weight: 700;
+        }
+
+
+        .status-inactive {
+            color: #6b7280;
+        }
+
+
+        .warning-box {
+            margin-bottom: 25px;
+
+            border-left:
+                5px solid #a16207;
+        }
+
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+
+            margin-top: 20px;
+        }
+
+
+        @media (max-width: 700px) {
+
+            .page {
+                padding: 15px;
+            }
+
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         MENSAJES
+         ================================================================ -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="card message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Volver al Espaciómetro
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:estructura' %}"
+        >
+            Ver estructura
+        </a>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <h1>
+        Rutas monitorizadas
+    </h1>
+
+
+    <div class="subtitle">
+
+        Seleccione qué directorios del proyecto quiere
+        mantener bajo monitorización especial.
+
+        <br>
+
+        BASE_DIR:
+
+        <strong>
+            {{ selector.base_dir }}
+        </strong>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         ADVERTENCIA
+         ================================================================ -->
+
+    <div class="card warning-box">
+
+        <strong>
+            Importante
+        </strong>
+
+        <p>
+
+            Marcar una ruta solamente habilita su
+            monitorización.
+
+            <strong>
+                No concede permiso para eliminar,
+                mover o modificar archivos.
+            </strong>
+
+        </p>
+
+        <p class="small">
+
+            Desmarcar una ruta tampoco borra su
+            configuración ni sus mediciones históricas.
+            Solamente la deja inactiva.
+
+        </p>
+
+    </div>
+
+
+
+    {% if selector.error %}
+
+        <div class="card">
+
+            <strong>
+                Error al descubrir las rutas:
+            </strong>
+
+            {{ selector.error }}
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- ============================================================
+             FORMULARIO
+             ============================================================ -->
+
+        <form
+            method="post"
+            action="{% url 'espaciometro:guardar_rutas' %}"
+        >
+
+            {% csrf_token %}
+
+
+            <div class="card table-wrapper">
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Monitorizar
+                            </th>
+
+                            <th>
+                                Directorio
+                            </th>
+
+                            <th>
+                                Espacio
+                            </th>
+
+                            <th>
+                                Archivos
+                            </th>
+
+                            <th>
+                                Contenido principal
+                            </th>
+
+                            <th>
+                                Categoría
+                            </th>
+
+                            <th>
+                                Estado actual
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for ruta in selector.rutas %}
+
+                        <tr>
+
+
+                            <!-- CHECKBOX -->
+
+                            <td>
+
+                                <input
+                                    class="monitor-checkbox"
+                                    type="checkbox"
+                                    name="monitorizar"
+                                    value="{{ ruta.ruta_relativa }}"
+
+                                    {% if ruta.activa %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                            </td>
+
+
+
+                            <!-- DIRECTORIO -->
+
+                            <td>
+
+                                <strong>
+                                    {{ ruta.nombre }}
+                                </strong>
+
+
+                                <div class="path">
+
+                                    {{ ruta.ruta_relativa }}
+
+                                </div>
+
+
+                                {% if ruta.registrada %}
+
+                                    <div class="small">
+
+                                        Configuración:
+                                        {{ ruta.nombre_configurado }}
+
+                                    </div>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- ESPACIO -->
+
+                            <td>
+
+                                <strong>
+                                    {{ ruta.total_legible }}
+                                </strong>
+
+                            </td>
+
+
+
+                            <!-- ARCHIVOS -->
+
+                            <td>
+
+                                {{ ruta.total_archivos }}
+
+                                <div class="small">
+
+                                    {{ ruta.total_directorios }}
+                                    subdirectorios
+
+                                </div>
+
+                            </td>
+
+
+
+                            <!-- CONTENIDO -->
+
+                            <td>
+
+                                {% if ruta.tipo_principal %}
+
+                                    <strong>
+
+                                        {{ ruta.tipo_principal.nombre }}
+
+                                    </strong>
+
+
+                                    <div class="small">
+
+                                        {{ ruta.tipo_principal.cantidad }}
+                                        archivos
+
+                                    </div>
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- CATEGORÍA -->
+
+                            <td>
+
+                                <select
+                                    name="categoria_{{ ruta.form_id }}"
+                                >
+
+                                    {% for valor, etiqueta in selector.categorias %}
+
+                                        <option
+                                            value="{{ valor }}"
+
+                                            {% if ruta.categoria == valor %}
+                                                selected
+                                            {% endif %}
+                                        >
+
+                                            {{ etiqueta }}
+
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </td>
+
+
+
+                            <!-- ESTADO -->
+
+                            <td>
+
+                                {% if ruta.activa %}
+
+                                    <span class="status-active">
+                                        Monitorizada
+                                    </span>
+
+                                {% elif ruta.registrada %}
+
+                                    <span class="status-inactive">
+                                        Registrada / inactiva
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status-inactive">
+                                        No configurada
+                                    </span>
+
+                                {% endif %}
+
+
+                                {% if ruta.permite_mantenimiento %}
+
+                                    <div class="small">
+
+                                        Mantenimiento autorizado
+
+                                    </div>
+
+                                {% endif %}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                No se detectaron directorios.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 ACCIONES
+                 ======================================================== -->
+
+            <div class="actions">
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Guardar selección
+                </button>
+
+
+                <button
+                    class="button button-secondary"
+                    type="button"
+                    onclick="marcarTodas(true)"
+                >
+                    Marcar todas
+                </button>
+
+
+                <button
+                    class="button button-secondary"
+                    type="button"
+                    onclick="marcarTodas(false)"
+                >
+                    Desmarcar todas
+                </button>
+
+            </div>
+
+
+        </form>
+
+
+    {% endif %}
+
+
+</div>
+
+
+<script>
+
+    function marcarTodas(valor) {
+
+        const cajas = document.querySelectorAll(
+            ".monitor-checkbox"
+        );
+
+        cajas.forEach(
+            function(caja) {
+                caja.checked = valor;
+            }
+        );
+
+    }
+
+</script>
+
+
+</body>
+
+</html>
