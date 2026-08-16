@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Evolución {{ evolucion.nombre }} — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+            padding: 30px;
+        }
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+        .small {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .nav {
+            display: flex;
+
+            gap: 10px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+
+            font-weight: 700;
+        }
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+        .CRECIENDO {
+            color: #a16207;
+
+            font-weight: 700;
+        }
+
+        .ESTABLE {
+            color: #15803d;
+
+            font-weight: 700;
+        }
+
+        .DISMINUYENDO {
+            color: #2563eb;
+
+            font-weight: 700;
+        }
+
+        .SIN_DATOS {
+            color: #6b7280;
+
+            font-weight: 700;
+        }
+
+        .warning-box {
+            border-left:
+                5px solid #a16207;
+        }
+
+        .info-box {
+            border-left:
+                5px solid #2563eb;
+        }
+
+        .chart {
+            width: 100%;
+
+            height: 300px;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            background: #fafafa;
+        }
+
+        .chart-line {
+            fill: none;
+
+            stroke: #1d4ed8;
+
+            stroke-width: 1;
+
+            vector-effect:
+                non-scaling-stroke;
+        }
+
+        .chart-dot {
+            fill: #1d4ed8;
+        }
+
+        .chart-guide {
+            stroke: #d1d5db;
+
+            stroke-width: 0.4;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:historico' %}"
+        >
+            ← Histórico
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:detalle_ruta' evolucion.ruta_id %}"
+        >
+            Explorar contenido
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <h1>
+
+        Evolución — {{ evolucion.nombre }}
+
+    </h1>
+
+
+    <div class="small">
+
+        {{ evolucion.categoria }}
+
+    </div>
+
+
+    <div class="path">
+
+        {{ evolucion.ruta }}
+
+    </div>
+
+
+
+    {% if evolucion.resumen.disponible %}
+
+
+        <!-- ============================================================
+             MÉTRICAS
+             ============================================================ -->
+
+        <div class="grid section">
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Tamaño más reciente
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.valor_actual_legible }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Primera medición
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.valor_inicial_legible }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Cambio acumulado
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.variacion_total_legible }}
+
+                </div>
+
+                <div class="small">
+
+                    {{ evolucion.resumen.porcentaje_total_texto }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Desde medición anterior
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.variacion_anterior_legible }}
+
+                </div>
+
+                <div class="small">
+
+                    {{ evolucion.resumen.porcentaje_anterior_texto }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Promedio de crecimiento
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.promedio_dia_legible }}
+
+                </div>
+
+                <div class="small">
+                    por día observado
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Tendencia
+                </div>
+
+                <div
+                    class="
+                        metric-value
+                        {{ evolucion.resumen.tendencia.codigo }}
+                    "
+                >
+
+                    {{ evolucion.resumen.tendencia.simbolo }}
+
+                    {{ evolucion.resumen.tendencia.texto }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Mediciones válidas
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.mediciones_validas }}
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Período observado
+                </div>
+
+                <div class="metric-value">
+
+                    {{ evolucion.resumen.dias_observados }}
+
+                </div>
+
+                <div class="small">
+                    días
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ============================================================
+             GRÁFICO
+             ============================================================ -->
+
+        <div class="card section">
+
+            <h2>
+                Evolución del espacio
+            </h2>
+
+
+            <div class="small">
+
+                Rango:
+
+                {{ evolucion.grafico.minimo_legible }}
+
+                →
+
+                {{ evolucion.grafico.maximo_legible }}
+
+            </div>
+
+
+            <svg
+                class="chart"
+                viewBox="0 0 100 40"
+                preserveAspectRatio="none"
+            >
+
+
+                <line
+                    class="chart-guide"
+                    x1="5"
+                    y1="35"
+                    x2="95"
+                    y2="35"
+                ></line>
+
+
+                <line
+                    class="chart-guide"
+                    x1="5"
+                    y1="20"
+                    x2="95"
+                    y2="20"
+                ></line>
+
+
+                <line
+                    class="chart-guide"
+                    x1="5"
+                    y1="5"
+                    x2="95"
+                    y2="5"
+                ></line>
+
+
+
+                {% if evolucion.puntos|length > 1 %}
+
+                    <polyline
+                        class="chart-line"
+                        points="{{ evolucion.grafico.puntos }}"
+                    ></polyline>
+
+                {% endif %}
+
+
+
+                {% for punto in evolucion.puntos %}
+
+                    <circle
+                        class="chart-dot"
+
+                        cx="{{ punto.grafico_x }}"
+
+                        cy="{{ punto.grafico_y }}"
+
+                        r="0.9"
+                    >
+
+                        <title>
+
+                            {{ punto.fecha|date:"d/m/Y H:i:s" }}
+
+                            — {{ punto.total_legible }}
+
+                        </title>
+
+                    </circle>
+
+                {% endfor %}
+
+
+            </svg>
+
+
+            <div class="small">
+
+                Cada punto representa una medición
+                almacenada por ESP004.
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ============================================================
+             TABLA HISTÓRICA
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Mediciones
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Medición</th>
+
+                            <th>Fecha</th>
+
+                            <th>Espacio</th>
+
+                            <th>Archivos</th>
+
+                            <th>Directorios</th>
+
+                            <th>Ejecución</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for punto in evolucion.puntos reversed %}
+
+
+                        <tr>
+
+
+                            <td>
+
+                                #{{ punto.ejecucion_id }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ punto.fecha|date:"d/m/Y H:i:s" }}
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+
+                                    {{ punto.total_legible }}
+
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                {{ punto.total_archivos }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ punto.total_directorios }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ punto.estado_ejecucion }}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+        </div>
+
+
+
+        {% if evolucion.total_con_error %}
+
+
+            <div class="card warning-box section">
+
+                <strong>
+
+                    {{ evolucion.total_con_error }}
+                    medición(es) de esta ruta contienen error.
+
+                </strong>
+
+
+                <p>
+
+                    Esas mediciones se conservan para auditoría,
+                    pero no participan en el cálculo de crecimiento.
+
+                </p>
+
+            </div>
+
+
+        {% endif %}
+
+
+
+    {% else %}
+
+
+        <div class="card info-box section">
+
+            <strong>
+                Todavía no existe histórico para esta ruta.
+            </strong>
+
+
+            <p>
+
+                Registre una medición desde el dashboard
+                de Espaciómetro.
+
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+
+    {% if evolucion.resumen.disponible and not evolucion.resumen.puede_calcular_tendencia %}
+
+
+        <div class="card info-box section">
+
+            Existe una medición válida.
+
+            <strong>
+                Se necesita al menos una segunda medición
+            </strong>
+
+            para calcular crecimiento y tendencia.
+
+        </div>
+
+
+    {% endif %}
+
+
+
+    <div class="card info-box section">
+
+        <strong>
+            ESP009 es analítico.
+        </strong>
+
+        <p>
+
+            Ninguna información mostrada aquí modifica
+            los archivos ni ejecuta mantenimiento.
+
+        </p>
+
+        <div class="small">
+
+            El crecimiento por sí solo no implica que un archivo
+            deba eliminarse.
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

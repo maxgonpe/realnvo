@@ -17,6 +17,10 @@ from .filetype_selector import (
     guardar_selector_tipos,
     obtener_selector_tipos,
 )
+from .history import (
+    obtener_evolucion_ruta,
+    obtener_panel_historico,
+)
 from .models import (
     EjecucionMedicion,
     RutaMonitoreada,
@@ -295,7 +299,7 @@ def guardar_tipos(request):
 
 
 # =============================================================================
-# ESP008 — DETALLE DE DIRECTORIO
+# ESP008
 # =============================================================================
 
 
@@ -304,9 +308,6 @@ def detalle_ruta(
     request,
     ruta_id,
 ):
-    """
-    Navegación segura dentro de una RutaMonitoreada.
-    """
 
     ruta = get_object_or_404(
         RutaMonitoreada,
@@ -335,6 +336,62 @@ def detalle_ruta(
         "espaciometro/detalle_ruta.html",
         {
             "detalle": datos,
+            "ruta_monitoreada": ruta,
+        },
+    )
+
+
+# =============================================================================
+# ESP009 — HISTÓRICO GENERAL
+# =============================================================================
+
+
+@login_required
+def historico(request):
+
+    datos = (
+        obtener_panel_historico()
+    )
+
+
+    return render(
+        request,
+        "espaciometro/historico.html",
+        {
+            "historico": datos,
+        },
+    )
+
+
+# =============================================================================
+# ESP009 — EVOLUCIÓN DE UNA RUTA
+# =============================================================================
+
+
+@login_required
+def evolucion_ruta(
+    request,
+    ruta_id,
+):
+
+    ruta = get_object_or_404(
+        RutaMonitoreada,
+        pk=ruta_id,
+    )
+
+
+    datos = (
+        obtener_evolucion_ruta(
+            ruta
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/evolucion_ruta.html",
+        {
+            "evolucion": datos,
             "ruta_monitoreada": ruta,
         },
     )

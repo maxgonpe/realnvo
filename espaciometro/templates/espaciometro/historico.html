@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Histórico y crecimiento — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+
+            border: 0;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .info {
+            border-left: 5px solid #2563eb;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f9fafb;
+
+            font-size: 13px;
+
+            color: #4b5563;
+
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .route-link {
+            color: #1d4ed8;
+
+            text-decoration: none;
+
+            font-weight: 700;
+        }
+
+        .CRECIENDO {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+        .ESTABLE {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .DISMINUYENDO {
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        .SIN_DATOS {
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .chart {
+            width: 100%;
+            height: 260px;
+
+            border:
+                1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            background: #fafafa;
+
+            margin-top: 20px;
+        }
+
+        .chart-line {
+            fill: none;
+            stroke: #1d4ed8;
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .chart-dot {
+            fill: #1d4ed8;
+        }
+
+        .chart-guide {
+            stroke: #d1d5db;
+            stroke-width: 0.4;
+        }
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+    </div>
+
+
+
+    <h1>
+        Histórico y crecimiento
+    </h1>
+
+
+    <p class="small">
+
+        ESP009 analiza exclusivamente las mediciones
+        previamente registradas por ESP004.
+
+        Abrir esta pantalla no ejecuta un nuevo escaneo.
+
+    </p>
+
+
+
+    <!-- ================================================================
+         RESUMEN DE RUTAS
+         ================================================================ -->
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Rutas históricas
+            </div>
+
+            <div class="metric-value">
+                {{ historico.total_rutas }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Creciendo
+            </div>
+
+            <div class="metric-value CRECIENDO">
+                {{ historico.creciendo }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Estables
+            </div>
+
+            <div class="metric-value ESTABLE">
+                {{ historico.estables }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Disminuyendo
+            </div>
+
+            <div class="metric-value DISMINUYENDO">
+                {{ historico.disminuyendo }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Sin tendencia
+            </div>
+
+            <div class="metric-value">
+                {{ historico.sin_datos }}
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================================
+         DISCO
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Evolución del disco
+        </h2>
+
+
+        {% if historico.disco.resumen.disponible %}
+
+
+            <div class="grid">
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Uso inicial
+                    </div>
+
+                    <div class="metric-value">
+                        {{ historico.disco.resumen.valor_inicial_legible }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Uso más reciente
+                    </div>
+
+                    <div class="metric-value">
+                        {{ historico.disco.resumen.valor_actual_legible }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Variación observada
+                    </div>
+
+                    <div class="metric-value">
+                        {{ historico.disco.resumen.variacion_total_legible }}
+                    </div>
+
+                    <div class="small">
+                        {{ historico.disco.resumen.porcentaje_total_texto }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Promedio por día
+                    </div>
+
+                    <div class="metric-value">
+                        {{ historico.disco.resumen.promedio_dia_legible }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Tendencia
+                    </div>
+
+                    <div
+                        class="
+                            metric-value
+                            {{ historico.disco.resumen.tendencia.codigo }}
+                        "
+                    >
+
+                        {{ historico.disco.resumen.tendencia.simbolo }}
+
+                        {{ historico.disco.resumen.tendencia.texto }}
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            {% if historico.disco.grafico.disponible %}
+
+
+                <div class="card section">
+
+                    <div class="small">
+
+                        Rango observado:
+
+                        {{ historico.disco.grafico.minimo_legible }}
+
+                        →
+
+                        {{ historico.disco.grafico.maximo_legible }}
+
+                    </div>
+
+
+                    <svg
+                        class="chart"
+                        viewBox="0 0 100 40"
+                        preserveAspectRatio="none"
+                    >
+
+                        <line
+                            class="chart-guide"
+                            x1="5"
+                            y1="35"
+                            x2="95"
+                            y2="35"
+                        ></line>
+
+                        <line
+                            class="chart-guide"
+                            x1="5"
+                            y1="20"
+                            x2="95"
+                            y2="20"
+                        ></line>
+
+                        <line
+                            class="chart-guide"
+                            x1="5"
+                            y1="5"
+                            x2="95"
+                            y2="5"
+                        ></line>
+
+
+                        {% if historico.disco.puntos|length > 1 %}
+
+                            <polyline
+                                class="chart-line"
+                                points="{{ historico.disco.grafico.puntos }}"
+                            ></polyline>
+
+                        {% endif %}
+
+
+                        {% for punto in historico.disco.puntos %}
+
+                            <circle
+                                class="chart-dot"
+                                cx="{{ punto.grafico_x }}"
+                                cy="{{ punto.grafico_y }}"
+                                r="0.9"
+                            >
+
+                                <title>
+
+                                    {{ punto.fecha|date:"d/m/Y H:i" }}
+
+                                    — {{ punto.usado_legible }}
+
+                                </title>
+
+                            </circle>
+
+                        {% endfor %}
+
+                    </svg>
+
+
+                    <div class="small">
+
+                        {{ historico.disco.resumen.mediciones }}
+                        medición(es) ·
+
+                        {{ historico.disco.resumen.dias_observados }}
+                        día(s) observados
+
+                    </div>
+
+                </div>
+
+
+            {% endif %}
+
+
+        {% else %}
+
+
+            <div class="card">
+
+                Todavía no existen mediciones históricas
+                de disco.
+
+            </div>
+
+
+        {% endif %}
+
+    </div>
+
+
+
+    <!-- ================================================================
+         EVOLUCIÓN POR RUTA
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Evolución por ruta
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ruta</th>
+
+                        <th>Mediciones</th>
+
+                        <th>Actual</th>
+
+                        <th>Variación</th>
+
+                        <th>Promedio / día</th>
+
+                        <th>Período</th>
+
+                        <th>Tendencia</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for ruta in historico.rutas %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                            <a
+                                class="route-link"
+
+                                href="{% url 'espaciometro:evolucion_ruta' ruta.id %}"
+                            >
+
+                                {{ ruta.nombre }}
+
+                            </a>
+
+
+                            <div class="small">
+                                {{ ruta.ruta }}
+                            </div>
+
+
+                            {% if not ruta.activa %}
+
+                                <div class="small">
+                                    Configuración actualmente inactiva
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ ruta.mediciones }}
+                        </td>
+
+
+                        <td>
+                            {{ ruta.actual_legible }}
+                        </td>
+
+
+                        <td>
+
+                            {{ ruta.variacion_legible }}
+
+                            <div class="small">
+                                {{ ruta.porcentaje_texto }}
+                            </div>
+
+                        </td>
+
+
+                        <td>
+                            {{ ruta.promedio_dia_legible }}
+                        </td>
+
+
+                        <td>
+
+                            {{ ruta.dias_observados }}
+
+                            día(s)
+
+                        </td>
+
+
+                        <td>
+
+                            <span
+                                class="{{ ruta.tendencia.codigo }}"
+                            >
+
+                                {{ ruta.tendencia.simbolo }}
+
+                                {{ ruta.tendencia.texto }}
+
+                            </span>
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+
+                    <tr>
+
+                        <td colspan="7">
+
+                            No existen rutas históricas.
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         NOTA
+         ================================================================ -->
+
+    <div class="card info section">
+
+        <strong>
+            Cómo interpretar ESP009
+        </strong>
+
+
+        <p>
+
+            Se considera una ruta estable cuando su variación
+            acumulada es inferior aproximadamente al 1 %.
+
+        </p>
+
+
+        <p>
+
+            El crecimiento no significa necesariamente un problema.
+            ESP009 describe la tendencia; las reglas de mantenimiento
+            vendrán posteriormente.
+
+        </p>
+
+
+        <div class="small">
+
+            Registre nuevas mediciones desde el dashboard para ampliar
+            el período histórico.
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

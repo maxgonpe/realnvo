@@ -61,4 +61,17 @@ urlpatterns = [
         views.detalle_ruta,
         name="detalle_ruta",
     ),
+
+    # ESP009
+    path(
+        "historico/",
+        views.historico,
+        name="historico",
+    ),
+
+    path(
+        "ruta/<int:ruta_id>/evolucion/",
+        views.evolucion_ruta,
+        name="evolucion_ruta",
+    ),
 ]
