@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Estructura del proyecto — Espaciómetro</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+
+        /* ==============================================================
+           CONTENEDOR GENERAL
+           ============================================================== */
+
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
+        .nav {
+            margin-bottom: 25px;
+        }
+
+        .nav a {
+            display: inline-block;
+
+            text-decoration: none;
+
+            padding: 9px 14px;
+
+            border-radius: 7px;
+
+            background: #374151;
+            color: white;
+        }
+
+        .nav a:hover {
+            background: #1f2937;
+        }
+
+
+        /* ==============================================================
+           GRID / TARJETAS
+           ============================================================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(210px, 1fr));
+
+            gap: 18px;
+
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .value {
+            font-size: 26px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+
+        /* ==============================================================
+           TABLAS
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .path {
+            color: #6b7280;
+            font-size: 12px;
+
+            max-width: 430px;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            margin-top: 3px;
+        }
+
+
+        /* ==============================================================
+           TEXTOS AUXILIARES
+           ============================================================== */
+
+        .small {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        .ok {
+            color: #15803d;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        /* ==============================================================
+           RESPONSIVE
+           ============================================================== */
+
+        @media (max-width: 700px) {
+
+            .page {
+                padding: 15px;
+            }
+
+            .value {
+                font-size: 22px;
+            }
+
+            th,
+            td {
+                padding: 9px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a href="{% url 'espaciometro:dashboard' %}">
+            ← Volver al Espaciómetro
+        </a>
+
+    </div>
+
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <h1>
+        Estructura del proyecto
+    </h1>
+
+
+    <div class="subtitle">
+
+        Exploración automática desde:
+
+        <strong>
+            {{ estructura.base_dir }}
+        </strong>
+
+    </div>
+
+
+    <!-- ================================================================
+         ERROR GENERAL
+         ================================================================ -->
+
+    {% if estructura.error %}
+
+        <div class="card error">
+
+            <strong>
+                No fue posible analizar la estructura.
+            </strong>
+
+            <div style="margin-top: 8px;">
+                {{ estructura.error }}
+            </div>
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- ============================================================
+             ESP002 — RESUMEN GENERAL DEL PROYECTO
+             ============================================================ -->
+
+        <div class="grid">
+
+
+            <div class="card">
+
+                <div class="label">
+                    Espacio detectado
+                </div>
+
+                <div class="value">
+                    {{ estructura.total_legible }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="label">
+                    Archivos
+                </div>
+
+                <div class="value">
+                    {{ estructura.total_archivos }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="label">
+                    Directorios
+                </div>
+
+                <div class="value">
+                    {{ estructura.total_directorios }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="label">
+                    Enlaces simbólicos
+                </div>
+
+                <div class="value">
+                    {{ estructura.total_enlaces }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="label">
+                    Inaccesibles
+                </div>
+
+                <div class="value">
+                    {{ estructura.inaccesibles }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="label">
+                    Tiempo de análisis
+                </div>
+
+                <div class="value">
+                    {{ estructura.duracion_ms }} ms
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ============================================================
+             ESP003 — TIPOS DE ARCHIVO
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Tipos de archivo detectados
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Archivos</th>
+                            <th>Espacio</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for tipo in estructura.tipos %}
+
+
+                        {% if tipo.cantidad %}
+
+                            <tr>
+
+                                <td>
+
+                                    <strong>
+                                        {{ tipo.nombre }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+                                    {{ tipo.cantidad }}
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ tipo.total_legible }}
+                                    </strong>
+
+                                </td>
+
+                            </tr>
+
+                        {% endif %}
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="3">
+
+                                No se detectaron tipos
+                                de archivo.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             ESP003 — EXTENSIONES
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Extensiones con mayor ocupación
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Extensión</th>
+                            <th>Archivos</th>
+                            <th>Espacio</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for extension in estructura.extensiones|slice:":20" %}
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    {{ extension.extension }}
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+                                {{ extension.cantidad }}
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ extension.total_legible }}
+                                </strong>
+
+                            </td>
+
+                        </tr>
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="3">
+
+                                No se detectaron extensiones.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             ESP002 + ESP003 — DIRECTORIOS PRINCIPALES
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Directorios principales
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Directorio
+                            </th>
+
+                            <th>
+                                Espacio
+                            </th>
+
+                            <th>
+                                Contenido principal
+                            </th>
+
+                            <th>
+                                Archivos
+                            </th>
+
+                            <th>
+                                Subdirectorios
+                            </th>
+
+                            <th>
+                                Enlaces
+                            </th>
+
+                            <th>
+                                Inaccesibles
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for directorio in estructura.directorios %}
+
+                        <tr>
+
+
+                            <!-- Directorio -->
+
+                            <td>
+
+                                <strong>
+                                    {{ directorio.nombre }}
+                                </strong>
+
+                                <div
+                                    class="path"
+                                    title="{{ directorio.ruta }}"
+                                >
+
+                                    {{ directorio.ruta }}
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- Tamaño -->
+
+                            <td>
+
+                                <strong>
+                                    {{ directorio.total_legible }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- Tipo principal -->
+
+                            <td>
+
+                                {% if directorio.tipo_principal %}
+
+                                    <strong>
+                                        {{ directorio.tipo_principal.nombre }}
+                                    </strong>
+
+                                    <div class="small">
+
+                                        {{ directorio.tipo_principal.cantidad }}
+                                        archivos
+
+                                    </div>
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Cantidad archivos -->
+
+                            <td>
+
+                                {{ directorio.total_archivos }}
+
+                            </td>
+
+
+                            <!-- Subdirectorios -->
+
+                            <td>
+
+                                {{ directorio.total_directorios }}
+
+                            </td>
+
+
+                            <!-- Enlaces -->
+
+                            <td>
+
+                                {{ directorio.total_enlaces }}
+
+                            </td>
+
+
+                            <!-- Inaccesibles -->
+
+                            <td>
+
+                                {% if directorio.inaccesibles %}
+
+                                    <span class="error">
+
+                                        {{ directorio.inaccesibles }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="ok">
+                                        0
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="7">
+
+                                No se detectaron directorios.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             ESP002 — ARCHIVOS DIRECTAMENTE EN BASE_DIR
+             ============================================================ -->
+
+        <div class="section">
+
+            <h2>
+                Archivos directamente en BASE_DIR
+            </h2>
+
+
+            <div class="card table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Archivo
+                            </th>
+
+                            <th>
+                                Tipo
+                            </th>
+
+                            <th>
+                                Tamaño
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for archivo in estructura.archivos_raiz %}
+
+                        <tr>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ archivo.nombre }}
+                                </strong>
+
+                                <div
+                                    class="path"
+                                    title="{{ archivo.ruta }}"
+                                >
+
+                                    {{ archivo.ruta }}
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if archivo.categoria %}
+
+                                    {{ archivo.categoria }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    {{ archivo.total_legible }}
+                                </strong>
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="3">
+
+                                No existen archivos
+                                directamente en BASE_DIR.
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             PIE
+             ============================================================ -->
+
+        <div
+            class="small"
+            style="margin-top: 25px;"
+        >
+
+            ESP002 y ESP003 realizan únicamente lectura
+            del filesystem.
+
+            No mueven, eliminan ni modifican archivos.
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+</body>
+
+</html>

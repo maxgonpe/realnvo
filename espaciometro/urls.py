@@ -8,4 +8,5 @@ app_name = "espaciometro"
 
 urlpatterns = [
     path("",views.dashboard,name="dashboard",),
+    path("estructura/",views.estructura,name="estructura",),
 ]

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from .discovery import detectar_proyecto
 import fnmatch
 import os
 import shutil
@@ -12,96 +12,7 @@ from django.db import connections
 from django.utils import timezone
 
 from .models import RutaMonitoreada, bytes_legibles
-
-
-# =============================================================================
-# CLASIFICACIÓN DE ARCHIVOS
-# =============================================================================
-
-EXTENSIONES_IMAGEN = {
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".gif",
-    ".bmp",
-    ".webp",
-    ".tif",
-    ".tiff",
-    ".svg",
-    ".heic",
-}
-
-EXTENSIONES_DOCUMENTO = {
-    ".doc",
-    ".docx",
-    ".odt",
-    ".txt",
-    ".rtf",
-}
-
-EXTENSIONES_PLANILLA = {
-    ".xls",
-    ".xlsx",
-    ".ods",
-    ".csv",
-}
-
-EXTENSIONES_VIDEO = {
-    ".mp4",
-    ".avi",
-    ".mov",
-    ".mkv",
-    ".webm",
-    ".mpeg",
-    ".mpg",
-}
-
-EXTENSIONES_COMPRIMIDO = {
-    ".zip",
-    ".tar",
-    ".gz",
-    ".tgz",
-    ".bz2",
-    ".xz",
-    ".7z",
-    ".rar",
-}
-
-EXTENSIONES_TEMPORAL = {
-    ".tmp",
-    ".temp",
-    ".bak",
-    ".cache",
-    ".part",
-    ".swp",
-}
-
-
-def clasificar_archivo(path: Path) -> str:
-    extension = path.suffix.lower()
-
-    if extension in EXTENSIONES_IMAGEN:
-        return "imagen"
-
-    if extension == ".pdf":
-        return "pdf"
-
-    if extension in EXTENSIONES_DOCUMENTO:
-        return "documento"
-
-    if extension in EXTENSIONES_PLANILLA:
-        return "planilla"
-
-    if extension in EXTENSIONES_VIDEO:
-        return "video"
-
-    if extension in EXTENSIONES_COMPRIMIDO:
-        return "comprimido"
-
-    if extension in EXTENSIONES_TEMPORAL:
-        return "temporal"
-
-    return "otro"
+from .classifier import clasificar_archivo
 
 
 # =============================================================================
@@ -184,7 +95,7 @@ def obtener_estado_disco() -> dict:
     total = int(uso.total)
     usado = int(uso.used)
     libre = int(uso.free)
-
+    '''
     porcentaje = 0.0
 
     if total:
@@ -195,6 +106,31 @@ def obtener_estado_disco() -> dict:
     # 50%  =   0 grados
     # 100% = +90 grados
     angulo = -90 + (porcentaje * 1.8)
+    '''
+    reservado = max(total - usado - libre, 0)
+
+    porcentaje_usado = 0.0
+    porcentaje_disponible = 0.0
+    porcentaje_reservado = 0.0
+
+    if total:
+        porcentaje_usado = round(
+            (usado / total) * 100,
+            2,
+        )
+
+        porcentaje_disponible = round(
+            (libre / total) * 100,
+            2,
+        )
+
+        porcentaje_reservado = round(
+            (reservado / total) * 100,
+            2,
+        )
+
+    angulo = -90 + (porcentaje_usado * 1.8)
+
 
     return {
         "ruta_base": str(base_dir),
@@ -207,10 +143,18 @@ def obtener_estado_disco() -> dict:
         "usado_legible": bytes_legibles(usado),
         "libre_legible": bytes_legibles(libre),
 
-        "porcentaje_usado": porcentaje,
-        "porcentaje_libre": round(100 - porcentaje, 2),
+        
+        "reservado_bytes": reservado,
+
+        "reservado_legible": bytes_legibles(reservado),
+
+        "porcentaje_usado": porcentaje_usado,
+        "porcentaje_disponible": porcentaje_disponible,
+        "porcentaje_reservado": porcentaje_reservado,
 
         "angulo_gauge": angulo,
+
+                "angulo_gauge": angulo,
     }
 
 
@@ -637,6 +581,8 @@ def obtener_dashboard_espaciometro() -> dict:
     return {
         "generado_en": timezone.now(),
         "hostname": socket.gethostname(),
+
+        "entorno": detectar_proyecto(),
 
         "disco": disco,
         "rutas": rutas,

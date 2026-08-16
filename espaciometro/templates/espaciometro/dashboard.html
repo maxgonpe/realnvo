@@ -10,6 +10,12 @@
 
     <title>Espaciómetro</title>
 
+    <p>
+    <a href="{% url 'espaciometro:estructura' %}">
+        Explorar estructura completa del proyecto
+    </a>
+</p>
+
     <style>
         * {
             box-sizing: border-box;
@@ -299,6 +305,236 @@
          DISCO
          ================================================================ -->
 
+    <!-- ================================================================
+     ENTORNO AUTODETECTADO — ESP001
+     ================================================================ -->
+
+<div class="section">
+
+    <h2>Entorno detectado</h2>
+
+    <div class="grid">
+
+        <div class="card">
+
+            <div class="metric-label">
+                Proyecto Django
+            </div>
+
+            <div class="metric-value">
+                {{ entorno.proyecto.nombre }}
+            </div>
+
+            <div class="small">
+                {{ entorno.proyecto.settings_module }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Servidor
+            </div>
+
+            <div class="metric-value">
+                {{ entorno.sistema.hostname }}
+            </div>
+
+            <div class="small">
+                {{ entorno.sistema.sistema_operativo }}
+                {{ entorno.sistema.release }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Python
+            </div>
+
+            <div class="metric-value">
+                {{ entorno.sistema.python }}
+            </div>
+
+            <div class="small">
+                Django {{ entorno.sistema.django }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Aplicaciones Django
+            </div>
+
+            <div class="metric-value">
+                {{ entorno.apps_instaladas }}
+            </div>
+
+            <div class="small">
+                Aplicaciones instaladas
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="section">
+
+    <h2>Directorios detectados</h2>
+
+    <div class="card table-wrapper">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Ruta</th>
+                    <th>Existe</th>
+                    <th>Lectura</th>
+                    <th>Escritura</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+
+                    <td>
+                        <strong>BASE_DIR</strong>
+                    </td>
+
+                    <td class="path">
+                        {{ entorno.rutas.base_dir.ruta }}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.base_dir.existe %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            <span class="error">No</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.base_dir.lectura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            <span class="error">No</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.base_dir.escritura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td>
+                        <strong>MEDIA_ROOT</strong>
+                    </td>
+
+                    <td class="path">
+                        {% if entorno.rutas.media_root.configurada %}
+                            {{ entorno.rutas.media_root.ruta }}
+                        {% else %}
+                            No configurado
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.media_root.existe %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.media_root.lectura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.media_root.escritura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td>
+                        <strong>STATIC_ROOT</strong>
+                    </td>
+
+                    <td class="path">
+                        {% if entorno.rutas.static_root.configurada %}
+                            {{ entorno.rutas.static_root.ruta }}
+                        {% else %}
+                            No configurado
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.static_root.existe %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.static_root.lectura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if entorno.rutas.static_root.escritura %}
+                            <span class="ok">Sí</span>
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
     <div class="card">
 
         <h2>Capacidad del servidor</h2>
@@ -380,7 +616,7 @@
                         </div>
 
                         <div class="metric-value">
-                            {{ disco.porcentaje_libre }} %
+                            {{ disco.porcentaje_disponible }} %
                         </div>
                     </div>
 
