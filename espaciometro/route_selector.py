@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 
 from django.conf import settings
@@ -18,8 +19,10 @@ def _resolver_ruta_modelo(
     ruta_monitoreada: RutaMonitoreada,
 ) -> Path:
     """
-    Obtiene la ruta física real correspondiente
-    a una RutaMonitoreada.
+    Obtiene la ruta física correspondiente a una RutaMonitoreada.
+
+    Puede trabajar tanto con rutas relativas a BASE_DIR
+    como con rutas absolutas.
     """
 
     ruta = Path(
@@ -39,15 +42,15 @@ def _resolver_ruta_modelo(
 
 
 def _form_id(
-    ruta_relativa: str,
+    valor: str,
 ) -> str:
     """
-    Genera un identificador seguro para usar
-    en los nombres de campos HTML.
+    Genera un identificador seguro y estable
+    para los controles HTML.
     """
 
     return hashlib.sha1(
-        ruta_relativa.encode("utf-8")
+        valor.encode("utf-8")
     ).hexdigest()[:12]
 
 
@@ -55,17 +58,17 @@ def _categoria_sugerida(
     ruta_fisica: Path,
 ) -> str:
     """
-    Sugiere una categoría utilizando solamente
-    configuración estándar de Django.
+    Sugiere categoría utilizando únicamente
+    configuraciones estándar de Django.
 
-    No conoce ninguna app del proyecto anfitrión.
+    No conoce ninguna aplicación del proyecto anfitrión.
     """
 
     try:
 
-        # =============================================================
+        # =====================================================================
         # MEDIA_ROOT
-        # =============================================================
+        # =====================================================================
 
         media_root = getattr(
             settings,
@@ -90,9 +93,9 @@ def _categoria_sugerida(
                 )
 
 
-        # =============================================================
+        # =====================================================================
         # STATIC_ROOT
-        # =============================================================
+        # =====================================================================
 
         static_root = getattr(
             settings,
@@ -116,7 +119,6 @@ def _categoria_sugerida(
                     .REGENERABLE
                 )
 
-
     except (
         TypeError,
         ValueError,
@@ -136,7 +138,7 @@ def _nombre_unico(
     nombre_base: str,
 ) -> str:
     """
-    Crea un nombre único para RutaMonitoreada.
+    Genera un nombre único para RutaMonitoreada.
     """
 
     nombre = nombre_base
@@ -158,35 +160,370 @@ def _nombre_unico(
     return nombre
 
 
-def _buscar_registro_por_ruta(
-    ruta_fisica: Path,
-) -> RutaMonitoreada | None:
+def _estado_fisico(
+    ruta: Path,
+) -> dict:
     """
-    Busca una RutaMonitoreada mediante su ruta física resuelta.
+    Comprueba el estado real de una ruta configurada.
 
-    Así podemos comparar tanto rutas relativas como absolutas.
+    Importante:
+    esta función solamente consulta el filesystem.
     """
 
-    for registro in (
-        RutaMonitoreada.objects.all()
-    ):
+    try:
 
-        try:
+        existe = ruta.exists()
 
-            if (
-                _resolver_ruta_modelo(
-                    registro
-                )
-                == ruta_fisica
-            ):
+    except OSError:
 
-                return registro
-
-        except Exception:
-            continue
+        existe = False
 
 
-    return None
+    if not existe:
+
+        return {
+            "existe": False,
+            "es_directorio": False,
+            "lectura": False,
+            "estado": "NO_EXISTE",
+            "estado_texto": "No existe",
+            "problema": True,
+        }
+
+
+    try:
+
+        es_directorio = (
+            ruta.is_dir()
+        )
+
+    except OSError:
+
+        es_directorio = False
+
+
+    if not es_directorio:
+
+        return {
+            "existe": True,
+            "es_directorio": False,
+            "lectura": False,
+            "estado": "NO_DIRECTORIO",
+            "estado_texto": (
+                "Existe, pero no es directorio"
+            ),
+            "problema": True,
+        }
+
+
+    try:
+
+        lectura = os.access(
+            ruta,
+            os.R_OK,
+        )
+
+    except OSError:
+
+        lectura = False
+
+
+    if not lectura:
+
+        return {
+            "existe": True,
+            "es_directorio": True,
+            "lectura": False,
+            "estado": "SIN_LECTURA",
+            "estado_texto": (
+                "Existe, sin permiso de lectura"
+            ),
+            "problema": True,
+        }
+
+
+    return {
+        "existe": True,
+        "es_directorio": True,
+        "lectura": True,
+        "estado": "OK",
+        "estado_texto": "Disponible",
+        "problema": False,
+    }
+
+
+def _crear_fila_registrada(
+    registro: RutaMonitoreada,
+    *,
+    descubierta: bool,
+    datos_directorio: dict | None = None,
+) -> dict:
+    """
+    Convierte una RutaMonitoreada existente
+    en una fila del selector ESP005.
+    """
+
+    ruta_fisica = (
+        _resolver_ruta_modelo(
+            registro
+        )
+    )
+
+    fisico = (
+        _estado_fisico(
+            ruta_fisica
+        )
+    )
+
+
+    if datos_directorio:
+
+        total_bytes = datos_directorio.get(
+            "total_bytes",
+            0,
+        )
+
+        total_legible = datos_directorio.get(
+            "total_legible",
+            "0 B",
+        )
+
+        total_archivos = datos_directorio.get(
+            "total_archivos",
+            0,
+        )
+
+        total_directorios = datos_directorio.get(
+            "total_directorios",
+            0,
+        )
+
+        tipo_principal = datos_directorio.get(
+            "tipo_principal"
+        )
+
+    else:
+
+        total_bytes = 0
+
+        total_legible = "-"
+
+        total_archivos = None
+
+        total_directorios = None
+
+        tipo_principal = None
+
+
+    selector_key = (
+        f"registro:{registro.pk}"
+    )
+
+
+    return {
+        "selector_key": selector_key,
+
+        "form_id": _form_id(
+            selector_key
+        ),
+
+        "registro_id": registro.pk,
+
+        "nombre": registro.nombre,
+
+        "ruta_relativa": registro.ruta,
+
+        "ruta_absoluta": str(
+            ruta_fisica
+        ),
+
+        "total_bytes": total_bytes,
+
+        "total_legible": total_legible,
+
+        "total_archivos": (
+            total_archivos
+        ),
+
+        "total_directorios": (
+            total_directorios
+        ),
+
+        "tipo_principal": (
+            tipo_principal
+        ),
+
+        "categoria": (
+            registro.categoria
+        ),
+
+        "activa": (
+            registro.activa
+        ),
+
+        "registrada": True,
+
+        "nombre_configurado": (
+            registro.nombre
+        ),
+
+        "permite_mantenimiento": (
+            registro
+            .permite_mantenimiento
+        ),
+
+        "descubierta": descubierta,
+
+        "existe": fisico[
+            "existe"
+        ],
+
+        "es_directorio": fisico[
+            "es_directorio"
+        ],
+
+        "lectura": fisico[
+            "lectura"
+        ],
+
+        "estado_fisico": fisico[
+            "estado"
+        ],
+
+        "estado_fisico_texto": fisico[
+            "estado_texto"
+        ],
+
+        "problema_fisico": fisico[
+            "problema"
+        ],
+    }
+
+
+def _crear_fila_nueva(
+    directorio: dict,
+    base_dir: Path,
+) -> dict | None:
+    """
+    Construye una fila para un directorio descubierto
+    que todavía no posee RutaMonitoreada.
+    """
+
+    ruta_fisica = Path(
+        directorio["ruta"]
+    ).resolve(
+        strict=False
+    )
+
+
+    try:
+
+        ruta_relativa = str(
+            ruta_fisica.relative_to(
+                base_dir
+            )
+        )
+
+    except ValueError:
+
+        return None
+
+
+    selector_key = (
+        f"nueva:{ruta_relativa}"
+    )
+
+
+    fisico = (
+        _estado_fisico(
+            ruta_fisica
+        )
+    )
+
+
+    return {
+        "selector_key": selector_key,
+
+        "form_id": _form_id(
+            selector_key
+        ),
+
+        "registro_id": None,
+
+        "nombre": directorio[
+            "nombre"
+        ],
+
+        "ruta_relativa": (
+            ruta_relativa
+        ),
+
+        "ruta_absoluta": str(
+            ruta_fisica
+        ),
+
+        "total_bytes": directorio[
+            "total_bytes"
+        ],
+
+        "total_legible": directorio[
+            "total_legible"
+        ],
+
+        "total_archivos": directorio[
+            "total_archivos"
+        ],
+
+        "total_directorios": directorio[
+            "total_directorios"
+        ],
+
+        "tipo_principal": (
+            directorio.get(
+                "tipo_principal"
+            )
+        ),
+
+        "categoria": (
+            _categoria_sugerida(
+                ruta_fisica
+            )
+        ),
+
+        "activa": False,
+
+        "registrada": False,
+
+        "nombre_configurado": "",
+
+        "permite_mantenimiento": False,
+
+        "descubierta": True,
+
+        "existe": fisico[
+            "existe"
+        ],
+
+        "es_directorio": fisico[
+            "es_directorio"
+        ],
+
+        "lectura": fisico[
+            "lectura"
+        ],
+
+        "estado_fisico": fisico[
+            "estado"
+        ],
+
+        "estado_fisico_texto": fisico[
+            "estado_texto"
+        ],
+
+        "problema_fisico": fisico[
+            "problema"
+        ],
+    }
 
 
 # =============================================================================
@@ -196,43 +533,20 @@ def _buscar_registro_por_ruta(
 
 def obtener_selector_rutas() -> dict:
     """
-    Combina:
+    ESP005.
 
-    - directorios descubiertos por ESP002;
-    - configuraciones existentes en RutaMonitoreada.
+    Combina dos fuentes:
 
-    Esta función es solamente de lectura.
+    1. directorios descubiertos físicamente por ESP002;
+    2. configuraciones RutaMonitoreada existentes en la BD.
+
+    Esto permite detectar configuraciones heredadas cuya
+    ruta física ya no existe en el servidor actual.
     """
 
     estructura = (
         analizar_estructura_proyecto()
     )
-
-
-    resultado = {
-
-        "base_dir": estructura.get(
-            "base_dir",
-            "",
-        ),
-
-        "error": estructura.get(
-            "error",
-            "",
-        ),
-
-        "rutas": [],
-
-        "categorias": list(
-            RutaMonitoreada
-            .Categoria
-            .choices
-        ),
-    }
-
-
-    if resultado["error"]:
-        return resultado
 
 
     base_dir = Path(
@@ -242,173 +556,232 @@ def obtener_selector_rutas() -> dict:
     )
 
 
+    registros = list(
+        RutaMonitoreada.objects
+        .all()
+        .order_by("nombre")
+    )
+
+
     # =========================================================================
-    # CONSTRUIR ÍNDICE DE RUTAS EXISTENTES
+    # ÍNDICE DE CONFIGURACIONES EXISTENTES POR RUTA FÍSICA
     # =========================================================================
 
-    existentes_por_path = {}
+    registros_por_path = {}
 
 
-    for registro in (
-        RutaMonitoreada.objects.all()
-    ):
+    for registro in registros:
 
         try:
 
-            path = (
+            ruta_fisica = (
                 _resolver_ruta_modelo(
                     registro
                 )
             )
 
-            existentes_por_path[
-                str(path)
-            ] = registro
+            registros_por_path.setdefault(
+                str(ruta_fisica),
+                [],
+            ).append(
+                registro
+            )
 
         except Exception:
+
             continue
 
 
+    filas = []
+
+    ids_utilizados = set()
+
+
     # =========================================================================
-    # DIRECTORIOS DESCUBIERTOS
+    # 1. DIRECTORIOS DESCUBIERTOS
     # =========================================================================
 
-    for directorio in estructura[
-        "directorios"
-    ]:
+    if not estructura.get(
+        "error"
+    ):
 
-        path = Path(
-            directorio["ruta"]
-        ).resolve(
-            strict=False
-        )
+        for directorio in estructura.get(
+            "directorios",
+            [],
+        ):
+
+            ruta_fisica = Path(
+                directorio["ruta"]
+            ).resolve(
+                strict=False
+            )
 
 
-        try:
-
-            ruta_relativa = str(
-                path.relative_to(
-                    base_dir
+            coincidencias = (
+                registros_por_path.get(
+                    str(ruta_fisica),
+                    [],
                 )
             )
 
-        except ValueError:
-            continue
 
+            # -----------------------------------------------------------------
+            # YA EXISTE UNA CONFIGURACIÓN PARA ESTA RUTA
+            # -----------------------------------------------------------------
 
-        existente = (
-            existentes_por_path.get(
-                str(path)
-            )
-        )
+            if coincidencias:
 
+                registro = coincidencias[0]
 
-        # =====================================================================
-        # YA ESTÁ CONFIGURADA
-        # =====================================================================
-
-        if existente:
-
-            categoria = (
-                existente.categoria
-            )
-
-            activa = (
-                existente.activa
-            )
-
-            registrada = True
-
-            nombre_configurado = (
-                existente.nombre
-            )
-
-            permite_mantenimiento = (
-                existente
-                .permite_mantenimiento
-            )
-
-
-        # =====================================================================
-        # TODAVÍA NO ESTÁ CONFIGURADA
-        # =====================================================================
-
-        else:
-
-            categoria = (
-                _categoria_sugerida(
-                    path
+                ids_utilizados.add(
+                    registro.pk
                 )
-            )
 
-            activa = False
-
-            registrada = False
-
-            nombre_configurado = ""
-
-            permite_mantenimiento = False
-
-
-        resultado["rutas"].append(
-            {
-
-                "form_id": _form_id(
-                    ruta_relativa
-                ),
-
-                "nombre": directorio[
-                    "nombre"
-                ],
-
-                "ruta_relativa": (
-                    ruta_relativa
-                ),
-
-                "ruta_absoluta": str(
-                    path
-                ),
-
-                "total_bytes": directorio[
-                    "total_bytes"
-                ],
-
-                "total_legible": directorio[
-                    "total_legible"
-                ],
-
-                "total_archivos": directorio[
-                    "total_archivos"
-                ],
-
-                "total_directorios": directorio[
-                    "total_directorios"
-                ],
-
-                "tipo_principal": (
-                    directorio.get(
-                        "tipo_principal"
+                fila = (
+                    _crear_fila_registrada(
+                        registro,
+                        descubierta=True,
+                        datos_directorio=directorio,
                     )
-                ),
+                )
 
-                "categoria": categoria,
+                filas.append(
+                    fila
+                )
 
-                "activa": activa,
 
-                "registrada": registrada,
+            # -----------------------------------------------------------------
+            # DIRECTORIO NUEVO
+            # -----------------------------------------------------------------
 
-                "nombre_configurado": (
-                    nombre_configurado
-                ),
+            else:
 
-                "permite_mantenimiento": (
-                    permite_mantenimiento
-                ),
-            }
+                fila = (
+                    _crear_fila_nueva(
+                        directorio,
+                        base_dir,
+                    )
+                )
+
+                if fila is not None:
+
+                    filas.append(
+                        fila
+                    )
+
+
+    # =========================================================================
+    # 2. CONFIGURACIONES QUE ESP002 NO DESCUBRIÓ
+    # =========================================================================
+    #
+    # Este bloque resuelve precisamente el caso:
+    #
+    #   desarrollo:  /home/max/realnvo/otros       existe
+    #   producción:  /home/max/myproject/otros     no existe
+    #
+    # El registro sigue apareciendo para que el usuario pueda desactivarlo.
+    # =========================================================================
+
+    for registro in registros:
+
+        if registro.pk in ids_utilizados:
+
+            continue
+
+
+        fila = (
+            _crear_fila_registrada(
+                registro,
+                descubierta=False,
+                datos_directorio=None,
+            )
         )
 
 
-    return resultado
+        filas.append(
+            fila
+        )
+
+
+    # =========================================================================
+    # ORDEN
+    # =========================================================================
+    #
+    # Primero mostramos configuraciones problemáticas,
+    # después el resto ordenado por tamaño.
+    # =========================================================================
+
+    filas.sort(
+        key=lambda item: (
+            0
+            if item["problema_fisico"]
+            else 1,
+
+            -item["total_bytes"],
+
+            item["nombre"].lower(),
+        )
+    )
+
+
+    total_problematicas = sum(
+        1
+        for fila in filas
+        if fila["problema_fisico"]
+    )
+
+
+    total_registradas = sum(
+        1
+        for fila in filas
+        if fila["registrada"]
+    )
+
+
+    total_activas = sum(
+        1
+        for fila in filas
+        if fila["registrada"]
+        and fila["activa"]
+    )
+
+
+    return {
+        "base_dir": str(
+            base_dir
+        ),
+
+        "error_descubrimiento": (
+            estructura.get(
+                "error",
+                "",
+            )
+        ),
+
+        "rutas": filas,
+
+        "categorias": list(
+            RutaMonitoreada
+            .Categoria
+            .choices
+        ),
+
+        "total_rutas": len(
+            filas
+        ),
+
+        "total_registradas": (
+            total_registradas
+        ),
+
+        "total_activas": (
+            total_activas
+        ),
+
+        "total_problematicas": (
+            total_problematicas
+        ),
+    }
 
 
 # =============================================================================
@@ -420,16 +793,18 @@ def guardar_seleccion_rutas(
     post,
 ) -> dict:
     """
-    Guarda la selección de rutas realizada desde ESP005.
+    Guarda la selección ESP005.
 
     REGLAS:
 
     - una ruta marcada se crea o activa;
     - una ruta desmarcada se desactiva;
+    - una ruta inexistente puede ser desactivada;
     - nunca se elimina RutaMonitoreada;
-    - nunca se borran mediciones históricas;
+    - nunca se elimina su histórico;
     - nunca se habilita mantenimiento automáticamente;
-    - nunca se modifican archivos físicos.
+    - nunca se crean directorios físicos;
+    - nunca se mueven ni eliminan archivos.
     """
 
     selector = (
@@ -437,25 +812,31 @@ def guardar_seleccion_rutas(
     )
 
 
-    if selector["error"]:
+    # Si ni siquiera tenemos filas que administrar
+    # y además falló el descubrimiento, no hay nada
+    # seguro que podamos procesar.
+
+    if (
+        selector[
+            "error_descubrimiento"
+        ]
+        and
+        not selector["rutas"]
+    ):
 
         return {
-
             "creadas": 0,
-
             "activadas": 0,
-
             "desactivadas": 0,
-
             "actualizadas": 0,
-
-            "error": selector["error"],
+            "activas_sin_ruta": 0,
+            "error": (
+                selector[
+                    "error_descubrimiento"
+                ]
+            ),
         }
 
-
-    # =========================================================================
-    # RUTAS MARCADAS POR EL USUARIO
-    # =========================================================================
 
     seleccionadas = set(
         post.getlist(
@@ -465,11 +846,8 @@ def guardar_seleccion_rutas(
 
 
     categorias_validas = {
-
         valor
-
         for valor, etiqueta
-
         in (
             RutaMonitoreada
             .Categoria
@@ -486,37 +864,28 @@ def guardar_seleccion_rutas(
 
     actualizadas = 0
 
+    activas_sin_ruta = 0
+
 
     # =========================================================================
-    # PROCESAR TODAS LAS RUTAS DESCUBIERTAS
+    # PROCESAR CADA FILA
     # =========================================================================
 
     for fila in selector[
         "rutas"
     ]:
 
-        ruta_relativa = fila[
-            "ruta_relativa"
-        ]
-
-
         seleccionada = (
-            ruta_relativa
+            fila["selector_key"]
             in seleccionadas
         )
 
 
-        # =====================================================================
-        # CATEGORÍA ELEGIDA
-        # =====================================================================
-
         categoria = post.get(
-
             (
                 "categoria_"
                 f"{fila['form_id']}"
             ),
-
             fila["categoria"],
         )
 
@@ -534,90 +903,36 @@ def guardar_seleccion_rutas(
 
 
         # =====================================================================
-        # BUSCAR CONFIGURACIÓN EXISTENTE
+        # CONFIGURACIÓN YA REGISTRADA
         # =====================================================================
 
-        ruta_fisica = Path(
-            fila["ruta_absoluta"]
-        ).resolve(
-            strict=False
-        )
+        if fila[
+            "registro_id"
+        ] is not None:
 
+            try:
 
-        registro = (
-            _buscar_registro_por_ruta(
-                ruta_fisica
-            )
-        )
-
-
-        # =====================================================================
-        # RUTA MARCADA
-        # =====================================================================
-
-        if seleccionada:
-
-            # -----------------------------------------------------------------
-            # NUEVA
-            # -----------------------------------------------------------------
-
-            if registro is None:
-
-                nombre = _nombre_unico(
-                    fila["nombre"]
+                registro = (
+                    RutaMonitoreada.objects.get(
+                        pk=fila[
+                            "registro_id"
+                        ]
+                    )
                 )
 
+            except (
+                RutaMonitoreada
+                .DoesNotExist
+            ):
 
-                RutaMonitoreada.objects.create(
-
-                    nombre=nombre,
-
-                    ruta=ruta_relativa,
-
-                    relativa_a_base_dir=True,
-
-                    categoria=categoria,
-
-                    recursiva=True,
-
-                    seguir_enlaces_simbolicos=False,
-
-                    patrones_incluir=[],
-
-                    patrones_excluir=[],
-
-                    activa=True,
-
-                    visible_dashboard=True,
-
-                    # ---------------------------------------------------------
-                    # SEGURIDAD
-                    # ---------------------------------------------------------
-                    # Monitorizar NO significa autorizar eliminación.
-                    # ---------------------------------------------------------
-
-                    permite_mantenimiento=False,
-
-                    observaciones=(
-                        "Ruta configurada "
-                        "mediante ESP005."
-                    ),
-                )
-
-
-                creadas += 1
+                continue
 
 
             # -----------------------------------------------------------------
-            # YA EXISTE
+            # MARCADA
             # -----------------------------------------------------------------
 
-            else:
-
-                estaba_activa = (
-                    registro.activa
-                )
-
+            if seleccionada:
 
                 hubo_cambio = False
 
@@ -645,51 +960,142 @@ def guardar_seleccion_rutas(
 
                 if hubo_cambio:
 
-                    # =========================================================
-                    # IMPORTANTE:
-                    #
-                    # No utilizamos update_fields con nombres de timestamps.
-                    # De esta forma ESP005 no depende de que el modelo tenga
-                    # un campo llamado actualizado_en, actualizado, modified,
-                    # etc.
-                    # =========================================================
-
                     registro.save()
 
                     actualizadas += 1
 
 
+                # -------------------------------------------------------------
+                # IMPORTANTE
+                # -------------------------------------------------------------
+                #
+                # Permitimos mantenerla activa si el usuario así lo decide,
+                # pero contamos la situación para advertirla.
+                #
+                # La medición podrá quedar PARCIAL mientras la ruta no exista.
+                # -------------------------------------------------------------
+
+                if (
+                    not fila["existe"]
+                    or
+                    not fila[
+                        "es_directorio"
+                    ]
+                    or
+                    not fila["lectura"]
+                ):
+
+                    activas_sin_ruta += 1
+
+
+            # -----------------------------------------------------------------
+            # DESMARCADA
+            # -----------------------------------------------------------------
+
+            else:
+
+                if registro.activa:
+
+                    registro.activa = False
+
+                    registro.save()
+
+                    desactivadas += 1
+
+
+            continue
+
+
         # =====================================================================
-        # RUTA DESMARCADA
+        # DIRECTORIO NUEVO DESCUBIERTO
         # =====================================================================
 
-        else:
+        if not seleccionada:
 
-            if (
-                registro is not None
-                and registro.activa
-            ):
+            continue
 
-                registro.activa = False
 
-                # Mismo principio:
-                # guardamos el modelo sin asumir
-                # la existencia de campos adicionales.
+        # Una ruta nueva solamente puede registrarse
+        # si actualmente existe como directorio.
 
-                registro.save()
+        if (
+            not fila["existe"]
+            or
+            not fila[
+                "es_directorio"
+            ]
+        ):
 
-                desactivadas += 1
+            continue
+
+
+        nombre = (
+            _nombre_unico(
+                fila["nombre"]
+            )
+        )
+
+
+        RutaMonitoreada.objects.create(
+
+            nombre=nombre,
+
+            ruta=fila[
+                "ruta_relativa"
+            ],
+
+            relativa_a_base_dir=True,
+
+            categoria=categoria,
+
+            recursiva=True,
+
+            seguir_enlaces_simbolicos=False,
+
+            patrones_incluir=[],
+
+            patrones_excluir=[],
+
+            activa=True,
+
+            visible_dashboard=True,
+
+            # -------------------------------------------------------------
+            # SEGURIDAD
+            # -------------------------------------------------------------
+            #
+            # Monitorizar jamás concede automáticamente
+            # permiso para mantenimiento.
+            # -------------------------------------------------------------
+
+            permite_mantenimiento=False,
+
+            observaciones=(
+                "Ruta configurada "
+                "mediante ESP005."
+            ),
+        )
+
+
+        creadas += 1
 
 
     return {
-
         "creadas": creadas,
 
         "activadas": activadas,
 
-        "desactivadas": desactivadas,
+        "desactivadas": (
+            desactivadas
+        ),
 
-        "actualizadas": actualizadas,
+        "actualizadas": (
+            actualizadas
+        ),
+
+        "activas_sin_ruta": (
+            activas_sin_ruta
+        ),
 
         "error": "",
     }

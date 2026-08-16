@@ -10,7 +10,9 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Rutas monitorizadas — Espaciómetro</title>
+    <title>
+        Rutas monitorizadas — Espaciómetro
+    </title>
 
 
     <style>
@@ -36,7 +38,7 @@
 
 
         .page {
-            max-width: 1450px;
+            max-width: 1500px;
             margin: 0 auto;
             padding: 30px;
         }
@@ -54,9 +56,15 @@
         }
 
 
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
         .nav {
             display: flex;
+
             gap: 10px;
+
             flex-wrap: wrap;
 
             margin-bottom: 25px;
@@ -93,6 +101,10 @@
         }
 
 
+        /* ==============================================================
+           TARJETAS
+           ============================================================== */
+
         .card {
             background: white;
 
@@ -101,7 +113,8 @@
             padding: 20px;
 
             box-shadow:
-                0 1px 3px rgba(0, 0, 0, 0.08);
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
         }
 
 
@@ -109,6 +122,67 @@
             margin-bottom: 15px;
         }
 
+
+        .summary-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
+
+            gap: 15px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .summary-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .summary-value {
+            font-size: 26px;
+            font-weight: 700;
+
+            margin-top: 4px;
+        }
+
+
+        /* ==============================================================
+           ADVERTENCIAS
+           ============================================================== */
+
+        .warning-box {
+            margin-bottom: 25px;
+
+            border-left:
+                5px solid #a16207;
+        }
+
+
+        .danger-box {
+            margin-bottom: 25px;
+
+            border-left:
+                5px solid #b91c1c;
+        }
+
+
+        .discovery-error {
+            margin-bottom: 25px;
+
+            border-left:
+                5px solid #b91c1c;
+        }
+
+
+        /* ==============================================================
+           TABLA
+           ============================================================== */
 
         .table-wrapper {
             overflow-x: auto;
@@ -127,6 +201,7 @@
             padding: 12px;
 
             text-align: left;
+
             vertical-align: middle;
 
             border-bottom:
@@ -150,12 +225,29 @@
         }
 
 
+        /*
+         * Las configuraciones problemáticas
+         * reciben un fondo suave para que sean visibles.
+         */
+
+        tr.problem-row {
+            background: #fff7ed;
+        }
+
+
+        tr.problem-row:hover {
+            background: #ffedd5;
+        }
+
+
         .path {
             color: #6b7280;
 
             font-size: 12px;
 
             margin-top: 3px;
+
+            word-break: break-all;
         }
 
 
@@ -165,6 +257,10 @@
             font-size: 13px;
         }
 
+
+        /* ==============================================================
+           CHECKBOX / SELECT
+           ============================================================== */
 
         .monitor-checkbox {
             width: 20px;
@@ -188,6 +284,10 @@
         }
 
 
+        /* ==============================================================
+           ESTADOS
+           ============================================================== */
+
         .status-active {
             color: #15803d;
 
@@ -197,27 +297,92 @@
 
         .status-inactive {
             color: #6b7280;
+
+            font-weight: 600;
         }
 
 
-        .warning-box {
-            margin-bottom: 25px;
+        .physical-ok {
+            color: #15803d;
 
-            border-left:
-                5px solid #a16207;
+            font-weight: 700;
         }
 
+
+        .physical-error {
+            color: #b91c1c;
+
+            font-weight: 700;
+        }
+
+
+        .physical-warning {
+            color: #a16207;
+
+            font-weight: 700;
+        }
+
+
+        .badge {
+            display: inline-block;
+
+            padding: 3px 7px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            margin-top: 5px;
+
+            background: #e5e7eb;
+
+            color: #4b5563;
+        }
+
+
+        .badge-problem {
+            background: #fee2e2;
+
+            color: #991b1b;
+        }
+
+
+        /* ==============================================================
+           ACCIONES
+           ============================================================== */
 
         .actions {
             display: flex;
+
             gap: 10px;
+
             flex-wrap: wrap;
 
             margin-top: 20px;
+
+            position: sticky;
+
+            bottom: 0;
+
+            padding: 15px 0;
+
+            background:
+                rgba(
+                    243,
+                    244,
+                    246,
+                    0.96
+                );
         }
 
 
-        @media (max-width: 700px) {
+        /* ==============================================================
+           RESPONSIVE
+           ============================================================== */
+
+        @media (
+            max-width: 700px
+        ) {
 
             .page {
                 padding: 15px;
@@ -251,7 +416,9 @@
         {% for message in messages %}
 
             <div class="card message">
+
                 {{ message }}
+
             </div>
 
         {% endfor %}
@@ -296,8 +463,8 @@
 
     <div class="subtitle">
 
-        Seleccione qué directorios del proyecto quiere
-        mantener bajo monitorización especial.
+        Seleccione qué directorios del proyecto
+        quiere mantener bajo monitorización especial.
 
         <br>
 
@@ -312,7 +479,148 @@
 
 
     <!-- ================================================================
-         ADVERTENCIA
+         RESUMEN
+         ================================================================ -->
+
+    <div class="summary-grid">
+
+
+        <div class="card">
+
+            <div class="summary-label">
+                Rutas disponibles
+            </div>
+
+            <div class="summary-value">
+                {{ selector.total_rutas }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="summary-label">
+                Configuradas
+            </div>
+
+            <div class="summary-value">
+                {{ selector.total_registradas }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="summary-label">
+                Monitorizadas
+            </div>
+
+            <div class="summary-value">
+                {{ selector.total_activas }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="summary-label">
+                Con problema físico
+            </div>
+
+            <div class="summary-value">
+                {{ selector.total_problematicas }}
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================================================================
+         ERROR EN DESCUBRIMIENTO
+         ================================================================ -->
+
+    {% if selector.error_descubrimiento %}
+
+        <div class="card discovery-error">
+
+            <strong>
+                El descubrimiento automático encontró un problema:
+            </strong>
+
+            <p>
+                {{ selector.error_descubrimiento }}
+            </p>
+
+            <div class="small">
+
+                Las configuraciones ya registradas
+                siguen mostrándose para permitir
+                su revisión o desactivación.
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+
+    <!-- ================================================================
+         RUTAS PROBLEMÁTICAS
+         ================================================================ -->
+
+    {% if selector.total_problematicas %}
+
+        <div class="card danger-box">
+
+            <strong>
+                Se detectaron configuraciones con problemas físicos.
+            </strong>
+
+
+            <p>
+
+                Una o más rutas configuradas no existen,
+                no corresponden a un directorio o no pueden
+                ser leídas por el proceso de Django.
+
+            </p>
+
+
+            <p>
+
+                Si una ruta inexistente permanece marcada como
+                monitorizada, una medición histórica puede terminar como:
+
+                <strong>
+                    Completada parcialmente
+                </strong>.
+
+            </p>
+
+
+            <p class="small">
+
+                Puede desmarcarla y guardar la configuración.
+                El registro y sus mediciones históricas
+                no serán eliminados.
+
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+
+    <!-- ================================================================
+         SEGURIDAD
          ================================================================ -->
 
     <div class="card warning-box">
@@ -321,23 +629,24 @@
             Importante
         </strong>
 
+
         <p>
 
-            Marcar una ruta solamente habilita su
-            monitorización.
+            Seleccionar una ruta solamente activa
+            su monitorización.
 
             <strong>
                 No concede permiso para eliminar,
-                mover o modificar archivos.
+                mover ni modificar archivos.
             </strong>
 
         </p>
 
+
         <p class="small">
 
-            Desmarcar una ruta tampoco borra su
-            configuración ni sus mediciones históricas.
-            Solamente la deja inactiva.
+            Desactivar una ruta tampoco elimina
+            su configuración ni sus mediciones históricas.
 
         </p>
 
@@ -345,25 +654,12 @@
 
 
 
-    {% if selector.error %}
+    <!-- ================================================================
+         FORMULARIO
+         ================================================================ -->
 
-        <div class="card">
+    {% if selector.rutas %}
 
-            <strong>
-                Error al descubrir las rutas:
-            </strong>
-
-            {{ selector.error }}
-
-        </div>
-
-
-    {% else %}
-
-
-        <!-- ============================================================
-             FORMULARIO
-             ============================================================ -->
 
         <form
             method="post"
@@ -391,6 +687,10 @@
                             </th>
 
                             <th>
+                                Estado físico
+                            </th>
+
+                            <th>
                                 Espacio
                             </th>
 
@@ -407,7 +707,7 @@
                             </th>
 
                             <th>
-                                Estado actual
+                                Configuración
                             </th>
 
                         </tr>
@@ -420,18 +720,28 @@
 
                     {% for ruta in selector.rutas %}
 
-                        <tr>
+
+                        <tr
+                            {% if ruta.problema_fisico %}
+                                class="problem-row"
+                            {% endif %}
+                        >
 
 
-                            <!-- CHECKBOX -->
+                            <!-- ==========================================
+                                 MONITORIZAR
+                                 ========================================== -->
 
                             <td>
 
                                 <input
                                     class="monitor-checkbox"
+
                                     type="checkbox"
+
                                     name="monitorizar"
-                                    value="{{ ruta.ruta_relativa }}"
+
+                                    value="{{ ruta.selector_key }}"
 
                                     {% if ruta.activa %}
                                         checked
@@ -442,7 +752,9 @@
 
 
 
-                            <!-- DIRECTORIO -->
+                            <!-- ==========================================
+                                 DIRECTORIO
+                                 ========================================== -->
 
                             <td>
 
@@ -458,14 +770,20 @@
                                 </div>
 
 
-                                {% if ruta.registrada %}
+                                <div class="path">
 
-                                    <div class="small">
+                                    {{ ruta.ruta_absoluta }}
 
-                                        Configuración:
-                                        {{ ruta.nombre_configurado }}
+                                </div>
 
-                                    </div>
+
+                                {% if not ruta.descubierta %}
+
+                                    <span class="badge badge-problem">
+
+                                        No descubierta por ESP002
+
+                                    </span>
 
                                 {% endif %}
 
@@ -473,36 +791,124 @@
 
 
 
-                            <!-- ESPACIO -->
+                            <!-- ==========================================
+                                 ESTADO FÍSICO
+                                 ========================================== -->
 
                             <td>
 
-                                <strong>
-                                    {{ ruta.total_legible }}
-                                </strong>
+
+                                {% if ruta.estado_fisico == "OK" %}
+
+                                    <span class="physical-ok">
+
+                                        Disponible
+
+                                    </span>
+
+
+                                {% elif ruta.estado_fisico == "NO_EXISTE" %}
+
+                                    <span class="physical-error">
+
+                                        No existe
+
+                                    </span>
+
+
+                                    <div class="small">
+
+                                        La configuración existe
+                                        en la base de datos,
+                                        pero la ruta física
+                                        no está presente
+                                        en este servidor.
+
+                                    </div>
+
+
+                                {% elif ruta.estado_fisico == "NO_DIRECTORIO" %}
+
+                                    <span class="physical-error">
+
+                                        No es directorio
+
+                                    </span>
+
+
+                                {% elif ruta.estado_fisico == "SIN_LECTURA" %}
+
+                                    <span class="physical-warning">
+
+                                        Sin permiso de lectura
+
+                                    </span>
+
+
+                                {% else %}
+
+                                    {{ ruta.estado_fisico_texto }}
+
+                                {% endif %}
+
 
                             </td>
 
 
 
-                            <!-- ARCHIVOS -->
+                            <!-- ==========================================
+                                 ESPACIO
+                                 ========================================== -->
 
                             <td>
 
-                                {{ ruta.total_archivos }}
+                                {% if ruta.total_legible != "-" %}
 
-                                <div class="small">
+                                    <strong>
+                                        {{ ruta.total_legible }}
+                                    </strong>
 
-                                    {{ ruta.total_directorios }}
-                                    subdirectorios
+                                {% else %}
 
-                                </div>
+                                    -
+
+                                {% endif %}
 
                             </td>
 
 
 
-                            <!-- CONTENIDO -->
+                            <!-- ==========================================
+                                 ARCHIVOS
+                                 ========================================== -->
+
+                            <td>
+
+                                {% if ruta.total_archivos != None %}
+
+                                    {{ ruta.total_archivos }}
+
+
+                                    <div class="small">
+
+                                        {{ ruta.total_directorios }}
+                                        subdirectorios
+
+                                    </div>
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <!-- ==========================================
+                                 CONTENIDO
+                                 ========================================== -->
 
                             <td>
 
@@ -532,7 +938,9 @@
 
 
 
-                            <!-- CATEGORÍA -->
+                            <!-- ==========================================
+                                 CATEGORÍA
+                                 ========================================== -->
 
                             <td>
 
@@ -562,29 +970,53 @@
 
 
 
-                            <!-- ESTADO -->
+                            <!-- ==========================================
+                                 CONFIGURACIÓN
+                                 ========================================== -->
 
                             <td>
+
 
                                 {% if ruta.activa %}
 
                                     <span class="status-active">
+
                                         Monitorizada
+
                                     </span>
+
 
                                 {% elif ruta.registrada %}
 
                                     <span class="status-inactive">
+
                                         Registrada / inactiva
+
                                     </span>
+
 
                                 {% else %}
 
                                     <span class="status-inactive">
+
                                         No configurada
+
                                     </span>
 
                                 {% endif %}
+
+
+
+                                {% if ruta.registrada %}
+
+                                    <div class="small">
+
+                                        {{ ruta.nombre_configurado }}
+
+                                    </div>
+
+                                {% endif %}
+
 
 
                                 {% if ruta.permite_mantenimiento %}
@@ -597,23 +1029,12 @@
 
                                 {% endif %}
 
+
                             </td>
 
 
                         </tr>
 
-
-                    {% empty %}
-
-                        <tr>
-
-                            <td colspan="7">
-
-                                No se detectaron directorios.
-
-                            </td>
-
-                        </tr>
 
                     {% endfor %}
 
@@ -636,25 +1057,31 @@
                     class="button"
                     type="submit"
                 >
+
                     Guardar selección
+
                 </button>
 
 
                 <button
                     class="button button-secondary"
                     type="button"
-                    onclick="marcarTodas(true)"
+                    onclick="marcarDisponibles()"
                 >
-                    Marcar todas
+
+                    Marcar rutas disponibles
+
                 </button>
 
 
                 <button
                     class="button button-secondary"
                     type="button"
-                    onclick="marcarTodas(false)"
+                    onclick="desmarcarTodas()"
                 >
+
                     Desmarcar todas
+
                 </button>
 
             </div>
@@ -663,23 +1090,90 @@
         </form>
 
 
+    {% else %}
+
+
+        <div class="card">
+
+            No existen rutas disponibles
+            ni configuraciones registradas.
+
+        </div>
+
+
     {% endif %}
 
 
 </div>
 
 
+
 <script>
 
-    function marcarTodas(valor) {
+    /*
+     * Marca solamente las rutas cuyo estado físico
+     * es correcto.
+     *
+     * Las rutas inexistentes no deben activarse
+     * accidentalmente con una acción masiva.
+     */
 
-        const cajas = document.querySelectorAll(
-            ".monitor-checkbox"
+    function marcarDisponibles() {
+
+        const filas =
+            document.querySelectorAll(
+                "tbody tr"
+            );
+
+
+        filas.forEach(
+            function(fila) {
+
+                const checkbox =
+                    fila.querySelector(
+                        ".monitor-checkbox"
+                    );
+
+
+                if (!checkbox) {
+                    return;
+                }
+
+
+                const tieneProblema =
+                    fila.classList.contains(
+                        "problem-row"
+                    );
+
+
+                if (!tieneProblema) {
+
+                    checkbox.checked =
+                        true;
+
+                }
+
+            }
         );
+
+    }
+
+
+
+    function desmarcarTodas() {
+
+        const cajas =
+            document.querySelectorAll(
+                ".monitor-checkbox"
+            );
+
 
         cajas.forEach(
             function(caja) {
-                caja.checked = valor;
+
+                caja.checked =
+                    false;
+
             }
         );
 
