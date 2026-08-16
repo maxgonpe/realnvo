@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'extintores.apps.ExtintoresConfig',
     'administracion.apps.AdministracionConfig',
     'widget_tweaks',
+    #"espaciometro",
+    "espaciometro.apps.EspaciometroConfig",
     #'extintores',
 ]
 

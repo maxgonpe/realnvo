@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Espaciómetro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            margin-top: 5px;
+            color: #6b7280;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(230px, 1fr));
+            gap: 18px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2,
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .metric-value {
+            margin-top: 5px;
+            font-size: 27px;
+            font-weight: 700;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        /* ===============================================================
+           GAUGE
+           =============================================================== */
+
+        .gauge-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 270px;
+        }
+
+        .gauge {
+            position: relative;
+            width: 320px;
+            height: 180px;
+        }
+
+        .gauge-background {
+            position: absolute;
+
+            left: 0;
+            top: 0;
+
+            width: 320px;
+            height: 320px;
+
+            border-radius: 50%;
+
+            background:
+                conic-gradient(
+                    from 270deg,
+                    #22c55e 0deg,
+                    #22c55e 54deg,
+                    #eab308 108deg,
+                    #ef4444 180deg,
+                    #e5e7eb 180deg,
+                    #e5e7eb 360deg
+                );
+
+            overflow: hidden;
+        }
+
+        .gauge-mask {
+            position: absolute;
+
+            width: 220px;
+            height: 220px;
+
+            border-radius: 50%;
+
+            background: white;
+
+            left: 50px;
+            top: 50px;
+        }
+
+        .needle {
+            position: absolute;
+
+            width: 5px;
+            height: 125px;
+
+            background: #111827;
+
+            left: 50%;
+            bottom: 20px;
+
+            transform-origin: 50% 100%;
+
+            border-radius: 3px;
+
+            z-index: 5;
+        }
+
+        .needle-center {
+            position: absolute;
+
+            width: 22px;
+            height: 22px;
+
+            border-radius: 50%;
+
+            background: #111827;
+
+            left: 50%;
+            bottom: 9px;
+
+            transform: translateX(-50%);
+
+            z-index: 6;
+        }
+
+        .gauge-value {
+            position: absolute;
+
+            width: 100%;
+
+            left: 0;
+            bottom: -40px;
+
+            text-align: center;
+
+            font-size: 31px;
+            font-weight: 700;
+        }
+
+        .gauge-caption {
+            position: absolute;
+
+            width: 100%;
+
+            left: 0;
+            bottom: -65px;
+
+            text-align: center;
+
+            color: #6b7280;
+        }
+
+        /* ===============================================================
+           TABLA
+           =============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f9fafb;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .path {
+            max-width: 350px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ok {
+            color: #15803d;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .database-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(260px, 1fr));
+
+            gap: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .page {
+                padding: 15px;
+            }
+
+            .gauge {
+                transform: scale(0.85);
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+<div class="page">
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <div class="header">
+
+        <h1>Espaciómetro</h1>
+
+        <div class="subtitle">
+            Estado actual del almacenamiento de {{ hostname }}
+        </div>
+
+        <div class="small">
+            Medición:
+            {{ generado_en|date:"d/m/Y H:i:s" }}
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         DISCO
+         ================================================================ -->
+
+    <div class="card">
+
+        <h2>Capacidad del servidor</h2>
+
+        <div class="grid">
+
+            <div class="gauge-wrapper">
+
+                <div class="gauge">
+
+                    <div class="gauge-background"></div>
+
+                    <div class="gauge-mask"></div>
+
+                    <div
+                        class="needle"
+                        style="
+                            transform:
+                            translateX(-50%)
+                            rotate({{ disco.angulo_gauge }}deg);
+                        "
+                    ></div>
+
+                    <div class="needle-center"></div>
+
+                    <div class="gauge-value">
+                        {{ disco.porcentaje_usado }} %
+                    </div>
+
+                    <div class="gauge-caption">
+                        espacio utilizado
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="grid">
+
+                    <div>
+                        <div class="metric-label">
+                            Capacidad total
+                        </div>
+
+                        <div class="metric-value">
+                            {{ disco.total_legible }}
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="metric-label">
+                            Utilizado
+                        </div>
+
+                        <div class="metric-value">
+                            {{ disco.usado_legible }}
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="metric-label">
+                            Disponible
+                        </div>
+
+                        <div class="metric-value">
+                            {{ disco.libre_legible }}
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="metric-label">
+                            Espacio libre
+                        </div>
+
+                        <div class="metric-value">
+                            {{ disco.porcentaje_libre }} %
+                        </div>
+                    </div>
+
+                </div>
+
+                <p class="small">
+                    Filesystem donde se encuentra:
+                    {{ disco.ruta_base }}
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         RESUMEN
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>Resumen de rutas monitorizadas</h2>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="metric-label">
+                    Rutas analizadas
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas }}
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="metric-label">
+                    Espacio detectado
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_rutas_legible }}
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="metric-label">
+                    Archivos
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_archivos }}
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="metric-label">
+                    Imágenes
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_imagenes }}
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="metric-label">
+                    PDF
+                </div>
+
+                <div class="metric-value">
+                    {{ resumen.total_pdf }}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         RUTAS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>Uso por directorio</h2>
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Ruta</th>
+                        <th>Categoría</th>
+                        <th>Espacio</th>
+                        <th>Archivos</th>
+                        <th>Imágenes</th>
+                        <th>PDF</th>
+                        <th>Directorios</th>
+                        <th>Más antiguo</th>
+                        <th>Más reciente</th>
+                        <th>Mayor archivo</th>
+                        <th>Escaneo</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for ruta in rutas %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ ruta.nombre }}
+                            </strong>
+
+                            <div
+                                class="small path"
+                                title="{{ ruta.ruta_resuelta }}"
+                            >
+                                {{ ruta.ruta_resuelta }}
+                            </div>
+
+                            {% if ruta.error %}
+                                <div class="error">
+                                    {{ ruta.error }}
+                                </div>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ ruta.categoria }}
+                        </td>
+
+
+                        <td>
+                            <strong>
+                                {{ ruta.total_legible }}
+                            </strong>
+                        </td>
+
+
+                        <td>
+                            {{ ruta.total_archivos }}
+                        </td>
+
+
+                        <td>
+                            {{ ruta.total_imagenes }}
+                        </td>
+
+
+                        <td>
+                            {{ ruta.total_pdf }}
+                        </td>
+
+
+                        <td>
+                            {{ ruta.total_directorios }}
+                        </td>
+
+
+                        <td>
+
+                            {% if ruta.archivo_mas_antiguo %}
+
+                                {{ ruta.archivo_mas_antiguo.fecha|date:"d/m/Y" }}
+
+                                <div
+                                    class="small path"
+                                    title="{{ ruta.archivo_mas_antiguo.ruta }}"
+                                >
+                                    {{ ruta.archivo_mas_antiguo.ruta }}
+                                </div>
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if ruta.archivo_mas_reciente %}
+
+                                {{ ruta.archivo_mas_reciente.fecha|date:"d/m/Y" }}
+
+                                <div
+                                    class="small path"
+                                    title="{{ ruta.archivo_mas_reciente.ruta }}"
+                                >
+                                    {{ ruta.archivo_mas_reciente.ruta }}
+                                </div>
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ ruta.archivo_mas_grande_legible }}
+
+                            {% if ruta.archivo_mas_grande %}
+
+                                <div
+                                    class="small path"
+                                    title="{{ ruta.archivo_mas_grande }}"
+                                >
+                                    {{ ruta.archivo_mas_grande }}
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ ruta.duracion_ms }} ms
+
+                            {% if ruta.archivos_inaccesibles %}
+
+                                <div class="error">
+                                    {{ ruta.archivos_inaccesibles }}
+                                    inaccesibles
+                                </div>
+
+                            {% endif %}
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+                        <td colspan="11">
+                            No existen rutas activas configuradas.
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         BASE DE DATOS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>Base de datos</h2>
+
+        <div class="database-grid">
+
+        {% for bd in bases_datos %}
+
+            <div class="card">
+
+                <h3>
+                    {{ bd.alias }}
+                </h3>
+
+                <p>
+                    <strong>Motor:</strong>
+                    {{ bd.vendor }}
+                </p>
+
+                <p>
+                    <strong>Base:</strong>
+                    {{ bd.nombre }}
+                </p>
+
+                <p>
+                    <strong>Tablas:</strong>
+
+                    {% if bd.total_tablas != None %}
+                        {{ bd.total_tablas }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+
+                <p>
+                    <strong>Tamaño:</strong>
+                    {{ bd.total_legible }}
+                </p>
+
+                {% if bd.error %}
+
+                    <p class="error">
+                        {{ bd.error }}
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+        {% empty %}
+
+            <div class="card">
+                No se detectaron conexiones de base de datos.
+            </div>
+
+        {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         PIE
+         ================================================================ -->
+
+    <div class="section small">
+
+        Esta primera versión del Espaciómetro es solamente de lectura.
+        No mueve, elimina ni modifica archivos o registros.
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -11,4 +11,5 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registro/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='intervencion_lista'), name='logout'),
     path('summernote/', include('django_summernote.urls')),
+    path('espaciometro/',include('espaciometro.urls')),
 ]
