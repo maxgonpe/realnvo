@@ -1083,3 +1083,273 @@ class CandidatoMantenimiento(models.Model):
         return bytes_legibles(
             self.total_bytes_snapshot
         )
+
+# =============================================================================
+# ESP013 — PREPARACIÓN DE RESPALDOS
+# =============================================================================
+
+
+class RespaldoMantenimiento(models.Model):
+    """
+    Paquete físico preparado a partir de un lote ESP012.
+
+    El respaldo no implica eliminación de los archivos originales.
+    """
+
+    class Estado(models.TextChoices):
+
+        PREPARANDO = (
+            "PREPARANDO",
+            "Preparando",
+        )
+
+        LISTO = (
+            "LISTO",
+            "Listo",
+        )
+
+        PARCIAL = (
+            "PARCIAL",
+            "Parcial",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    lote = models.ForeignKey(
+        LoteCandidatosMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="respaldos",
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.PREPARANDO,
+    )
+
+
+    creado_por = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    nombre_archivo = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+
+    ruta_relativa_archivo = models.TextField(
+        blank=True,
+    )
+
+
+    total_candidatos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    incluidos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    omitidos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    total_bytes_contenido = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    total_bytes_paquete = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    manifest = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+
+    errores = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    finalizado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_respaldo_mantenimiento"
+        )
+
+        ordering = [
+            "-creado_en",
+            "-id",
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"Respaldo #{self.pk} "
+            f"— lote #{self.lote_id}"
+        )
+
+
+    @property
+    def contenido_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_contenido
+        )
+
+
+    @property
+    def paquete_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_paquete
+        )
+
+
+
+class DetalleRespaldoMantenimiento(models.Model):
+    """
+    Resultado individual de cada candidato
+    durante la preparación ESP013.
+    """
+
+    class Estado(models.TextChoices):
+
+        INCLUIDO = (
+            "INCLUIDO",
+            "Incluido",
+        )
+
+        OMITIDO = (
+            "OMITIDO",
+            "Omitido",
+        )
+
+
+    respaldo = models.ForeignKey(
+        RespaldoMantenimiento,
+        on_delete=models.CASCADE,
+        related_name="detalles",
+    )
+
+
+    candidato = models.ForeignKey(
+        CandidatoMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="detalles_respaldo",
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+    )
+
+
+    estado_validacion = models.CharField(
+        max_length=30,
+        blank=True,
+    )
+
+
+    motivo = models.TextField(
+        blank=True,
+    )
+
+
+    ruta_zip = models.TextField(
+        blank=True,
+    )
+
+
+    total_bytes = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_detalle_respaldo_mantenimiento"
+        )
+
+        ordering = [
+            "candidato__ruta_monitoreada__nombre",
+            "candidato__ruta_relativa",
+        ]
+
+        constraints = [
+
+            models.UniqueConstraint(
+                fields=[
+                    "respaldo",
+                    "candidato",
+                ],
+                name=(
+                    "esp_unique_detalle_respaldo_candidato"
+                ),
+            ),
+
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"{self.get_estado_display()} "
+            f"— candidato #{self.candidato_id}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes
+        )
+

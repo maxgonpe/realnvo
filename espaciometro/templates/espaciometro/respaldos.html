@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Respaldos — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .info {
+            border-left: 5px solid #2563eb;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        .LISTO {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .PARCIAL {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+        .ERROR {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .PREPARANDO {
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:candidatos' %}"
+        >
+            Candidatos ESP012
+        </a>
+
+    </div>
+
+
+    <h1>
+        Respaldos preparados
+    </h1>
+
+
+    <div class="card info">
+
+        <strong>
+            ESP013 prepara paquetes verificables.
+        </strong>
+
+        <p>
+            Los originales permanecen en su ubicación.
+            Esta etapa no elimina ni mueve archivos.
+        </p>
+
+        <div class="small">
+            La descarga al computador se incorporará en ESP014.
+        </div>
+
+    </div>
+
+
+    <div class="card table-wrapper section">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Respaldo</th>
+                    <th>Lote</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Incluidos</th>
+                    <th>Omitidos</th>
+                    <th>Contenido</th>
+                    <th>Paquete</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+
+            {% for respaldo in respaldos %}
+
+                <tr>
+
+                    <td>
+
+                        <a
+                            href="{% url 'espaciometro:detalle_respaldo' respaldo.id %}"
+                        >
+                            <strong>
+                                Respaldo #{{ respaldo.id }}
+                            </strong>
+                        </a>
+
+                    </td>
+
+
+                    <td>
+
+                        {% if respaldo.lote.nombre %}
+                            {{ respaldo.lote.nombre }}
+                        {% else %}
+                            Lote #{{ respaldo.lote.id }}
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+                        {{ respaldo.creado_en|date:"d/m/Y H:i:s" }}
+                    </td>
+
+
+                    <td>
+
+                        <span class="{{ respaldo.estado }}">
+                            {{ respaldo.get_estado_display }}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+                        {{ respaldo.incluidos }}
+                    </td>
+
+
+                    <td>
+                        {{ respaldo.omitidos }}
+                    </td>
+
+
+                    <td>
+                        {{ respaldo.contenido_legible }}
+                    </td>
+
+
+                    <td>
+                        {{ respaldo.paquete_legible }}
+                    </td>
+
+                </tr>
+
+
+            {% empty %}
+
+                <tr>
+
+                    <td colspan="8">
+                        Todavía no existen respaldos preparados.
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

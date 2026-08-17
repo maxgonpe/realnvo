@@ -16,3 +16,4 @@ _pycache/
 # Archivos locales comunes
 .env
 .env.local
+.espaciometro/

@@ -107,4 +107,24 @@ urlpatterns = [
         views.detalle_lote_candidatos,
         name="detalle_lote_candidatos",
     ),
+
+        # ESP013
+    path(
+        "respaldos/",
+        views.respaldos,
+        name="respaldos",
+    ),
+
+    path(
+        "respaldos/preparar/<int:lote_id>/",
+        views.preparar_respaldo,
+        name="preparar_respaldo",
+    ),
+
+    path(
+        "respaldos/<int:respaldo_id>/",
+        views.detalle_respaldo,
+        name="detalle_respaldo",
+    ),
+    
 ]

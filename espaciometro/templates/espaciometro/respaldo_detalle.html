@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Respaldo ESP013 — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1550px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .hash {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .info {
+            border-left: 5px solid #2563eb;
+        }
+
+        .warning {
+            border-left: 5px solid #a16207;
+        }
+
+        .error-box {
+            border-left: 5px solid #b91c1c;
+        }
+
+        .LISTO,
+        .INCLUIDO {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .PARCIAL,
+        .OMITIDO {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+        .ERROR {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        .path {
+            color: #6b7280;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="card" style="margin-bottom:15px;">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:respaldos' %}"
+        >
+            ← Respaldos
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:detalle_lote_candidatos' detalle.respaldo.lote_id %}"
+        >
+            Ver lote
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+    <h1>
+        Respaldo #{{ detalle.respaldo.id }}
+    </h1>
+
+
+    <div class="small">
+
+        Lote:
+
+        {% if detalle.respaldo.lote.nombre %}
+            {{ detalle.respaldo.lote.nombre }}
+        {% else %}
+            #{{ detalle.respaldo.lote.id }}
+        {% endif %}
+
+        · Creado:
+
+        {{ detalle.respaldo.creado_en|date:"d/m/Y H:i:s" }}
+
+        · Usuario:
+
+        {{ detalle.respaldo.creado_por|default:"-" }}
+
+    </div>
+
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Estado
+            </div>
+
+            <div
+                class="
+                    metric-value
+                    {{ detalle.respaldo.estado }}
+                "
+            >
+                {{ detalle.respaldo.get_estado_display }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Incluidos
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.respaldo.incluidos }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Omitidos
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.respaldo.omitidos }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Contenido original
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.respaldo.contenido_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Tamaño ZIP
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.respaldo.paquete_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Archivo físico
+            </div>
+
+            <div class="metric-value">
+
+                {% if detalle.archivo_existe %}
+                    Sí
+                {% else %}
+                    No
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    {% if detalle.respaldo.sha256 %}
+
+        <div class="card info section">
+
+            <strong>
+                Integridad SHA-256 del paquete
+            </strong>
+
+            <p class="hash">
+                {{ detalle.respaldo.sha256 }}
+            </p>
+
+            <div class="small">
+                ESP014 utilizará esta información
+                para validar la descarga.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    {% if detalle.respaldo.nombre_archivo %}
+
+        <div class="card section">
+
+            <strong>
+                Paquete preparado
+            </strong>
+
+            <p>
+                {{ detalle.respaldo.nombre_archivo }}
+            </p>
+
+            <div class="small">
+                El paquete existe en el área privada
+                de Espaciómetro. Todavía no se expone
+                directamente para descarga.
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+    {% if detalle.respaldo.estado == "PARCIAL" %}
+
+        <div class="card warning section">
+
+            <strong>
+                Respaldo parcial.
+            </strong>
+
+            <p>
+                Uno o más candidatos cambiaron,
+                desaparecieron o dejaron de ser válidos.
+            </p>
+
+            <p>
+                El lote permanece abierto y
+                todavía no queda habilitado para
+                una futura liberación segura.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    {% if detalle.respaldo.estado == "ERROR" %}
+
+        <div class="card error-box section">
+
+            <strong>
+                No se obtuvo un respaldo válido.
+            </strong>
+
+            {% for error in detalle.respaldo.errores %}
+
+                <p>
+                    {{ error }}
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <div class="section">
+
+        <h2>
+            Archivos procesados
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Ruta</th>
+                        <th>Resultado</th>
+                        <th>Tamaño</th>
+                        <th>SHA-256</th>
+                        <th>Ruta dentro del ZIP</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for item in detalle.detalles %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ item.candidato.nombre }}
+                            </strong>
+
+                            <div class="path">
+                                {{ item.candidato.ruta_relativa }}
+                            </div>
+
+                        </td>
+
+
+                        <td>
+                            {{ item.candidato.ruta_monitoreada.nombre }}
+                        </td>
+
+
+                        <td>
+
+                            <span class="{{ item.estado }}">
+                                {{ item.get_estado_display }}
+                            </span>
+
+                            <div class="small">
+                                {{ item.motivo }}
+                            </div>
+
+                        </td>
+
+
+                        <td>
+                            {{ item.total_legible }}
+                        </td>
+
+
+                        <td>
+
+                            {% if item.sha256 %}
+
+                                <div class="hash">
+                                    {{ item.sha256 }}
+                                </div>
+
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if item.ruta_zip %}
+
+                                <div class="path">
+                                    {{ item.ruta_zip }}
+                                </div>
+
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="6">
+                            No existe detalle de archivos.
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div class="card info section">
+
+        <strong>
+            ESP013 no ha eliminado ningún original.
+        </strong>
+
+        <p>
+            Este paquete es una copia preparada
+            en el área privada de Espaciómetro.
+        </p>
+
+        <div class="small">
+            La próxima etapa, ESP014,
+            permitirá descargarlo al computador.
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

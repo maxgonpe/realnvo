@@ -613,30 +613,185 @@
 
     <!-- FUTURO ESP013 -->
 
-    <div class="card info-box section">
+    <!-- ================================================================
+     ESP013
+     ================================================================ -->
 
-        <strong>
-            Siguiente etapa: ESP013
-        </strong>
+<div class="card info-box section">
 
+    <strong>
+        ESP013 — Preparación de respaldo
+    </strong>
+
+
+    <p>
+
+        Espaciómetro puede preparar un paquete ZIP
+        verificable con los candidatos que continúen
+        siendo válidos.
+
+    </p>
+
+
+    <p>
+
+        Los archivos originales no serán
+        modificados ni eliminados.
+
+    </p>
+
+
+    {% if detalle.lote.estado == "ABIERTO" %}
+
+        <form
+            method="post"
+
+            action="{% url 'espaciometro:preparar_respaldo' detalle.lote.id %}"
+        >
+
+            {% csrf_token %}
+
+
+            <button
+                class="button"
+                type="submit"
+            >
+                Preparar respaldo verificable
+            </button>
+
+        </form>
+
+
+    {% else %}
 
         <p>
 
-            ESP013 utilizará este lote para preparar
-            un respaldo reproducible de los candidatos
-            que continúen siendo válidos.
+            Estado actual del lote:
+
+            <strong>
+                {{ detalle.lote.get_estado_display }}
+            </strong>
 
         </p>
 
+    {% endif %}
 
-        <div class="small">
 
-            Los candidatos modificados o desaparecidos
-            deberán ser tratados de forma conservadora.
+    <div class="small" style="margin-top:10px;">
+
+        Solo un respaldo completo cambiará
+        el lote al estado PREPARADO.
+
+    </div>
+
+</div>
+
+
+
+{% if detalle.respaldos %}
+
+    <div class="section">
+
+        <h2>
+            Respaldos de este lote
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Respaldo</th>
+
+                        <th>Fecha</th>
+
+                        <th>Estado</th>
+
+                        <th>Incluidos</th>
+
+                        <th>Omitidos</th>
+
+                        <th>Paquete</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for respaldo in detalle.respaldos %}
+
+                    <tr>
+
+                        <td>
+
+                            <a
+                                href="{% url 'espaciometro:detalle_respaldo' respaldo.id %}"
+                            >
+
+                                <strong>
+                                    Respaldo #{{ respaldo.id }}
+                                </strong>
+
+                            </a>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ respaldo.creado_en|date:"d/m/Y H:i:s" }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ respaldo.get_estado_display }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ respaldo.incluidos }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ respaldo.omitidos }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ respaldo.paquete_legible }}
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
 
         </div>
 
     </div>
+
+{% endif %}
 
 
 </div>

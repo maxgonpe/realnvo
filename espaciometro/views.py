@@ -33,6 +33,7 @@ from .models import (
     EjecucionMedicion,
     LoteCandidatosMantenimiento,
     RutaMonitoreada,
+    RespaldoMantenimiento,
 )
 from .route_selector import (
     guardar_seleccion_rutas,
@@ -45,6 +46,12 @@ from .candidates import (
     obtener_configuracion_candidatos,
     obtener_detalle_lote,
     obtener_lotes_recientes,
+)
+
+from .backup import (
+    obtener_detalle_respaldo,
+    obtener_respaldos_recientes,
+    preparar_respaldo_lote,
 )
 
 from .scanner import ejecutar_medicion_completa
@@ -659,10 +666,176 @@ def detalle_lote_candidatos(
         )
     )
 
+    detalle[
+    "respaldos"
+    ] = (
+        lote.respaldos
+        .all()
+        .order_by(
+            "-creado_en"
+        )
+    )
 
     return render(
         request,
         "espaciometro/lote_candidatos.html",
+        {
+            "detalle": detalle,
+        },
+    )
+
+# =============================================================================
+# ESP013 — RESPALDOS
+# =============================================================================
+
+
+@login_required
+def respaldos(request):
+
+    datos = (
+        obtener_respaldos_recientes()
+    )
+
+
+    return render(
+        request,
+        "espaciometro/respaldos.html",
+        {
+            "respaldos": datos,
+        },
+    )
+
+
+
+@login_required
+@require_POST
+def preparar_respaldo(
+    request,
+    lote_id,
+):
+
+    lote = get_object_or_404(
+        LoteCandidatosMantenimiento,
+        pk=lote_id,
+    )
+
+
+    usuario = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    resultado = (
+        preparar_respaldo_lote(
+            lote=lote,
+            usuario=usuario,
+        )
+    )
+
+
+    respaldo = (
+        resultado[
+            "respaldo"
+        ]
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+        if respaldo:
+
+            return redirect(
+                "espaciometro:detalle_respaldo",
+                respaldo_id=(
+                    respaldo.pk
+                ),
+            )
+
+
+        return redirect(
+            "espaciometro:detalle_lote_candidatos",
+            lote_id=lote.pk,
+        )
+
+
+    if (
+        resultado[
+            "estado"
+        ]
+        == RespaldoMantenimiento
+        .Estado
+        .LISTO
+    ):
+
+        messages.success(
+            request,
+            (
+                "Respaldo preparado y "
+                "verificado correctamente. "
+                f"Archivos incluidos: "
+                f"{resultado['incluidos']}."
+            ),
+        )
+
+
+    else:
+
+        messages.warning(
+            request,
+            (
+                "Se preparó un respaldo parcial. "
+                f"Incluidos: "
+                f"{resultado['incluidos']}. "
+                f"Omitidos: "
+                f"{resultado['omitidos']}."
+            ),
+        )
+
+
+    return redirect(
+        "espaciometro:detalle_respaldo",
+        respaldo_id=(
+            respaldo.pk
+        ),
+    )
+
+
+
+@login_required
+def detalle_respaldo(
+    request,
+    respaldo_id,
+):
+
+    respaldo = get_object_or_404(
+        RespaldoMantenimiento,
+        pk=respaldo_id,
+    )
+
+
+    detalle = (
+        obtener_detalle_respaldo(
+            respaldo
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/respaldo_detalle.html",
         {
             "detalle": detalle,
         },

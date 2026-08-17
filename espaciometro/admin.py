@@ -12,6 +12,8 @@ from .models import (
     OperacionMantenimiento,
     LoteCandidatosMantenimiento,
     CandidatoMantenimiento,
+    RespaldoMantenimiento,
+    DetalleRespaldoMantenimiento,
 )
 
 
@@ -231,3 +233,98 @@ class CandidatoMantenimientoAdmin(
     ):
 
         return obj.total_legible
+
+
+# =============================================================================
+# ESP013
+# =============================================================================
+
+
+@admin.register(
+    RespaldoMantenimiento
+)
+class RespaldoMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "lote",
+        "estado",
+        "incluidos",
+        "omitidos",
+        "contenido_legible",
+        "paquete_legible",
+        "creado_por",
+        "creado_en",
+    )
+
+    list_filter = (
+        "estado",
+        "creado_en",
+    )
+
+    search_fields = (
+        "lote__nombre",
+        "nombre_archivo",
+        "sha256",
+    )
+
+    readonly_fields = (
+        "lote",
+        "estado",
+        "creado_por",
+        "nombre_archivo",
+        "ruta_relativa_archivo",
+        "total_candidatos",
+        "incluidos",
+        "omitidos",
+        "total_bytes_contenido",
+        "total_bytes_paquete",
+        "sha256",
+        "manifest",
+        "errores",
+        "creado_en",
+        "finalizado_en",
+    )
+
+
+
+@admin.register(
+    DetalleRespaldoMantenimiento
+)
+class DetalleRespaldoMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "respaldo",
+        "candidato",
+        "estado",
+        "estado_validacion",
+        "total_legible",
+    )
+
+    list_filter = (
+        "estado",
+        "estado_validacion",
+    )
+
+    search_fields = (
+        "candidato__nombre",
+        "candidato__ruta_relativa",
+        "sha256",
+    )
+
+    readonly_fields = (
+        "respaldo",
+        "candidato",
+        "estado",
+        "estado_validacion",
+        "motivo",
+        "ruta_zip",
+        "total_bytes",
+        "sha256",
+        "creado_en",
+    )
