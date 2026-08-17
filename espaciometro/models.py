@@ -1793,3 +1793,146 @@ class DetalleLiberacionMantenimiento(models.Model):
         return bytes_legibles(
             self.total_bytes_snapshot
         )
+
+
+# =============================================================================
+# ESP015 — RETIRO DE COPIA TEMPORAL DEL SERVIDOR
+# =============================================================================
+
+
+class RetiroRespaldoServidor(models.Model):
+    """
+    Registra el retiro físico del ZIP ESP013
+    después de que:
+
+    - los originales fueron liberados correctamente;
+    - existe una descarga ESP014 verificada;
+    - el ZIP todavía conserva su integridad SHA-256.
+
+    El registro permanece en la BD aunque el ZIP físico
+    ya no exista.
+    """
+
+    class Estado(models.TextChoices):
+
+        EJECUTANDO = (
+            "EJECUTANDO",
+            "Ejecutando",
+        )
+
+        COMPLETADO = (
+            "COMPLETADO",
+            "Completado",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    respaldo = models.ForeignKey(
+        RespaldoMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="retiros_servidor",
+    )
+
+
+    liberacion = models.ForeignKey(
+        LiberacionMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="retiros_respaldo_servidor",
+    )
+
+
+    descarga_verificada = models.ForeignKey(
+        RegistroDescargaRespaldo,
+        on_delete=models.PROTECT,
+        related_name="retiros_respaldo_servidor",
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.EJECUTANDO,
+    )
+
+
+    usuario = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    nombre_archivo_snapshot = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+
+    total_bytes_snapshot = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    sha256_snapshot = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    confirmacion = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+
+    detalle = models.TextField(
+        blank=True,
+    )
+
+
+    errores = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+
+    iniciado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    finalizado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_retiro_respaldo_servidor"
+        )
+
+        ordering = [
+            "-iniciado_en",
+            "-id",
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"Retiro #{self.pk} "
+            f"— respaldo #{self.respaldo_id}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_snapshot
+        )

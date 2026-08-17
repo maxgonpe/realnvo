@@ -158,5 +158,19 @@ urlpatterns = [
         views.detalle_liberacion_view,
         name="detalle_liberacion",
     ),
+
+        # ESP015 — retiro del ZIP privado
+
+    path(
+        "respaldos/<int:respaldo_id>/retiro-servidor/",
+        views.evaluar_retiro_respaldo_view,
+        name="evaluar_retiro_respaldo",
+    ),
+
+    path(
+        "respaldos/<int:respaldo_id>/retiro-servidor/ejecutar/",
+        views.ejecutar_retiro_respaldo_view,
+        name="ejecutar_retiro_respaldo",
+    ),
     
 ]

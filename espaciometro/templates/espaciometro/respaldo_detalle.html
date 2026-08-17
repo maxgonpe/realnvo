@@ -358,9 +358,10 @@
             </p>
 
             <div class="small">
-                El paquete existe en el área privada
-                de Espaciómetro. Todavía no se expone
-                directamente para descarga.
+                El paquete se mantiene en el área privada
+                de Espaciómetro mientras exista físicamente.
+                ESP014 permite descargarlo y verificarlo
+                mediante SHA-256.
             </div>
 
         </div>
@@ -748,6 +749,142 @@
     </div>
 
 
+    <!-- ================================================================
+         CIERRE ESP015 — RETIRO DEL ZIP DEL SERVIDOR
+         ================================================================ -->
+
+    {% if detalle.respaldo.lote.estado == "LIBERADO" %}
+
+        {% if detalle.archivo_existe %}
+
+            <div class="card warning section">
+
+                <h2>
+                    Cierre ESP015 — Liberar copia temporal
+                </h2>
+
+                <p>
+                    Los archivos originales del lote
+                    ya fueron liberados correctamente.
+                </p>
+
+                <p>
+                    El ZIP privado todavía ocupa:
+                    <strong>
+                        {{ detalle.respaldo.paquete_legible }}
+                    </strong>
+                </p>
+
+                <p>
+                    Espaciómetro puede evaluar si ya es
+                    seguro retirarlo del servidor sin perder
+                    la evidencia registrada en la base de datos.
+                </p>
+
+                <a
+                    class="button"
+                    href="{% url 'espaciometro:evaluar_retiro_respaldo' detalle.respaldo.id %}"
+                >
+                    Evaluar retiro del ZIP del servidor
+                </a>
+
+            </div>
+
+        {% else %}
+
+            <div class="card info section">
+
+                <strong>
+                    Copia privada no presente en el servidor.
+                </strong>
+
+                <p>
+                    El ZIP físico ya no ocupa espacio
+                    en el área privada de Espaciómetro.
+                </p>
+
+                <div class="small">
+                    Los datos históricos, SHA-256, manifiesto,
+                    descarga y liberación permanecen registrados.
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+
+    {% if detalle.retiros_servidor %}
+
+        <div class="section">
+
+            <h2>
+                Retiro de copia del servidor
+            </h2>
+
+            <div class="card table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Estado</th>
+                            <th>Espacio</th>
+                            <th>Detalle</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    {% for retiro in detalle.retiros_servidor %}
+
+                        <tr>
+
+                            <td>
+                                #{{ retiro.id }}
+                            </td>
+
+                            <td>
+                                {{ retiro.iniciado_en|date:"d/m/Y H:i:s" }}
+                            </td>
+
+                            <td>
+                                {{ retiro.usuario|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ retiro.get_estado_display }}
+                            </td>
+
+                            <td>
+                                {{ retiro.total_legible }}
+                            </td>
+
+                            <td>
+                                {{ retiro.detalle }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
     <div class="section">
 
         <h2>
@@ -872,21 +1009,41 @@
 
     <div class="card info section">
 
-        <strong>
-            ESP013 no ha eliminado ningún original.
-        </strong>
+        {% if detalle.respaldo.lote.estado == "LIBERADO" %}
 
-        <p>
-            Este paquete es una copia preparada
-            en el área privada de Espaciómetro.
-        </p>
+            <strong>
+                ESP015 ya liberó los archivos originales de este lote.
+            </strong>
 
-        <div class="small">
-            El respaldo ya puede descargarse y verificarse
-            mediante ESP014. La próxima etapa, ESP015,
-            permitirá evaluar la liberación segura de los
-            archivos originales.
-        </div>
+            {% if detalle.archivo_existe %}
+
+                <p>
+                    La copia ZIP del servidor sigue disponible
+                    y puede evaluarse para su retiro seguro.
+                </p>
+
+            {% else %}
+
+                <p>
+                    La copia ZIP física ya no está presente
+                    en el servidor. La evidencia permanece en la BD.
+                </p>
+
+            {% endif %}
+
+        {% else %}
+
+            <strong>
+                Respaldo preparado y verificable.
+            </strong>
+
+            <p>
+                ESP014 permite descargarlo y verificar el SHA-256.
+                ESP015 utilizará esa evidencia para evaluar
+                la liberación segura de los originales.
+            </p>
+
+        {% endif %}
 
     </div>
 

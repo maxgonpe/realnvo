@@ -73,6 +73,11 @@ from .downloads import (
     preparar_entrega_descarga,
 )
 
+from .backup_retirement import (
+    evaluar_retiro_respaldo,
+    ejecutar_retiro_respaldo,
+)
+
 from .scanner import ejecutar_medicion_completa
 from .services import obtener_dashboard_espaciometro
 from .structure import analizar_estructura_proyecto
@@ -1232,4 +1237,110 @@ def detalle_liberacion_view(
         {
             "detalle": detalle,
         },
+    )
+
+
+# =============================================================================
+# ESP015 — RETIRO DEL ZIP PRIVADO
+# =============================================================================
+
+
+@login_required
+def evaluar_retiro_respaldo_view(
+    request,
+    respaldo_id,
+):
+
+    respaldo = get_object_or_404(
+        RespaldoMantenimiento,
+        pk=respaldo_id,
+    )
+
+
+    evaluacion = (
+        evaluar_retiro_respaldo(
+            respaldo
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/retiro_respaldo_evaluacion.html",
+        {
+            "evaluacion": evaluacion,
+        },
+    )
+
+
+
+@login_required
+@permission_required(
+    "espaciometro.puede_liberar_archivos",
+    raise_exception=True,
+)
+@require_POST
+def ejecutar_retiro_respaldo_view(
+    request,
+    respaldo_id,
+):
+
+    respaldo = get_object_or_404(
+        RespaldoMantenimiento,
+        pk=respaldo_id,
+    )
+
+
+    usuario = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    resultado = (
+        ejecutar_retiro_respaldo(
+
+            respaldo=respaldo,
+
+            usuario=usuario,
+
+            confirmacion=(
+                request.POST.get(
+                    "confirmacion",
+                    "",
+                )
+            ),
+        )
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+    else:
+
+        messages.success(
+            request,
+            (
+                "La copia temporal del respaldo "
+                "fue retirada del servidor "
+                "correctamente."
+            ),
+        )
+
+
+    return redirect(
+        "espaciometro:detalle_respaldo",
+        respaldo_id=respaldo.pk,
     )
