@@ -153,3 +153,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'intervencion_lista'
+
+# =============================================================================
+# CONFIGURACIÓN LOCAL DE CADA MÁQUINA
+# =============================================================================
+#
+# local_settings.py contiene únicamente configuraciones específicas
+# de esta máquina y está excluido de Git.
+# =============================================================================
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass

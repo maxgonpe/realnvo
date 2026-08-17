@@ -17,3 +17,6 @@ _pycache/
 .env
 .env.local
 .espaciometro/
+
+# Configuración específica de cada máquina
+myproject/local_settings.py
