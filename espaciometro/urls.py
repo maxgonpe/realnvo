@@ -88,4 +88,23 @@ urlpatterns = [
         views.ciclo_vida,
         name="ciclo_vida",
     ),
+
+        # ESP012
+    path(
+        "candidatos/",
+        views.candidatos,
+        name="candidatos",
+    ),
+
+    path(
+        "candidatos/crear/",
+        views.crear_lote_candidatos_view,
+        name="crear_lote_candidatos",
+    ),
+
+    path(
+        "candidatos/lote/<int:lote_id>/",
+        views.detalle_lote_candidatos,
+        name="detalle_lote_candidatos",
+    ),
 ]

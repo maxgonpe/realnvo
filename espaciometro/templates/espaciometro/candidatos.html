@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Candidatos a mantenimiento — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
+        .nav,
+        .actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+        }
+
+
+        .nav {
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            border: 0;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .button:hover {
+            background: #1f2937;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        /* ==============================================================
+           AVISOS
+           ============================================================== */
+
+        .info-box {
+            border-left: 5px solid #2563eb;
+        }
+
+
+        .warning-box {
+            border-left: 5px solid #a16207;
+        }
+
+
+        .error-box {
+            border-left: 5px solid #b91c1c;
+        }
+
+
+        /* ==============================================================
+           FILTROS
+           ============================================================== */
+
+        .filters {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(210px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .field-title {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        input,
+        select {
+            width: 100%;
+
+            padding: 9px 10px;
+
+            border: 1px solid #d1d5db;
+
+            border-radius: 7px;
+
+            background: white;
+
+            font-size: 14px;
+        }
+
+
+        .size-group {
+            display: grid;
+
+            grid-template-columns:
+                minmax(100px, 1fr)
+                80px;
+
+            gap: 5px;
+        }
+
+
+        .actions {
+            margin-top: 18px;
+        }
+
+
+        /* ==============================================================
+           MÉTRICAS
+           ============================================================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+
+            font-weight: 700;
+        }
+
+
+        /* ==============================================================
+           TABLA
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 11px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: top;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+
+        .candidate-checkbox,
+        #check-all {
+            width: 19px;
+            height: 19px;
+
+            cursor: pointer;
+        }
+
+
+        .badge {
+            display: inline-block;
+
+            margin: 2px;
+
+            padding: 3px 6px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            background: #e5e7eb;
+        }
+
+
+        .badge-interest {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+
+        .ok {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+
+        .warning {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+
+        .error {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+
+        .sticky-actions {
+            position: sticky;
+
+            bottom: 0;
+
+            margin-top: 15px;
+
+            padding: 15px;
+
+            background:
+                rgba(
+                    243,
+                    244,
+                    246,
+                    0.97
+                );
+
+            border-top:
+                1px solid #d1d5db;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- MENSAJES -->
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div
+                class="card"
+                style="margin-bottom: 15px;"
+            >
+
+                {{ message }}
+
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+
+    <!-- NAVEGACIÓN -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:inventario' %}"
+        >
+            Inventario ESP010
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:ciclo_vida' %}"
+        >
+            Ciclo de vida ESP011
+        </a>
+
+    </div>
+
+
+
+    <h1>
+        Candidatos a mantenimiento
+    </h1>
+
+
+    <p class="small">
+
+        ESP012 permite identificar y guardar
+        conjuntos concretos de archivos para
+        una operación posterior.
+
+    </p>
+
+
+
+    <!-- SEGURIDAD -->
+
+    <div class="card info-box">
+
+        <strong>
+            Seleccionar no significa borrar.
+        </strong>
+
+
+        <p>
+
+            Crear un lote solamente registra cuáles
+            archivos fueron elegidos y cómo eran
+            en ese momento.
+
+        </p>
+
+
+        <p>
+
+            No se mueve, comprime, descarga
+            ni elimina ningún archivo.
+
+        </p>
+
+
+        <div class="small">
+
+            ESP013 volverá a verificar cada archivo
+            antes de preparar un respaldo.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- FILTROS -->
+
+    <div class="card section">
+
+        <h2>
+            Buscar candidatos
+        </h2>
+
+
+        <form
+            method="get"
+            action="{% url 'espaciometro:candidatos' %}"
+        >
+
+            <input
+                type="hidden"
+                name="buscar"
+                value="1"
+            >
+
+
+            <div class="filters">
+
+
+                <label>
+
+                    <span class="field-title">
+                        Ruta
+                    </span>
+
+
+                    <select name="ruta">
+
+                        <option value="">
+                            Todas las rutas activas
+                        </option>
+
+
+                        {% for ruta in selector.rutas %}
+
+                            <option
+                                value="{{ ruta.id }}"
+
+                                {% if selector.filtros.ruta == ruta.id|stringformat:"s" %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ ruta.nombre }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Tipo
+                    </span>
+
+
+                    <select name="tipo">
+
+                        <option value="">
+                            Todos
+                        </option>
+
+
+                        {% for codigo, nombre in selector.categorias %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if selector.filtros.tipo == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ nombre }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Extensión
+                    </span>
+
+
+                    <input
+                        type="text"
+                        name="extension"
+
+                        value="{{ selector.filtros.extension }}"
+
+                        placeholder=".jpg, .pdf..."
+                    >
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Nombre o ruta contiene
+                    </span>
+
+
+                    <input
+                        type="text"
+                        name="texto"
+
+                        value="{{ selector.filtros.texto }}"
+
+                        placeholder="cliente, 2024..."
+                    >
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Antigüedad mínima
+                    </span>
+
+
+                    <select name="antiguedad">
+
+                        {% for codigo, nombre in selector.antiguedades %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if selector.filtros.antiguedad == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ nombre }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Tamaño mínimo
+                    </span>
+
+
+                    <span class="size-group">
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+
+                            name="minimo"
+
+                            value="{{ selector.filtros.minimo }}"
+                        >
+
+
+                        <select
+                            name="minimo_unidad"
+                        >
+
+                            {% for codigo, nombre in selector.unidades %}
+
+                                <option
+                                    value="{{ codigo }}"
+
+                                    {% if selector.filtros.minimo_unidad == codigo %}
+                                        selected
+                                    {% endif %}
+                                >
+
+                                    {{ nombre }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </span>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Tamaño máximo
+                    </span>
+
+
+                    <span class="size-group">
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+
+                            name="maximo"
+
+                            value="{{ selector.filtros.maximo }}"
+                        >
+
+
+                        <select
+                            name="maximo_unidad"
+                        >
+
+                            {% for codigo, nombre in selector.unidades %}
+
+                                <option
+                                    value="{{ codigo }}"
+
+                                    {% if selector.filtros.maximo_unidad == codigo %}
+                                        selected
+                                    {% endif %}
+                                >
+
+                                    {{ nombre }}
+
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </span>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Orden
+                    </span>
+
+
+                    <select name="orden">
+
+                        {% for codigo, nombre in selector.ordenes %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if selector.filtros.orden == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ nombre }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+            </div>
+
+
+
+            <div class="actions">
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Buscar candidatos
+                </button>
+
+
+                <a
+                    class="button button-secondary"
+                    href="{% url 'espaciometro:candidatos' %}"
+                >
+                    Limpiar
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- RESULTADOS -->
+
+    {% if resultado %}
+
+
+        {% if resultado.error %}
+
+
+            <div class="card error-box section">
+
+                <strong class="error">
+                    No fue posible realizar la búsqueda.
+                </strong>
+
+                <p>
+                    {{ resultado.error }}
+                </p>
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="grid section">
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Coincidencias
+                    </div>
+
+                    <div class="metric-value">
+                        {{ resultado.coincidencias }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Espacio representado
+                    </div>
+
+                    <div class="metric-value">
+                        {{ resultado.total_legible }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Filas disponibles para selección
+                    </div>
+
+                    <div class="metric-value">
+                        {{ resultado.mostrados }}
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="metric-label">
+                        Tiempo
+                    </div>
+
+                    <div class="metric-value">
+                        {{ resultado.duracion_ms }} ms
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            {% if resultado.ocultos %}
+
+                <div class="card warning-box section">
+
+                    La búsqueda encontró
+
+                    <strong>
+                        {{ resultado.coincidencias }}
+                    </strong>
+
+                    archivos, pero ESP012 presenta
+                    un máximo de
+
+                    <strong>
+                        {{ resultado.mostrados }}
+                    </strong>
+
+                    filas seleccionables.
+
+                    <p>
+
+                        Refine los filtros si necesita
+                        trabajar con otro subconjunto.
+
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+
+            {% if resultado.archivos %}
+
+
+                <form
+                    method="post"
+
+                    action="{% url 'espaciometro:crear_lote_candidatos' %}"
+                >
+
+                    {% csrf_token %}
+
+
+                    <input
+                        type="hidden"
+
+                        name="filtros_token"
+
+                        value="{{ resultado.filtros_token }}"
+                    >
+
+
+                    <div
+                        class="card section table-wrapper"
+                    >
+
+
+                        <table>
+
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+
+                                        <input
+                                            type="checkbox"
+                                            id="check-all"
+                                            title="Seleccionar todos los visibles"
+                                        >
+
+                                    </th>
+
+                                    <th>Archivo</th>
+
+                                    <th>Ruta</th>
+
+                                    <th>Tipo</th>
+
+                                    <th>Tamaño</th>
+
+                                    <th>Modificado</th>
+
+                                    <th>Antigüedad</th>
+
+                                    <th>ESP006</th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                            {% for archivo in resultado.archivos %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+                                        <input
+                                            class="candidate-checkbox"
+
+                                            type="checkbox"
+
+                                            name="seleccionados"
+
+                                            value="{{ archivo.candidato_token }}"
+                                            data-bytes="{{ archivo.total_bytes }}"
+                                        >
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong>
+                                            {{ archivo.nombre }}
+                                        </strong>
+
+
+                                        <div class="path">
+
+                                            {{ archivo.ruta_relativa }}
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ archivo.ruta_nombre }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ archivo.categoria }}
+
+                                        {% if archivo.extension %}
+
+                                            <div class="small">
+
+                                                {{ archivo.extension }}
+
+                                            </div>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <strong>
+
+                                            {{ archivo.total_legible }}
+
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ archivo.modificado|date:"d/m/Y H:i:s" }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ archivo.antiguedad_dias }}
+                                        días
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        {% if archivo.tipo_interes %}
+
+                                            <span
+                                                class="
+                                                    badge
+                                                    badge-interest
+                                                "
+                                            >
+
+                                                Tipo prioritario
+
+                                            </span>
+
+                                        {% endif %}
+
+
+                                        {% if archivo.extension_interes %}
+
+                                            <span
+                                                class="
+                                                    badge
+                                                    badge-interest
+                                                "
+                                            >
+
+                                                Extensión prioritaria
+
+                                            </span>
+
+                                        {% endif %}
+
+
+                                        {% if not archivo.tipo_interes and not archivo.extension_interes %}
+
+                                            -
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+
+                    <div class="sticky-actions">
+
+
+                        <div
+                            style="
+                                display: grid;
+                                grid-template-columns:
+                                    minmax(200px, 420px)
+                                    auto;
+                                gap: 10px;
+                                align-items: end;
+                            "
+                        >
+
+
+                            <label>
+
+                                <span class="field-title">
+
+                                    Nombre del lote
+                                    (opcional)
+
+                                </span>
+
+
+                                <input
+                                    type="text"
+
+                                    maxlength="150"
+
+                                    name="nombre_lote"
+
+                                    placeholder="Ej.: Imágenes antiguas Media agosto 2026"
+                                >
+
+                            </label>
+
+                        <div>
+
+    <div
+        id="selection-summary"
+        style="
+            margin-bottom: 8px;
+            font-weight: 700;
+        "
+                    >
+                        Seleccionados:
+                        <span id="selected-count">0</span>
+                        archivo(s)
+                        ·
+                        <span id="selected-size">0 B</span>
+                    </div>
+
+                    <button
+                        class="button"
+                        type="submit"
+                        id="create-lot-button"
+                        disabled
+                    >
+                        Crear lote con seleccionados
+                    </button>
+
+                </div>
+                            
+
+
+                        </div>
+
+
+                        <div
+                            class="small"
+                            style="margin-top: 8px;"
+                        >
+
+                            Esta acción solamente guarda
+                            la selección en Espaciómetro.
+
+                        </div>
+
+
+                    </div>
+
+
+                </form>
+
+
+            {% else %}
+
+
+                <div class="card section">
+
+                    Ningún archivo cumple
+                    los filtros seleccionados.
+
+                </div>
+
+
+            {% endif %}
+
+
+        {% endif %}
+
+
+    {% endif %}
+
+
+
+    <!-- LOTES EXISTENTES -->
+
+    <div class="section">
+
+        <h2>
+            Lotes recientes
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>Lote</th>
+
+                        <th>Creado</th>
+
+                        <th>Usuario</th>
+
+                        <th>Archivos</th>
+
+                        <th>Espacio</th>
+
+                        <th>Estado</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for lote in lotes %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                            <a
+                                href="{% url 'espaciometro:detalle_lote_candidatos' lote.id %}"
+                            >
+
+                                <strong>
+
+                                    {% if lote.nombre %}
+
+                                        {{ lote.nombre }}
+
+                                    {% else %}
+
+                                        Lote #{{ lote.id }}
+
+                                    {% endif %}
+
+                                </strong>
+
+                            </a>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ lote.creado_en|date:"d/m/Y H:i:s" }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ lote.creado_por|default:"-" }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ lote.total_archivos }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ lote.total_legible }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ lote.get_estado_display }}
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            Todavía no existen lotes.
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+    const checkAll =
+        document.getElementById(
+            "check-all"
+        );
+
+
+    const checkboxes =
+        document.querySelectorAll(
+            ".candidate-checkbox"
+        );
+
+
+    const selectedCount =
+        document.getElementById(
+            "selected-count"
+        );
+
+
+    const selectedSize =
+        document.getElementById(
+            "selected-size"
+        );
+
+
+    const createButton =
+        document.getElementById(
+            "create-lot-button"
+        );
+
+
+    function formatBytes(bytes) {
+
+        if (!bytes) {
+            return "0 B";
+        }
+
+
+        const units = [
+            "B",
+            "KB",
+            "MB",
+            "GB",
+            "TB"
+        ];
+
+
+        let value = bytes;
+
+        let unitIndex = 0;
+
+
+        while (
+            value >= 1024
+            &&
+            unitIndex < units.length - 1
+        ) {
+
+            value = value / 1024;
+
+            unitIndex += 1;
+
+        }
+
+
+        return (
+            value.toFixed(
+                unitIndex === 0 ? 0 : 2
+            )
+            +
+            " "
+            +
+            units[
+                unitIndex
+            ]
+        );
+    }
+
+
+    function updateSelectionSummary() {
+
+        let count = 0;
+
+        let totalBytes = 0;
+
+
+        checkboxes.forEach(
+            function(caja) {
+
+                if (caja.checked) {
+
+                    count += 1;
+
+                    totalBytes += Number(
+                        caja.dataset.bytes
+                        || 0
+                    );
+
+                }
+
+            }
+        );
+
+
+        if (selectedCount) {
+
+            selectedCount.textContent =
+                count;
+
+        }
+
+
+        if (selectedSize) {
+
+            selectedSize.textContent =
+                formatBytes(
+                    totalBytes
+                );
+
+        }
+
+
+        if (createButton) {
+
+            createButton.disabled =
+                count === 0;
+
+        }
+
+
+        if (checkAll) {
+
+            checkAll.checked =
+                (
+                    checkboxes.length > 0
+                    &&
+                    count === checkboxes.length
+                );
+
+
+            checkAll.indeterminate =
+                (
+                    count > 0
+                    &&
+                    count < checkboxes.length
+                );
+
+        }
+
+    }
+
+
+    if (checkAll) {
+
+        checkAll.addEventListener(
+            "change",
+            function() {
+
+                checkboxes.forEach(
+                    function(caja) {
+
+                        caja.checked =
+                            checkAll.checked;
+
+                    }
+                );
+
+
+                updateSelectionSummary();
+
+            }
+        );
+
+    }
+
+
+    checkboxes.forEach(
+        function(caja) {
+
+            caja.addEventListener(
+                "change",
+                updateSelectionSummary
+            );
+
+        }
+    );
+
+
+    updateSelectionSummary();
+
+</script>
+
+
+
+</body>
+
+</html>

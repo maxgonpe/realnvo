@@ -840,3 +840,246 @@ class OperacionMantenimiento(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} — {self.estado}"
+
+
+# =============================================================================
+# ESP012 — CANDIDATOS A MANTENIMIENTO
+# =============================================================================
+
+
+class LoteCandidatosMantenimiento(models.Model):
+    """
+    Conjunto de archivos seleccionados por el usuario
+    para una eventual operación posterior.
+
+    ESP012 no modifica los archivos físicos.
+    """
+
+    class Estado(models.TextChoices):
+
+        ABIERTO = (
+            "ABIERTO",
+            "Abierto",
+        )
+
+        PREPARADO = (
+            "PREPARADO",
+            "Preparado para respaldo",
+        )
+
+        CANCELADO = (
+            "CANCELADO",
+            "Cancelado",
+        )
+
+
+    nombre = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    creado_por = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    filtros = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+
+    total_archivos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    total_bytes = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.ABIERTO,
+    )
+
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_lote_candidatos_mantenimiento"
+        )
+
+        ordering = [
+            "-creado_en",
+            "-id",
+        ]
+
+
+    def __str__(self):
+
+        if self.nombre:
+            return self.nombre
+
+        return (
+            f"Lote #{self.pk}"
+            if self.pk
+            else "Nuevo lote"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes
+        )
+
+
+
+class CandidatoMantenimiento(models.Model):
+    """
+    Fotografía de un archivo seleccionado.
+
+    No almacena el archivo ni modifica su contenido.
+
+    Se conservan metadatos suficientes para que ESP013
+    pueda detectar si el archivo cambió después de haber
+    sido seleccionado.
+    """
+
+    lote = models.ForeignKey(
+        LoteCandidatosMantenimiento,
+        on_delete=models.CASCADE,
+        related_name="candidatos",
+    )
+
+
+    ruta_monitoreada = models.ForeignKey(
+        RutaMonitoreada,
+        on_delete=models.PROTECT,
+        related_name="candidatos_mantenimiento",
+    )
+
+
+    ruta_relativa = models.TextField()
+
+
+    nombre = models.CharField(
+        max_length=255,
+    )
+
+
+    categoria = models.CharField(
+        max_length=40,
+        blank=True,
+    )
+
+
+    extension = models.CharField(
+        max_length=40,
+        blank=True,
+    )
+
+
+    total_bytes_snapshot = (
+        models.PositiveBigIntegerField()
+    )
+
+
+    mtime_ns_snapshot = (
+        models.BigIntegerField()
+    )
+
+
+    inode_snapshot = (
+        models.PositiveBigIntegerField(
+            default=0,
+        )
+    )
+
+
+    dispositivo_snapshot = (
+        models.PositiveBigIntegerField(
+            default=0,
+        )
+    )
+
+
+    modificado_snapshot = (
+        models.DateTimeField(
+            null=True,
+            blank=True,
+        )
+    )
+
+
+    tipo_interes_snapshot = (
+        models.BooleanField(
+            default=False,
+        )
+    )
+
+
+    extension_interes_snapshot = (
+        models.BooleanField(
+            default=False,
+        )
+    )
+
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_candidato_mantenimiento"
+        )
+
+        ordering = [
+            "ruta_monitoreada__nombre",
+            "ruta_relativa",
+        ]
+
+        constraints = [
+
+            models.UniqueConstraint(
+                fields=[
+                    "lote",
+                    "ruta_monitoreada",
+                    "ruta_relativa",
+                ],
+                name=(
+                    "esp_unique_candidato_lote_ruta"
+                ),
+            ),
+
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"{self.ruta_monitoreada.nombre}"
+            f"/{self.ruta_relativa}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_snapshot
+        )

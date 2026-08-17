@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Lote ESP012 — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1550px;
+
+            margin: 0 auto;
+
+            padding: 30px;
+        }
+
+
+        h1,
+        h2 {
+            margin-top: 0;
+        }
+
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .path {
+            color: #6b7280;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+
+        .nav {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+
+            font-weight: 700;
+        }
+
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 11px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: top;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        .VIGENTE {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+
+        .CAMBIADO {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+
+        .AUSENTE,
+        .PROBLEMA {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+
+        .yes {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+
+        .no {
+            color: #6b7280;
+        }
+
+
+        .info-box {
+            border-left:
+                5px solid #2563eb;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- NAVEGACIÓN -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:candidatos' %}"
+        >
+            ← Candidatos
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+
+    <!-- CABECERA -->
+
+    <h1>
+
+        {% if detalle.lote.nombre %}
+
+            {{ detalle.lote.nombre }}
+
+        {% else %}
+
+            Lote #{{ detalle.lote.id }}
+
+        {% endif %}
+
+    </h1>
+
+
+    <div class="small">
+
+        Creado:
+
+        {{ detalle.lote.creado_en|date:"d/m/Y H:i:s" }}
+
+        ·
+
+        Usuario:
+
+        {{ detalle.lote.creado_por|default:"-" }}
+
+        ·
+
+        Estado:
+
+        {{ detalle.lote.get_estado_display }}
+
+    </div>
+
+
+
+    <!-- RESUMEN -->
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Archivos seleccionados
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.total }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Espacio al seleccionar
+            </div>
+
+            <div class="metric-value">
+                {{ detalle.total_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Vigentes
+            </div>
+
+            <div class="metric-value VIGENTE">
+
+                {{ detalle.vigentes }}
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Cambiaron
+            </div>
+
+            <div class="metric-value CAMBIADO">
+
+                {{ detalle.cambiados }}
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Ausentes
+            </div>
+
+            <div class="metric-value AUSENTE">
+
+                {{ detalle.ausentes }}
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Problemas
+            </div>
+
+            <div class="metric-value PROBLEMA">
+
+                {{ detalle.problemas }}
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- EXPLICACIÓN -->
+
+    <div class="card info-box section">
+
+        <strong>
+            Validación en tiempo real
+        </strong>
+
+
+        <p>
+
+            Al abrir esta pantalla, Espaciómetro
+            vuelve a consultar los archivos físicos.
+
+        </p>
+
+
+        <p>
+
+            Un candidato marcado como
+
+            <strong>Vigente</strong>
+
+            coincide con el tamaño, fecha de modificación
+            e identidad registrados cuando se creó el lote.
+
+        </p>
+
+
+        <div class="small">
+
+            Esta validación todavía no modifica
+            ningún archivo.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ARCHIVOS -->
+
+    <div class="section">
+
+        <h2>
+            Archivos del lote
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>Archivo</th>
+
+                        <th>Ruta</th>
+
+                        <th>Tipo</th>
+
+                        <th>Tamaño snapshot</th>
+
+                        <th>Modificado snapshot</th>
+
+                        <th>Estado actual</th>
+
+                        <th>Mantenimiento</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for fila in detalle.filas %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                            <strong>
+
+                                {{ fila.objeto.nombre }}
+
+                            </strong>
+
+
+                            <div class="path">
+
+                                {{ fila.objeto.ruta_relativa }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ fila.objeto.ruta_monitoreada.nombre }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ fila.objeto.categoria }}
+
+                            {% if fila.objeto.extension %}
+
+                                <div class="small">
+
+                                    {{ fila.objeto.extension }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ fila.objeto.total_legible }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ fila.objeto.modificado_snapshot|date:"d/m/Y H:i:s" }}
+
+                        </td>
+
+
+                        <td>
+
+                            <span
+                                class="{{ fila.estado.codigo }}"
+                            >
+
+                                {{ fila.estado.texto }}
+
+                            </span>
+
+
+                            <div class="small">
+
+                                {{ fila.estado.detalle }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {% if fila.mantenimiento_permitido %}
+
+                                <span class="yes">
+
+                                    Autorizado en la ruta
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="no">
+
+                                    No autorizado
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+
+                    <tr>
+
+                        <td colspan="7">
+
+                            El lote no contiene candidatos.
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- FUTURO ESP013 -->
+
+    <div class="card info-box section">
+
+        <strong>
+            Siguiente etapa: ESP013
+        </strong>
+
+
+        <p>
+
+            ESP013 utilizará este lote para preparar
+            un respaldo reproducible de los candidatos
+            que continúen siendo válidos.
+
+        </p>
+
+
+        <div class="small">
+
+            Los candidatos modificados o desaparecidos
+            deberán ser tratados de forma conservadora.
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

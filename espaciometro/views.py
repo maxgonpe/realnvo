@@ -31,12 +31,22 @@ from .lifecycle import (
 )
 from .models import (
     EjecucionMedicion,
+    LoteCandidatosMantenimiento,
     RutaMonitoreada,
 )
 from .route_selector import (
     guardar_seleccion_rutas,
     obtener_selector_rutas,
 )
+
+from .candidates import (
+    buscar_candidatos,
+    crear_lote_candidatos,
+    obtener_configuracion_candidatos,
+    obtener_detalle_lote,
+    obtener_lotes_recientes,
+)
+
 from .scanner import ejecutar_medicion_completa
 from .services import obtener_dashboard_espaciometro
 from .structure import analizar_estructura_proyecto
@@ -480,5 +490,180 @@ def ciclo_vida(request):
         {
             "ciclo": configuracion,
             "resultado": resultado,
+        },
+    )
+
+# =============================================================================
+# ESP012 — CANDIDATOS A MANTENIMIENTO
+# =============================================================================
+
+
+@login_required
+def candidatos(request):
+    """
+    Abrir la pantalla no ejecuta búsqueda.
+
+    Solo se analiza el filesystem cuando:
+        ?buscar=1
+    """
+
+    configuracion = (
+        obtener_configuracion_candidatos(
+            request.GET
+        )
+    )
+
+
+    resultado = None
+
+
+    if request.GET.get(
+        "buscar"
+    ):
+
+        resultado = (
+            buscar_candidatos(
+                request.GET
+            )
+        )
+
+
+    lotes = (
+        obtener_lotes_recientes()
+    )
+
+
+    return render(
+        request,
+        "espaciometro/candidatos.html",
+        {
+            "selector": configuracion,
+            "resultado": resultado,
+            "lotes": lotes,
+        },
+    )
+
+
+
+@login_required
+@require_POST
+def crear_lote_candidatos_view(
+    request,
+):
+
+    usuario = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    resultado = (
+        crear_lote_candidatos(
+
+            tokens=(
+                request.POST.getlist(
+                    "seleccionados"
+                )
+            ),
+
+            filtros_token=(
+                request.POST.get(
+                    "filtros_token",
+                    "",
+                )
+            ),
+
+            usuario=usuario,
+
+            nombre=(
+                request.POST.get(
+                    "nombre_lote",
+                    "",
+                )
+            ),
+        )
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+        return redirect(
+            "espaciometro:candidatos"
+        )
+
+
+    texto = (
+        f"Lote #{resultado['lote'].pk} "
+        f"creado con "
+        f"{resultado['creados']} "
+        "archivo(s)."
+    )
+
+
+    if resultado[
+        "omitidos"
+    ]:
+
+        texto += (
+            f" Se omitieron "
+            f"{resultado['omitidos']} "
+            "selección(es) que ya no "
+            "eran válidas."
+        )
+
+
+    messages.success(
+        request,
+        texto,
+    )
+
+
+    return redirect(
+        "espaciometro:detalle_lote_candidatos",
+        lote_id=(
+            resultado[
+                "lote"
+            ].pk
+        ),
+    )
+
+
+
+@login_required
+def detalle_lote_candidatos(
+    request,
+    lote_id,
+):
+
+    lote = get_object_or_404(
+        LoteCandidatosMantenimiento,
+        pk=lote_id,
+    )
+
+
+    detalle = (
+        obtener_detalle_lote(
+            lote
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/lote_candidatos.html",
+        {
+            "detalle": detalle,
         },
     )

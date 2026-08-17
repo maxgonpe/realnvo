@@ -1,300 +1,233 @@
 from django.contrib import admin
 
 from .models import (
+    RutaMonitoreada,
     EjecucionMedicion,
-    MedicionBaseDatos,
     MedicionDisco,
     MedicionRuta,
-    MedicionTabla,
-    OperacionMantenimiento,
     ResumenTipoArchivo,
-    RutaMonitoreada,
+    MedicionBaseDatos,
+    MedicionTabla,
     UmbralAlerta,
-    bytes_legibles,
+    OperacionMantenimiento,
+    LoteCandidatosMantenimiento,
+    CandidatoMantenimiento,
 )
 
 
-@admin.register(RutaMonitoreada)
-class RutaMonitoreadaAdmin(admin.ModelAdmin):
-    list_display = (
-        "nombre",
-        "ruta",
-        "categoria",
-        "recursiva",
-        "activa",
-        "visible_dashboard",
-        "permite_mantenimiento",
-    )
-
-    list_filter = (
-        "categoria",
-        "recursiva",
-        "activa",
-        "visible_dashboard",
-        "permite_mantenimiento",
-    )
-
-    search_fields = (
-        "nombre",
-        "ruta",
-        "observaciones",
-    )
+# =============================================================================
+# MODELOS EXISTENTES DE ESPACIÓMETRO
+# =============================================================================
+#
+# Los mantenemos registrados de forma simple.
+#
+# No imponemos aquí nombres de campos específicos para conservar
+# compatibilidad con la estructura real existente del proyecto.
+# =============================================================================
 
 
-@admin.register(EjecucionMedicion)
-class EjecucionMedicionAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "iniciada_en",
-        "finalizada_en",
-        "estado",
-        "hostname",
-        "plataforma",
-    )
+admin.site.register(
+    RutaMonitoreada
+)
 
-    list_filter = (
-        "estado",
-        "iniciada_en",
-    )
+admin.site.register(
+    EjecucionMedicion
+)
 
-    search_fields = (
-        "hostname",
-        "plataforma",
-        "observaciones",
-    )
+admin.site.register(
+    MedicionDisco
+)
 
-    readonly_fields = (
-        "iniciada_en",
-    )
+admin.site.register(
+    MedicionRuta
+)
 
+admin.site.register(
+    ResumenTipoArchivo
+)
 
-@admin.register(MedicionDisco)
-class MedicionDiscoAdmin(admin.ModelAdmin):
-    list_display = (
-        "ejecucion",
-        "punto_montaje",
-        "total_formateado",
-        "usado_formateado",
-        "libre_formateado",
-        "porcentaje_usado",
-    )
+admin.site.register(
+    MedicionBaseDatos
+)
 
-    search_fields = (
-        "punto_montaje",
-        "dispositivo",
-        "sistema_archivos",
-    )
+admin.site.register(
+    MedicionTabla
+)
 
-    @admin.display(description="Total")
-    def total_formateado(self, obj):
-        return bytes_legibles(obj.total_bytes)
+admin.site.register(
+    UmbralAlerta
+)
 
-    @admin.display(description="Usado")
-    def usado_formateado(self, obj):
-        return bytes_legibles(obj.usados_bytes)
-
-    @admin.display(description="Libre")
-    def libre_formateado(self, obj):
-        return bytes_legibles(obj.libres_bytes)
+admin.site.register(
+    OperacionMantenimiento
+)
 
 
-class ResumenTipoArchivoInline(admin.TabularInline):
-    model = ResumenTipoArchivo
+# =============================================================================
+# ESP012 — CANDIDATOS DENTRO DEL LOTE
+# =============================================================================
+
+
+class CandidatoMantenimientoInline(
+    admin.TabularInline
+):
+
+    model = CandidatoMantenimiento
+
     extra = 0
-    readonly_fields = (
-        "categoria",
-        "extension",
-        "cantidad",
-        "total_bytes",
-        "archivo_mas_antiguo_fecha",
-        "archivo_mas_reciente_fecha",
-    )
 
     can_delete = False
 
     show_change_link = True
 
-
-@admin.register(MedicionRuta)
-class MedicionRutaAdmin(admin.ModelAdmin):
-    list_display = (
+    fields = (
         "ruta_monitoreada",
-        "ejecucion",
-        "tamano_formateado",
+        "ruta_relativa",
+        "nombre",
+        "categoria",
+        "extension",
+        "total_bytes_snapshot",
+        "modificado_snapshot",
+    )
+
+    readonly_fields = (
+        "ruta_monitoreada",
+        "ruta_relativa",
+        "nombre",
+        "categoria",
+        "extension",
+        "total_bytes_snapshot",
+        "modificado_snapshot",
+    )
+
+
+# =============================================================================
+# ESP012 — LOTES
+# =============================================================================
+
+
+@admin.register(
+    LoteCandidatosMantenimiento
+)
+class LoteCandidatosMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "nombre",
+        "estado",
         "total_archivos",
-        "total_imagenes",
-        "total_pdf",
-        "archivos_inaccesibles",
+        "espacio_legible",
+        "creado_por",
+        "creado_en",
     )
 
     list_filter = (
-        "ruta_monitoreada",
-        "ejecucion__estado",
+        "estado",
+        "creado_en",
     )
 
     search_fields = (
-        "ruta_monitoreada__nombre",
-        "ruta_resuelta",
-        "archivo_mas_grande_ruta",
+        "nombre",
+        "creado_por",
     )
 
-    inlines = [ResumenTipoArchivoInline]
-
-    @admin.display(description="Tamaño")
-    def tamano_formateado(self, obj):
-        return bytes_legibles(obj.total_bytes)
-
-
-@admin.register(ResumenTipoArchivo)
-class ResumenTipoArchivoAdmin(admin.ModelAdmin):
-    list_display = (
-        "medicion_ruta",
-        "categoria",
-        "extension",
-        "cantidad",
-        "tamano_formateado",
+    ordering = (
+        "-creado_en",
+        "-id",
     )
-
-    list_filter = (
-        "categoria",
-        "extension",
-    )
-
-    search_fields = (
-        "extension",
-        "medicion_ruta__ruta_monitoreada__nombre",
-    )
-
-    @admin.display(description="Tamaño")
-    def tamano_formateado(self, obj):
-        return bytes_legibles(obj.total_bytes)
-
-
-class MedicionTablaInline(admin.TabularInline):
-    model = MedicionTabla
-    extra = 0
 
     readonly_fields = (
-        "esquema",
-        "nombre_tabla",
-        "total_registros",
-        "datos_bytes",
-        "indices_bytes",
+        "total_archivos",
         "total_bytes",
+        "creado_en",
     )
 
-    can_delete = False
-
-    show_change_link = True
-
-
-@admin.register(MedicionBaseDatos)
-class MedicionBaseDatosAdmin(admin.ModelAdmin):
-    list_display = (
-        "ejecucion",
-        "alias",
-        "vendor",
-        "nombre_base_datos",
-        "total_tablas",
-        "total_registros",
-        "tamano_formateado",
-    )
-
-    list_filter = (
-        "vendor",
-        "alias",
-    )
-
-    search_fields = (
-        "alias",
-        "vendor",
-        "nombre_base_datos",
-        "host",
-    )
-
-    inlines = [MedicionTablaInline]
-
-    @admin.display(description="Tamaño")
-    def tamano_formateado(self, obj):
-        return bytes_legibles(obj.total_bytes)
-
-
-@admin.register(MedicionTabla)
-class MedicionTablaAdmin(admin.ModelAdmin):
-    list_display = (
-        "nombre_tabla",
-        "esquema",
-        "medicion_bd",
-        "total_registros",
-        "tamano_formateado",
-    )
-
-    search_fields = (
-        "nombre_tabla",
-        "esquema",
-    )
-
-    @admin.display(description="Tamaño")
-    def tamano_formateado(self, obj):
-        return bytes_legibles(obj.total_bytes)
-
-
-@admin.register(UmbralAlerta)
-class UmbralAlertaAdmin(admin.ModelAdmin):
-    list_display = (
-        "nombre",
-        "tipo_objetivo",
-        "identificador",
-        "metrica",
-        "operador",
-        "valor",
-        "unidad",
-        "nivel",
-        "activa",
-    )
-
-    list_filter = (
-        "tipo_objetivo",
-        "nivel",
-        "activa",
-    )
-
-    search_fields = (
-        "nombre",
-        "identificador",
-        "metrica",
+    inlines = (
+        CandidatoMantenimientoInline,
     )
 
 
-@admin.register(OperacionMantenimiento)
-class OperacionMantenimientoAdmin(admin.ModelAdmin):
+    @admin.display(
+        description="Espacio"
+    )
+    def espacio_legible(
+        self,
+        obj,
+    ):
+
+        return obj.total_legible
+
+
+# =============================================================================
+# ESP012 — CANDIDATOS INDIVIDUALES
+# =============================================================================
+
+
+@admin.register(
+    CandidatoMantenimiento
+)
+class CandidatoMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
     list_display = (
         "id",
-        "tipo",
-        "estado",
-        "identificador_objetivo",
-        "usuario",
-        "creada_en",
-        "bytes_liberados_formateados",
-        "registros_afectados",
+        "lote",
+        "ruta_monitoreada",
+        "nombre",
+        "categoria",
+        "extension",
+        "espacio_legible",
+        "modificado_snapshot",
+        "creado_en",
     )
 
     list_filter = (
-        "tipo",
-        "estado",
-        "creada_en",
+        "categoria",
+        "extension",
+        "ruta_monitoreada",
+        "tipo_interes_snapshot",
+        "extension_interes_snapshot",
     )
 
     search_fields = (
-        "identificador_objetivo",
-        "usuario",
-        "error",
+        "nombre",
+        "ruta_relativa",
+        "lote__nombre",
+        "ruta_monitoreada__nombre",
+    )
+
+    ordering = (
+        "-creado_en",
+        "-id",
     )
 
     readonly_fields = (
-        "creada_en",
+        "lote",
+        "ruta_monitoreada",
+        "ruta_relativa",
+        "nombre",
+        "categoria",
+        "extension",
+        "total_bytes_snapshot",
+        "mtime_ns_snapshot",
+        "inode_snapshot",
+        "dispositivo_snapshot",
+        "modificado_snapshot",
+        "tipo_interes_snapshot",
+        "extension_interes_snapshot",
+        "creado_en",
     )
 
-    @admin.display(description="Liberado")
-    def bytes_liberados_formateados(self, obj):
-        return bytes_legibles(obj.bytes_liberados)
+
+    @admin.display(
+        description="Espacio"
+    )
+    def espacio_legible(
+        self,
+        obj,
+    ):
+
+        return obj.total_legible
