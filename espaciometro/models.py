@@ -1353,3 +1353,146 @@ class DetalleRespaldoMantenimiento(models.Model):
             self.total_bytes
         )
 
+# =============================================================================
+# ESP014 — DESCARGAS DE RESPALDOS
+# =============================================================================
+
+
+class RegistroDescargaRespaldo(models.Model):
+    """
+    Registra la entrega de un respaldo ESP013.
+
+    IMPORTANTE:
+    INICIADA significa que el servidor validó el paquete
+    y comenzó a entregarlo al navegador.
+
+    VERIFICADA significa que posteriormente el usuario
+    proporcionó el SHA-256 del archivo recibido y este
+    coincide con el registrado por ESP013.
+    """
+
+    class Estado(models.TextChoices):
+
+        INICIADA = (
+            "INICIADA",
+            "Entrega iniciada",
+        )
+
+        CONFIRMADA = (
+            "CONFIRMADA",
+            "Recepción confirmada",
+        )
+
+        VERIFICADA = (
+            "VERIFICADA",
+            "Recepción verificada",
+        )
+
+        VERIFICACION_FALLIDA = (
+            "VERIFICACION_FALLIDA",
+            "Verificación fallida",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    respaldo = models.ForeignKey(
+        RespaldoMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="descargas",
+    )
+
+
+    usuario = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    estado = models.CharField(
+        max_length=30,
+        choices=Estado.choices,
+        default=Estado.INICIADA,
+    )
+
+
+    sha256_esperado = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    sha256_servidor = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    sha256_cliente = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    total_bytes = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    ip_cliente = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+
+    user_agent = models.TextField(
+        blank=True,
+    )
+
+
+    detalle = models.TextField(
+        blank=True,
+    )
+
+
+    iniciada_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    confirmada_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_registro_descarga_respaldo"
+        )
+
+        ordering = [
+            "-iniciada_en",
+            "-id",
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"Descarga #{self.pk} "
+            f"— respaldo #{self.respaldo_id}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes
+        )
+

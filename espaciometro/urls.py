@@ -126,5 +126,18 @@ urlpatterns = [
         views.detalle_respaldo,
         name="detalle_respaldo",
     ),
+
+        # ESP014
+    path(
+        "respaldos/<int:respaldo_id>/descargar/",
+        views.descargar_respaldo,
+        name="descargar_respaldo",
+    ),
+
+    path(
+        "respaldos/descargas/<int:descarga_id>/confirmar/",
+        views.confirmar_descarga_view,
+        name="confirmar_descarga",
+    ),
     
 ]

@@ -14,6 +14,7 @@ from .models import (
     CandidatoMantenimiento,
     RespaldoMantenimiento,
     DetalleRespaldoMantenimiento,
+    RegistroDescargaRespaldo,
 )
 
 
@@ -327,4 +328,53 @@ class DetalleRespaldoMantenimientoAdmin(
         "total_bytes",
         "sha256",
         "creado_en",
+    )
+
+# =============================================================================
+# ESP014
+# =============================================================================
+
+
+@admin.register(
+    RegistroDescargaRespaldo
+)
+class RegistroDescargaRespaldoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "respaldo",
+        "usuario",
+        "estado",
+        "total_legible",
+        "iniciada_en",
+        "confirmada_en",
+    )
+
+    list_filter = (
+        "estado",
+        "iniciada_en",
+    )
+
+    search_fields = (
+        "usuario",
+        "respaldo__nombre_archivo",
+        "sha256_esperado",
+        "sha256_cliente",
+    )
+
+    readonly_fields = (
+        "respaldo",
+        "usuario",
+        "estado",
+        "sha256_esperado",
+        "sha256_servidor",
+        "sha256_cliente",
+        "total_bytes",
+        "ip_cliente",
+        "user_agent",
+        "detalle",
+        "iniciada_en",
+        "confirmada_en",
     )

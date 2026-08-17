@@ -413,6 +413,341 @@
     {% endif %}
 
 
+        <!-- ================================================================
+     ESP014 — DESCARGA
+     ================================================================ -->
+
+<div class="card info section">
+
+    <h2>
+        ESP014 — Descargar respaldo
+    </h2>
+
+
+    {% if detalle.archivo_existe %}
+
+
+        {% if detalle.respaldo.estado == "LISTO" or detalle.respaldo.estado == "PARCIAL" %}
+
+
+            <p>
+
+                Antes de iniciar la descarga,
+                Espaciómetro volverá a comprobar
+                el SHA-256 completo del paquete.
+
+            </p>
+
+
+            {% if detalle.respaldo.estado == "PARCIAL" %}
+
+                <p>
+
+                    <strong>
+                        Advertencia:
+                    </strong>
+
+                    este respaldo es parcial.
+
+                    Puede descargarse para conservar
+                    los archivos incluidos, pero no
+                    habilitará la liberación completa
+                    del lote.
+
+                </p>
+
+            {% endif %}
+
+
+            <form
+                method="post"
+
+                action="{% url 'espaciometro:descargar_respaldo' detalle.respaldo.id %}"
+            >
+
+                {% csrf_token %}
+
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Descargar respaldo
+                </button>
+
+            </form>
+
+
+            <div class="small" style="margin-top:10px;">
+
+                Archivo:
+
+                {{ detalle.respaldo.nombre_archivo }}
+
+                ·
+
+                {{ detalle.respaldo.paquete_legible }}
+
+            </div>
+
+
+        {% else %}
+
+            <p>
+
+                El respaldo no se encuentra
+                en un estado descargable.
+
+            </p>
+
+        {% endif %}
+
+
+    {% else %}
+
+        <p>
+
+            <strong>
+
+                El archivo físico del respaldo
+                no está disponible.
+
+            </strong>
+
+        </p>
+
+    {% endif %}
+
+</div>
+
+
+
+<!-- ================================================================
+     HISTORIAL DE DESCARGAS
+     ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Historial de entregas
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+
+                        <th>Fecha</th>
+
+                        <th>Usuario</th>
+
+                        <th>Estado</th>
+
+                        <th>Tamaño</th>
+
+                        <th>Verificación local</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for descarga in detalle.descargas %}
+
+
+                    <tr>
+
+
+                        <td>
+
+                            #{{ descarga.id }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ descarga.iniciada_en|date:"d/m/Y H:i:s" }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ descarga.usuario|default:"-" }}
+
+                        </td>
+
+
+                        <td>
+
+                            <strong>
+
+                                {{ descarga.get_estado_display }}
+
+                            </strong>
+
+
+                            <div class="small">
+
+                                {{ descarga.detalle }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ descarga.total_legible }}
+
+                        </td>
+
+
+                        <td>
+
+
+                            {% if descarga.estado == "VERIFICADA" %}
+
+                                <strong style="color:#15803d;">
+
+                                    SHA-256 verificado
+
+                                </strong>
+
+
+                                <div class="hash">
+
+                                    {{ descarga.sha256_cliente }}
+
+                                </div>
+
+
+                            {% elif descarga.estado == "ERROR" %}
+
+                                <span style="color:#b91c1c;">
+
+                                    Entrega no válida
+
+                                </span>
+
+
+                            {% else %}
+
+
+                                <form
+                                    method="post"
+
+                                    action="{% url 'espaciometro:confirmar_descarga' descarga.id %}"
+                                >
+
+                                    {% csrf_token %}
+
+
+                                    <label>
+
+                                        <span class="small">
+
+                                            SHA-256 calculado
+                                            en tu PC
+                                            (recomendado)
+
+                                        </span>
+
+
+                                        <input
+                                            type="text"
+
+                                            name="sha256_cliente"
+
+                                            maxlength="64"
+
+                                            placeholder="64 caracteres hexadecimales"
+
+                                            style="
+                                                width:100%;
+                                                margin-top:5px;
+                                                padding:8px;
+                                            "
+                                        >
+
+                                    </label>
+
+
+                                    <button
+                                        class="button button-secondary"
+
+                                        type="submit"
+
+                                        style="margin-top:8px;"
+                                    >
+
+                                        Confirmar recepción
+
+                                    </button>
+
+
+                                    <div
+                                        class="small"
+                                        style="margin-top:5px;"
+                                    >
+
+                                        Puede confirmarse sin SHA,
+                                        pero ESP015 considerará más
+                                        fuerte una descarga verificada.
+
+                                    </div>
+
+                                </form>
+
+
+                            {% endif %}
+
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            Este respaldo todavía
+                            no ha sido descargado.
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
     <div class="section">
 
         <h2>
@@ -547,8 +882,10 @@
         </p>
 
         <div class="small">
-            La próxima etapa, ESP014,
-            permitirá descargarlo al computador.
+            El respaldo ya puede descargarse y verificarse
+            mediante ESP014. La próxima etapa, ESP015,
+            permitirá evaluar la liberación segura de los
+            archivos originales.
         </div>
 
     </div>

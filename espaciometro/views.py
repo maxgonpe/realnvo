@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.http import FileResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import (
     get_object_or_404,
@@ -34,6 +35,7 @@ from .models import (
     LoteCandidatosMantenimiento,
     RutaMonitoreada,
     RespaldoMantenimiento,
+    RegistroDescargaRespaldo,
 )
 from .route_selector import (
     guardar_seleccion_rutas,
@@ -52,6 +54,11 @@ from .backup import (
     obtener_detalle_respaldo,
     obtener_respaldos_recientes,
     preparar_respaldo_lote,
+)
+
+from .downloads import (
+    confirmar_descarga as confirmar_descarga_servicio,
+    preparar_entrega_descarga,
 )
 
 from .scanner import ejecutar_medicion_completa
@@ -832,6 +839,15 @@ def detalle_respaldo(
         )
     )
 
+    detalle[
+    "descargas"
+    ] = (
+        respaldo.descargas
+        .all()
+        .order_by(
+            "-iniciada_en"
+        )
+    )
 
     return render(
         request,
@@ -839,4 +855,212 @@ def detalle_respaldo(
         {
             "detalle": detalle,
         },
+    )
+
+# =============================================================================
+# ESP014 — DESCARGA SEGURA
+# =============================================================================
+
+
+@login_required
+@require_POST
+def descargar_respaldo(
+    request,
+    respaldo_id,
+):
+
+    respaldo = get_object_or_404(
+        RespaldoMantenimiento,
+        pk=respaldo_id,
+    )
+
+
+    usuario = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    ip_cliente = (
+        request.META.get(
+            "REMOTE_ADDR",
+            "",
+        )
+    )
+
+
+    user_agent = (
+        request.META.get(
+            "HTTP_USER_AGENT",
+            "",
+        )
+    )
+
+
+    resultado = (
+        preparar_entrega_descarga(
+
+            respaldo=respaldo,
+
+            usuario=usuario,
+
+            ip_cliente=ip_cliente,
+
+            user_agent=user_agent,
+        )
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+        return redirect(
+            "espaciometro:detalle_respaldo",
+            respaldo_id=respaldo.pk,
+        )
+
+
+    respuesta = FileResponse(
+
+        resultado[
+            "archivo"
+        ],
+
+        as_attachment=True,
+
+        filename=(
+            resultado[
+                "nombre_archivo"
+            ]
+        ),
+
+        content_type=(
+            "application/zip"
+        ),
+    )
+
+
+    respuesta[
+        "Cache-Control"
+    ] = (
+        "private, no-store"
+    )
+
+
+    respuesta[
+        "X-Content-Type-Options"
+    ] = "nosniff"
+
+
+    respuesta[
+        "X-Espaciometro-Download-Id"
+    ] = str(
+        resultado[
+            "registro"
+        ].pk
+    )
+
+
+    return respuesta
+
+
+
+@login_required
+@require_POST
+def confirmar_descarga_view(
+    request,
+    descarga_id,
+):
+
+    registro = get_object_or_404(
+        RegistroDescargaRespaldo,
+        pk=descarga_id,
+    )
+
+
+    usuario_actual = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    if (
+        registro.usuario
+        and registro.usuario
+        != usuario_actual
+        and not request.user.is_superuser
+    ):
+
+        messages.error(
+            request,
+            (
+                "Esta entrega fue iniciada "
+                "por otro usuario."
+            ),
+        )
+
+
+        return redirect(
+            "espaciometro:detalle_respaldo",
+            respaldo_id=(
+                registro.respaldo_id
+            ),
+        )
+
+
+    resultado = (
+        confirmar_descarga_servicio(
+
+            registro=registro,
+
+            sha256_cliente=(
+                request.POST.get(
+                    "sha256_cliente",
+                    "",
+                )
+            ),
+        )
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+    else:
+
+        messages.success(
+            request,
+            resultado[
+                "mensaje"
+            ],
+        )
+
+
+    return redirect(
+        "espaciometro:detalle_respaldo",
+        respaldo_id=(
+            registro.respaldo_id
+        ),
     )
