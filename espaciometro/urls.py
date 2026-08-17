@@ -74,4 +74,18 @@ urlpatterns = [
         views.evolucion_ruta,
         name="evolucion_ruta",
     ),
+
+    # ESP010
+    path(
+        "inventario/",
+        views.inventario,
+        name="inventario",
+    ),
+
+    # ESP011
+    path(
+        "ciclo-vida/",
+        views.ciclo_vida,
+        name="ciclo_vida",
+    ),
 ]

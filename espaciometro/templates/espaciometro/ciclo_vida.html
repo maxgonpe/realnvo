@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Ciclo de vida — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1550px;
+
+            margin: 0 auto;
+
+            padding: 30px;
+        }
+
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+        }
+
+
+        .small {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .path {
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        /* ==============================================================
+           CARD
+           ============================================================== */
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* ==============================================================
+           BOTONES
+           ============================================================== */
+
+        .nav,
+        .actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+        }
+
+
+        .nav {
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border: 0;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .button:hover {
+            background: #1f2937;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        .button-small {
+            padding: 6px 10px;
+
+            font-size: 12px;
+        }
+
+
+        /* ==============================================================
+           AVISOS
+           ============================================================== */
+
+        .info-box {
+            border-left:
+                5px solid #2563eb;
+        }
+
+
+        .warning-box {
+            border-left:
+                5px solid #a16207;
+        }
+
+
+        .error-box {
+            border-left:
+                5px solid #b91c1c;
+        }
+
+
+        /* ==============================================================
+           FILTROS
+           ============================================================== */
+
+        .filters {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .field-title {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        input,
+        select {
+            width: 100%;
+
+            padding: 9px 10px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 7px;
+
+            background: white;
+
+            font-size: 14px;
+        }
+
+
+        .actions {
+            margin-top: 18px;
+        }
+
+
+        /* ==============================================================
+           MÉTRICAS
+           ============================================================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(185px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .metric-label {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+
+            font-weight: 700;
+        }
+
+
+        .attention {
+            color: #a16207;
+        }
+
+
+        .ok {
+            color: #15803d;
+
+            font-weight: 700;
+        }
+
+
+        .warning {
+            color: #a16207;
+
+            font-weight: 700;
+        }
+
+
+        .error {
+            color: #b91c1c;
+
+            font-weight: 700;
+        }
+
+
+        /* ==============================================================
+           TABLAS
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: middle;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        /* ==============================================================
+           BARRAS
+           ============================================================== */
+
+        .bar {
+            min-width: 140px;
+
+            width: 100%;
+
+            height: 9px;
+
+            margin-top: 5px;
+
+            overflow: hidden;
+
+            border-radius: 6px;
+
+            background: #e5e7eb;
+        }
+
+
+        .bar-value {
+            height: 100%;
+
+            border-radius: 6px;
+
+            background: #4b5563;
+        }
+
+
+        /* ==============================================================
+           RANGOS
+           ============================================================== */
+
+        .ranges-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .range-name {
+            font-size: 18px;
+
+            font-weight: 700;
+        }
+
+
+        .range-space {
+            margin-top: 12px;
+
+            font-size: 24px;
+
+            font-weight: 700;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:inventario' %}"
+        >
+            Inventario ESP010
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:historico' %}"
+        >
+            Histórico
+        </a>
+
+    </div>
+
+
+
+    <h1>
+        Ciclo de vida de archivos
+    </h1>
+
+
+    <p class="small">
+
+        ESP011 analiza la edad actual de los archivos
+        según su fecha de última modificación.
+
+        Abrir esta pantalla no ejecuta automáticamente
+        el análisis.
+
+    </p>
+
+
+
+    <!-- ================================================================
+         ACLARACIÓN
+         ================================================================ -->
+
+    <div class="card info-box">
+
+        <strong>
+            Antigüedad no significa obsolescencia.
+        </strong>
+
+
+        <p>
+
+            Un archivo con dos años de antigüedad puede seguir
+            siendo necesario para el negocio.
+
+        </p>
+
+
+        <p>
+
+            ESP011 únicamente organiza el almacenamiento
+            por edad para ayudar a entender qué parte del
+            espacio corresponde a información reciente
+            y qué parte corresponde a información antigua.
+
+        </p>
+
+
+        <div class="small">
+
+            No se elimina, mueve ni modifica ningún archivo.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         FILTROS
+         ================================================================ -->
+
+    <div class="card section">
+
+        <h2>
+            Analizar ciclo de vida
+        </h2>
+
+
+        <form
+            method="get"
+            action="{% url 'espaciometro:ciclo_vida' %}"
+        >
+
+            <input
+                type="hidden"
+                name="analizar"
+                value="1"
+            >
+
+
+            <div class="filters">
+
+
+                <label>
+
+                    <span class="field-title">
+                        Ruta
+                    </span>
+
+
+                    <select name="ruta">
+
+                        <option value="">
+                            Todas las rutas activas
+                        </option>
+
+
+                        {% for ruta in ciclo.rutas %}
+
+                            <option
+                                value="{{ ruta.id }}"
+
+                                {% if ciclo.filtros.ruta == ruta.id|stringformat:"s" %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ ruta.nombre }}
+                                — {{ ruta.ruta }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Tipo
+                    </span>
+
+
+                    <select name="tipo">
+
+                        <option value="">
+                            Todos los tipos
+                        </option>
+
+
+                        {% for codigo, nombre in ciclo.categorias %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if ciclo.filtros.tipo == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ nombre }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <label>
+
+                    <span class="field-title">
+                        Extensión
+                    </span>
+
+
+                    <input
+                        type="text"
+
+                        name="extension"
+
+                        value="{{ ciclo.filtros.extension }}"
+
+                        placeholder=".jpg, .pdf, .xlsx..."
+                    >
+
+                </label>
+
+
+            </div>
+
+
+
+            <div class="actions">
+
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Analizar ciclo de vida
+                </button>
+
+
+                <a
+                    class="button button-secondary"
+                    href="{% url 'espaciometro:ciclo_vida' %}"
+                >
+                    Limpiar
+                </a>
+
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         RESULTADOS
+         ================================================================ -->
+
+    {% if resultado %}
+
+
+        {% if resultado.error %}
+
+
+            <div class="card error-box section">
+
+                <strong class="error">
+                    No fue posible realizar el análisis.
+                </strong>
+
+
+                <p>
+                    {{ resultado.error }}
+                </p>
+
+            </div>
+
+
+        {% else %}
+
+
+            <!-- ========================================================
+                 RESUMEN
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Resumen
+                </h2>
+
+
+                <div class="grid">
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Archivos analizados
+                        </div>
+
+                        <div class="metric-value">
+
+                            {{ resultado.total_archivos }}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Espacio analizado
+                        </div>
+
+                        <div class="metric-value">
+
+                            {{ resultado.total_legible }}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Archivos con más de 1 año
+                        </div>
+
+                        <div class="metric-value attention">
+
+                            {{ resultado.archivos_antiguos }}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Espacio con más de 1 año
+                        </div>
+
+                        <div class="metric-value attention">
+
+                            {{ resultado.antiguos_legible }}
+
+                        </div>
+
+                        <div class="small">
+
+                            {{ resultado.porcentaje_antiguo }}
+                            % del espacio analizado
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Rutas analizadas
+                        </div>
+
+                        <div class="metric-value">
+
+                            {{ resultado.rutas_analizadas }}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Inaccesibles
+                        </div>
+
+                        <div class="metric-value">
+
+                            {% if resultado.inaccesibles %}
+
+                                <span class="warning">
+
+                                    {{ resultado.inaccesibles }}
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="ok">
+                                    0
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Tiempo de análisis
+                        </div>
+
+                        <div class="metric-value">
+
+                            {{ resultado.duracion_ms }}
+                            ms
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 ARCHIVO MÁS ANTIGUO
+                 ======================================================== -->
+
+            {% if resultado.archivo_mas_antiguo %}
+
+
+                <div class="card section">
+
+                    <div class="metric-label">
+                        Archivo más antiguo detectado
+                    </div>
+
+
+                    <h3 style="margin-top: 7px;">
+
+                        {{ resultado.archivo_mas_antiguo.nombre }}
+
+                    </h3>
+
+
+                    <div>
+
+                        Modificado:
+
+                        <strong>
+
+                            {{ resultado.archivo_mas_antiguo.modificado|date:"d/m/Y H:i:s" }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div style="margin-top: 5px;">
+
+                        Antigüedad:
+
+                        <strong>
+
+                            {{ resultado.archivo_mas_antiguo.antiguedad_dias }}
+                            días
+
+                        </strong>
+
+                    </div>
+
+
+                    <div style="margin-top: 5px;">
+
+                        Tamaño:
+
+                        <strong>
+
+                            {{ resultado.archivo_mas_antiguo.total_legible }}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="path">
+
+                        {{ resultado.archivo_mas_antiguo.ruta_nombre }}
+
+                        /
+
+                        {{ resultado.archivo_mas_antiguo.ruta_relativa }}
+
+                    </div>
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <!-- ========================================================
+                 DISTRIBUCIÓN POR EDAD
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Distribución por antigüedad
+                </h2>
+
+
+                <div class="ranges-grid">
+
+
+                    {% for rango in resultado.rangos %}
+
+
+                        <div class="card">
+
+
+                            <div class="range-name">
+
+                                {{ rango.nombre }}
+
+                            </div>
+
+
+                            <div class="small">
+
+                                {{ rango.descripcion }}
+
+                            </div>
+
+
+                            <div class="range-space">
+
+                                {{ rango.total_legible }}
+
+                            </div>
+
+
+                            <div style="margin-top: 8px;">
+
+                                <strong>
+
+                                    {{ rango.archivos }}
+
+                                </strong>
+
+                                archivo(s)
+
+                            </div>
+
+
+                            <div class="small">
+
+                                {{ rango.porcentaje_espacio }}
+                                % del espacio
+
+                            </div>
+
+
+                            <div class="bar">
+
+                                <div
+                                    class="bar-value"
+
+                                    style="
+                                        width:
+                                        {{ rango.porcentaje_espacio }}%;
+                                    "
+                                ></div>
+
+                            </div>
+
+
+                            <div style="margin-top: 15px;">
+
+                                <a
+                                    class="
+                                        button
+                                        button-secondary
+                                        button-small
+                                    "
+
+                                    href="{% url 'espaciometro:inventario' %}?{{ rango.inventario_query }}"
+                                >
+
+                                    Ver archivos →
+
+                                </a>
+
+                            </div>
+
+
+                        </div>
+
+
+                    {% endfor %}
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 POR RUTA
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Antigüedad por ruta
+                </h2>
+
+
+                <div class="card table-wrapper">
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Ruta</th>
+
+                                <th>Total</th>
+
+                                <th>Archivos</th>
+
+                                <th>Más de 1 año</th>
+
+                                <th>Espacio antiguo</th>
+
+                                <th>% espacio antiguo</th>
+
+                                <th>Archivo más antiguo</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                        {% for ruta in resultado.rutas %}
+
+
+                            <tr>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ ruta.nombre }}
+                                    </strong>
+
+                                    <div class="path">
+                                        {{ ruta.ruta }}
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+
+                                        {{ ruta.total_legible }}
+
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ ruta.archivos }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ ruta.archivos_antiguos }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ ruta.antiguos_legible }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ ruta.porcentaje_antiguo }}
+                                    %
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if ruta.archivo_mas_antiguo %}
+
+                                        {{ ruta.archivo_mas_antiguo.modificado|date:"d/m/Y" }}
+
+                                        <div class="small">
+
+                                            {{ ruta.archivo_mas_antiguo.nombre }}
+
+                                        </div>
+
+                                    {% else %}
+
+                                        -
+
+                                    {% endif %}
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% empty %}
+
+
+                            <tr>
+
+                                <td colspan="7">
+
+                                    No hay información disponible.
+
+                                </td>
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                        </tbody>
+
+                    </table>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 POR TIPO
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Antigüedad por tipo de archivo
+                </h2>
+
+
+                <div class="card table-wrapper">
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Tipo</th>
+
+                                <th>Archivos</th>
+
+                                <th>Espacio</th>
+
+                                <th>Más de 1 año</th>
+
+                                <th>Espacio antiguo</th>
+
+                                <th>% espacio antiguo</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                        {% for tipo in resultado.tipos %}
+
+
+                            <tr>
+
+
+                                <td>
+
+                                    <strong>
+
+                                        {{ tipo.nombre }}
+
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ tipo.archivos }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ tipo.total_legible }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ tipo.archivos_antiguos }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ tipo.antiguos_legible }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ tipo.porcentaje_antiguo }}
+                                    %
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% empty %}
+
+
+                            <tr>
+
+                                <td colspan="6">
+
+                                    No se detectaron archivos.
+
+                                </td>
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                        </tbody>
+
+                    </table>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 ADVERTENCIAS
+                 ======================================================== -->
+
+            {% if resultado.fechas_futuras %}
+
+
+                <div class="card warning-box section">
+
+                    <strong>
+
+                        {{ resultado.fechas_futuras }}
+                        archivo(s) tienen fecha de modificación futura.
+
+                    </strong>
+
+
+                    <p>
+
+                        Para efectos del ciclo de vida
+                        fueron tratados como archivos recientes.
+
+                    </p>
+
+
+                    <div class="small">
+
+                        Esto puede indicar diferencias de reloj,
+                        restauraciones o metadatos particulares.
+
+                    </div>
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            {% if resultado.errores %}
+
+
+                <div class="card warning-box section">
+
+                    <strong>
+
+                        Algunas ubicaciones no pudieron analizarse.
+
+                    </strong>
+
+
+                    {% for error in resultado.errores %}
+
+                        <p>
+
+                            <strong>
+                                {{ error.ruta }}
+                            </strong>
+
+                            —
+
+                            {{ error.detalle }}
+
+                        </p>
+
+                    {% endfor %}
+
+                </div>
+
+
+            {% endif %}
+
+
+        {% endif %}
+
+
+    {% else %}
+
+
+        <div class="card section">
+
+            <strong>
+                El análisis aún no se ha ejecutado.
+            </strong>
+
+
+            <p>
+
+                Puede analizar todas las rutas activas
+                o limitar la consulta por ruta,
+                tipo o extensión.
+
+            </p>
+
+        </div>
+
+
+    {% endif %}
+
+
+
+    <div
+        class="small"
+        style="
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #d1d5db;
+        "
+    >
+
+        ESP011 clasifica archivos según su fecha
+        de última modificación.
+
+        Ningún resultado constituye todavía
+        autorización de mantenimiento.
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

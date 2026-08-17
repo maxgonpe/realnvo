@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Inventario — Espaciómetro
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f3f4f6;
+
+            color: #1f2937;
+        }
+
+
+        .page {
+            max-width: 1600px;
+
+            margin: 0 auto;
+
+            padding: 30px;
+        }
+
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+        }
+
+
+        .small {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .section {
+            margin-top: 30px;
+        }
+
+
+        .card {
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 20px;
+
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* ==============================================================
+           NAVEGACIÓN
+           ============================================================== */
+
+        .nav {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .button {
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border: 0;
+
+            border-radius: 7px;
+
+            background: #374151;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .button:hover {
+            background: #1f2937;
+        }
+
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+
+        /* ==============================================================
+           INFO
+           ============================================================== */
+
+        .info-box {
+            border-left:
+                5px solid #2563eb;
+        }
+
+
+        .warning-box {
+            border-left:
+                5px solid #a16207;
+        }
+
+
+        .error-box {
+            border-left:
+                5px solid #b91c1c;
+        }
+
+
+        /* ==============================================================
+           FILTROS
+           ============================================================== */
+
+        .filters {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        label.field {
+            display: block;
+        }
+
+
+        .field-title {
+            display: block;
+
+            margin-bottom: 5px;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        input,
+        select {
+            width: 100%;
+
+            padding: 9px 10px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 7px;
+
+            background: white;
+
+            font-size: 14px;
+        }
+
+
+        .size-group {
+            display: grid;
+
+            grid-template-columns:
+                minmax(100px, 1fr)
+                80px;
+
+            gap: 5px;
+        }
+
+
+        .filter-actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-top: 18px;
+        }
+
+
+        /* ==============================================================
+           MÉTRICAS
+           ============================================================== */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(180px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+
+        .metric-label {
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+
+        .metric-value {
+            margin-top: 4px;
+
+            font-size: 25px;
+
+            font-weight: 700;
+        }
+
+
+        /* ==============================================================
+           TABLA
+           ============================================================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th,
+        td {
+            padding: 11px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            text-align: left;
+
+            vertical-align: top;
+        }
+
+
+        th {
+            background: #f9fafb;
+
+            color: #4b5563;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+
+        .path {
+            margin-top: 3px;
+
+            color: #6b7280;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+
+        /* ==============================================================
+           BADGES
+           ============================================================== */
+
+        .badge {
+            display: inline-block;
+
+            margin:
+                3px 3px 0 0;
+
+            padding: 3px 6px;
+
+            border-radius: 5px;
+
+            background: #e5e7eb;
+
+            color: #374151;
+
+            font-size: 11px;
+        }
+
+
+        .badge-interest {
+            background: #dbeafe;
+
+            color: #1e40af;
+        }
+
+
+        .badge-extension {
+            background: #ede9fe;
+
+            color: #5b21b6;
+        }
+
+
+        .ok {
+            color: #15803d;
+
+            font-weight: 700;
+        }
+
+
+        .warning {
+            color: #a16207;
+
+            font-weight: 700;
+        }
+
+
+        .error {
+            color: #b91c1c;
+
+            font-weight: 700;
+        }
+
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .page {
+                padding: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:configurar_rutas' %}"
+        >
+            Rutas
+        </a>
+
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:configurar_tipos' %}"
+        >
+            Tipos de interés
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:ciclo_vida' %}"
+       >
+            Ciclo de vida
+        </a>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         CABECERA
+         ================================================================ -->
+
+    <h1>
+        Inventario bajo demanda
+    </h1>
+
+
+    <p class="small">
+
+        ESP010 busca archivos concretos dentro
+        de las rutas actualmente monitorizadas.
+
+        Abrir esta pantalla no ejecuta automáticamente
+        un inventario.
+
+    </p>
+
+
+
+    <!-- ================================================================
+         SEGURIDAD
+         ================================================================ -->
+
+    <div class="card info-box">
+
+        <strong>
+            ESP010 es exclusivamente de lectura.
+        </strong>
+
+
+        <p>
+
+            Los archivos encontrados pueden analizarse,
+            pero todavía no pueden eliminarse,
+            moverse ni descargarse desde esta pantalla.
+
+        </p>
+
+
+        <div class="small">
+
+            La selección para mantenimiento llegará
+            en ESP012 y será protegida por las etapas
+            posteriores de respaldo y seguridad.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         FILTROS
+         ================================================================ -->
+
+    <div class="card section">
+
+        <h2>
+            Buscar archivos
+        </h2>
+
+
+        <form
+            method="get"
+            action="{% url 'espaciometro:inventario' %}"
+        >
+
+            <input
+                type="hidden"
+                name="buscar"
+                value="1"
+            >
+
+
+            <div class="filters">
+
+
+                <!-- RUTA -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Ruta monitorizada
+                    </span>
+
+
+                    <select name="ruta">
+
+                        <option value="">
+                            Todas las rutas activas
+                        </option>
+
+
+                        {% for ruta in inventario.rutas %}
+
+                            <option
+                                value="{{ ruta.id }}"
+
+                                {% if inventario.filtros.ruta == ruta.id|stringformat:"s" %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ ruta.nombre }}
+                                — {{ ruta.ruta }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <!-- TIPO -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Tipo de archivo
+                    </span>
+
+
+                    <select name="tipo">
+
+                        <option value="">
+                            Todos los tipos
+                        </option>
+
+
+                        {% for codigo, nombre in inventario.categorias %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if inventario.filtros.tipo == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ nombre }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </label>
+
+
+
+                <!-- EXTENSIÓN -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Extensión
+                    </span>
+
+
+                    <input
+                        type="text"
+
+                        name="extension"
+
+                        value="{{ inventario.filtros.extension }}"
+
+                        placeholder=".jpg, .pdf, .xlsx..."
+                    >
+
+                </label>
+
+
+
+                <!-- TEXTO -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Nombre o ruta contiene
+                    </span>
+
+
+                    <input
+                        type="text"
+
+                        name="texto"
+
+                        value="{{ inventario.filtros.texto }}"
+
+                        placeholder="factura, cliente, 2024..."
+                    >
+
+                </label>
+
+
+
+                <!-- TAMAÑO MÍNIMO -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Tamaño mínimo
+                    </span>
+
+
+                    <span class="size-group">
+
+
+                        <input
+                            type="number"
+
+                            step="0.01"
+
+                            min="0"
+
+                            name="minimo"
+
+                            value="{{ inventario.filtros.minimo }}"
+
+                            placeholder="0"
+                        >
+
+
+                        <select
+                            name="minimo_unidad"
+                        >
+
+                            {% for codigo, nombre in inventario.unidades %}
+
+                                <option
+                                    value="{{ codigo }}"
+
+                                    {% if inventario.filtros.minimo_unidad == codigo %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ nombre }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                    </span>
+
+                </label>
+
+
+
+                <!-- TAMAÑO MÁXIMO -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Tamaño máximo
+                    </span>
+
+
+                    <span class="size-group">
+
+
+                        <input
+                            type="number"
+
+                            step="0.01"
+
+                            min="0"
+
+                            name="maximo"
+
+                            value="{{ inventario.filtros.maximo }}"
+
+                            placeholder="Sin límite"
+                        >
+
+
+                        <select
+                            name="maximo_unidad"
+                        >
+
+                            {% for codigo, nombre in inventario.unidades %}
+
+                                <option
+                                    value="{{ codigo }}"
+
+                                    {% if inventario.filtros.maximo_unidad == codigo %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ nombre }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                    </span>
+
+                </label>
+
+
+
+                <!-- FECHA DESDE -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Modificado desde
+                    </span>
+
+
+                    <input
+                        type="date"
+
+                        name="fecha_desde"
+
+                        value="{{ inventario.filtros.fecha_desde }}"
+                    >
+
+                </label>
+
+
+
+                <!-- FECHA HASTA -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Modificado hasta
+                    </span>
+
+
+                    <input
+                        type="date"
+
+                        name="fecha_hasta"
+
+                        value="{{ inventario.filtros.fecha_hasta }}"
+                    >
+
+                </label>
+
+
+
+                <!-- ORDEN -->
+
+                <label class="field">
+
+                    <span class="field-title">
+                        Orden
+                    </span>
+
+
+                    <select name="orden">
+
+
+                        {% for codigo, nombre in inventario.ordenes %}
+
+                            <option
+                                value="{{ codigo }}"
+
+                                {% if inventario.filtros.orden == codigo %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ nombre }}
+                            </option>
+
+                        {% endfor %}
+
+
+                    </select>
+
+                </label>
+
+
+            </div>
+
+
+
+            <div class="filter-actions">
+
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Buscar archivos
+                </button>
+
+
+                <a
+                    class="button button-secondary"
+                    href="{% url 'espaciometro:inventario' %}"
+                >
+                    Limpiar filtros
+                </a>
+
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+
+
+    <!-- ================================================================
+         RESULTADO
+         ================================================================ -->
+
+    {% if resultado %}
+
+
+        {% if resultado.error %}
+
+
+            <div class="card error-box section">
+
+                <strong class="error">
+                    No fue posible ejecutar el inventario.
+                </strong>
+
+                <p>
+                    {{ resultado.error }}
+                </p>
+
+            </div>
+
+
+        {% else %}
+
+
+            <!-- ========================================================
+                 RESUMEN
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Resultado
+                </h2>
+
+
+                <div class="grid">
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Archivos encontrados
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.coincidencias }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Espacio representado
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.total_legible }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Archivos examinados
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.archivos_examinados }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Directorios examinados
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.directorios_examinados }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Rutas analizadas
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.rutas_analizadas }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Inaccesibles
+                        </div>
+
+                        <div class="metric-value">
+
+                            {% if resultado.inaccesibles %}
+
+                                <span class="warning">
+                                    {{ resultado.inaccesibles }}
+                                </span>
+
+                            {% else %}
+
+                                <span class="ok">
+                                    0
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Tiempo
+                        </div>
+
+                        <div class="metric-value">
+                            {{ resultado.duracion_ms }} ms
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================================
+                 DATOS DESTACADOS
+                 ======================================================== -->
+
+            {% if resultado.coincidencias %}
+
+
+                <div class="grid section">
+
+
+                    {% if resultado.archivo_mayor %}
+
+                        <div class="card">
+
+                            <div class="metric-label">
+                                Archivo de mayor tamaño
+                            </div>
+
+                            <h3 style="margin-top: 7px;">
+
+                                {{ resultado.archivo_mayor.nombre }}
+
+                            </h3>
+
+                            <strong>
+
+                                {{ resultado.archivo_mayor.total_legible }}
+
+                            </strong>
+
+                            <div class="path">
+
+                                {{ resultado.archivo_mayor.ruta_presentacion }}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+
+                    {% if resultado.archivo_mas_antiguo %}
+
+                        <div class="card">
+
+                            <div class="metric-label">
+                                Más antiguo
+                            </div>
+
+                            <h3 style="margin-top: 7px;">
+
+                                {{ resultado.archivo_mas_antiguo.nombre }}
+
+                            </h3>
+
+                            <strong>
+
+                                {{ resultado.archivo_mas_antiguo.modificado|date:"d/m/Y H:i:s" }}
+
+                            </strong>
+
+                            <div class="small">
+
+                                {{ resultado.archivo_mas_antiguo.antiguedad_dias }}
+                                días
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+
+                    {% if resultado.archivo_mas_reciente %}
+
+                        <div class="card">
+
+                            <div class="metric-label">
+                                Más reciente
+                            </div>
+
+                            <h3 style="margin-top: 7px;">
+
+                                {{ resultado.archivo_mas_reciente.nombre }}
+
+                            </h3>
+
+                            <strong>
+
+                                {{ resultado.archivo_mas_reciente.modificado|date:"d/m/Y H:i:s" }}
+
+                            </strong>
+
+                        </div>
+
+                    {% endif %}
+
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <!-- ========================================================
+                 ADVERTENCIAS
+                 ======================================================== -->
+
+            {% if resultado.memoria_limitada %}
+
+
+                <div class="card warning-box section">
+
+                    La búsqueda superó el límite interno de filas
+                    conservadas en memoria.
+
+                    <strong>
+                        El conteo y espacio total sí son completos,
+                    </strong>
+
+                    pero el orden de las filas visibles puede representar
+                    solamente el subconjunto conservado.
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            {% if resultado.errores %}
+
+
+                <div class="card warning-box section">
+
+                    <strong>
+                        Algunas ubicaciones no pudieron analizarse.
+                    </strong>
+
+
+                    {% for error in resultado.errores %}
+
+                        <p>
+
+                            <strong>
+                                {{ error.ruta }}
+                            </strong>
+
+                            —
+
+                            {{ error.detalle }}
+
+                        </p>
+
+                    {% endfor %}
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <!-- ========================================================
+                 TABLA
+                 ======================================================== -->
+
+            <div class="section">
+
+                <h2>
+                    Archivos
+                </h2>
+
+
+                {% if resultado.ocultos %}
+
+                    <p class="small">
+
+                        Se encontraron
+
+                        <strong>
+                            {{ resultado.coincidencias }}
+                        </strong>
+
+                        archivos.
+
+                        La tabla muestra los primeros
+
+                        <strong>
+                            {{ resultado.mostrados }}
+                        </strong>
+
+                        según el orden seleccionado.
+
+                        Hay
+
+                        <strong>
+                            {{ resultado.ocultos }}
+                        </strong>
+
+                        coincidencias adicionales.
+
+                    </p>
+
+                {% endif %}
+
+
+                <div class="card table-wrapper">
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Archivo</th>
+
+                                <th>Ruta monitorizada</th>
+
+                                <th>Tipo</th>
+
+                                <th>Extensión</th>
+
+                                <th>Tamaño</th>
+
+                                <th>Modificado</th>
+
+                                <th>Antigüedad</th>
+
+                                <th>Interés ESP006</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                        {% for archivo in resultado.archivos %}
+
+
+                            <tr>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ archivo.nombre }}
+                                    </strong>
+
+
+                                    <div class="path">
+
+                                        {{ archivo.ruta_relativa }}
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ archivo.ruta_nombre }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ archivo.categoria }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {% if archivo.extension %}
+
+                                        {{ archivo.extension }}
+
+                                    {% else %}
+
+                                        -
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+                                        {{ archivo.total_legible }}
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ archivo.modificado|date:"d/m/Y H:i:s" }}
+
+                                </td>
+
+
+                                <td>
+
+                                    {{ archivo.antiguedad_dias }}
+                                    días
+
+                                </td>
+
+
+                                <td>
+
+
+                                    {% if archivo.tipo_interes %}
+
+                                        <span class="badge badge-interest">
+
+                                            Tipo prioritario
+
+                                        </span>
+
+                                    {% endif %}
+
+
+                                    {% if archivo.extension_interes %}
+
+                                        <span class="badge badge-extension">
+
+                                            Extensión prioritaria
+
+                                        </span>
+
+                                    {% endif %}
+
+
+                                    {% if not archivo.tipo_interes and not archivo.extension_interes %}
+
+                                        <span class="small">
+                                            -
+                                        </span>
+
+                                    {% endif %}
+
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% empty %}
+
+
+                            <tr>
+
+                                <td colspan="8">
+
+                                    Ningún archivo cumple
+                                    los filtros seleccionados.
+
+                                </td>
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+            </div>
+
+
+        {% endif %}
+
+
+    {% else %}
+
+
+        <div class="card section">
+
+            <strong>
+                El inventario aún no se ha ejecutado.
+            </strong>
+
+
+            <p>
+
+                Configure uno o más filtros y pulse
+
+                <strong>
+                    Buscar archivos
+                </strong>.
+
+            </p>
+
+
+            <div class="small">
+
+                Si deja todos los filtros vacíos,
+                ESP010 inventariará todos los archivos
+                contenidos en las rutas monitorizadas activas.
+
+            </div>
+
+        </div>
+
+
+    {% endif %}
+
+
+
+    <!-- ================================================================
+         PIE
+         ================================================================ -->
+
+    <div
+        class="small"
+        style="
+            margin-top: 35px;
+            padding-top: 20px;
+            border-top: 1px solid #d1d5db;
+        "
+    >
+
+        ESP010 no almacena este inventario permanentemente.
+
+        Cada búsqueda refleja el estado actual del filesystem.
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

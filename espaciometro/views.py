@@ -21,6 +21,14 @@ from .history import (
     obtener_evolucion_ruta,
     obtener_panel_historico,
 )
+from .inventory import (
+    buscar_inventario,
+    obtener_configuracion_inventario,
+)
+from .lifecycle import (
+    analizar_ciclo_vida,
+    obtener_configuracion_ciclo_vida,
+)
 from .models import (
     EjecucionMedicion,
     RutaMonitoreada,
@@ -342,7 +350,7 @@ def detalle_ruta(
 
 
 # =============================================================================
-# ESP009 — HISTÓRICO GENERAL
+# ESP009
 # =============================================================================
 
 
@@ -361,11 +369,6 @@ def historico(request):
             "historico": datos,
         },
     )
-
-
-# =============================================================================
-# ESP009 — EVOLUCIÓN DE UNA RUTA
-# =============================================================================
 
 
 @login_required
@@ -393,5 +396,89 @@ def evolucion_ruta(
         {
             "evolucion": datos,
             "ruta_monitoreada": ruta,
+        },
+    )
+
+
+# =============================================================================
+# ESP010
+# =============================================================================
+
+
+@login_required
+def inventario(request):
+
+    configuracion = (
+        obtener_configuracion_inventario(
+            request.GET
+        )
+    )
+
+
+    resultado = None
+
+
+    if request.GET.get(
+        "buscar"
+    ):
+
+        resultado = (
+            buscar_inventario(
+                request.GET
+            )
+        )
+
+
+    return render(
+        request,
+        "espaciometro/inventario.html",
+        {
+            "inventario": configuracion,
+            "resultado": resultado,
+        },
+    )
+
+
+# =============================================================================
+# ESP011 — CICLO DE VIDA
+# =============================================================================
+
+
+@login_required
+def ciclo_vida(request):
+    """
+    La pantalla no escanea automáticamente.
+
+    El análisis solamente se ejecuta cuando:
+        ?analizar=1
+    """
+
+    configuracion = (
+        obtener_configuracion_ciclo_vida(
+            request.GET
+        )
+    )
+
+
+    resultado = None
+
+
+    if request.GET.get(
+        "analizar"
+    ):
+
+        resultado = (
+            analizar_ciclo_vida(
+                request.GET
+            )
+        )
+
+
+    return render(
+        request,
+        "espaciometro/ciclo_vida.html",
+        {
+            "ciclo": configuracion,
+            "resultado": resultado,
         },
     )
