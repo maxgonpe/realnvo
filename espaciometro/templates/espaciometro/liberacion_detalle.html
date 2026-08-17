@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Liberación — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+
+        .section {
+            margin-top: 28px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric {
+            font-size: 25px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .ok {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .bad {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            font-size: 13px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="card" style="margin-bottom:15px;">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:detalle_lote_candidatos' detalle.liberacion.lote_id %}"
+        >
+            ← Ver lote
+        </a>
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+    <h1>
+        Liberación #{{ detalle.liberacion.id }}
+    </h1>
+
+
+    <div class="grid section">
+
+        <div class="card">
+
+            <div class="metric-label">
+                Estado
+            </div>
+
+            <div class="metric">
+                {{ detalle.liberacion.get_estado_display }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Archivos objetivo
+            </div>
+
+            <div class="metric">
+                {{ detalle.liberacion.total_candidatos }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Liberados
+            </div>
+
+            <div class="metric">
+                {{ detalle.liberacion.liberados }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Omitidos
+            </div>
+
+            <div class="metric">
+                {{ detalle.liberacion.omitidos }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Bytes originales retirados
+            </div>
+
+            <div class="metric">
+                {{ detalle.liberacion.liberado_legible }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card section">
+
+        <strong>
+            Evidencia utilizada
+        </strong>
+
+        <p>
+            Respaldo ESP013:
+            #{{ detalle.liberacion.respaldo_id }}
+        </p>
+
+        <p>
+            Descarga ESP014 verificada:
+            #{{ detalle.liberacion.descarga_verificada_id }}
+        </p>
+
+        <p>
+            Usuario:
+            {{ detalle.liberacion.usuario }}
+        </p>
+
+        <p>
+            Confirmación:
+            <code>
+                {{ detalle.liberacion.confirmacion }}
+            </code>
+        </p>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>
+            Resultado por archivo
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Ruta</th>
+                        <th>Estado</th>
+                        <th>Tamaño</th>
+                        <th>Detalle</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for item in detalle.detalles %}
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                {{ item.candidato.nombre }}
+                            </strong>
+                        </td>
+
+                        <td>
+                            {{ item.ruta_relativa }}
+                        </td>
+
+                        <td>
+
+                            {% if item.estado == "LIBERADO" %}
+
+                                <span class="ok">
+                                    Liberado
+                                </span>
+
+                            {% else %}
+
+                                <span class="bad">
+                                    {{ item.get_estado_display }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ item.total_legible }}
+                        </td>
+
+                        <td>
+                            {{ item.motivo }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    {% if detalle.liberacion.errores %}
+
+        <div class="card section">
+
+            <strong>
+                Incidencias
+            </strong>
+
+            {% for error in detalle.liberacion.errores %}
+
+                <p class="bad">
+                    {{ error }}
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    {% if detalle.liberacion.estado == "COMPLETADA" %}
+
+        <div class="card section">
+
+            <strong class="ok">
+                Liberación completada.
+            </strong>
+
+            <p>
+                Los archivos originales incluidos
+                en este lote ya no están presentes
+                en sus ubicaciones originales.
+            </p>
+
+            <p>
+                El ZIP ESP013 permanece por ahora
+                en el área privada de Espaciómetro.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+</div>
+
+
+</body>
+
+</html>

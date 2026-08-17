@@ -864,8 +864,25 @@ class LoteCandidatosMantenimiento(models.Model):
 
         PREPARADO = (
             "PREPARADO",
-            "Preparado para respaldo",
+            "Preparado para liberación",
         )
+
+        LIBERANDO = (
+        "LIBERANDO",
+        "Liberación en curso",
+        )
+
+        LIBERADO = (
+            "LIBERADO",
+            "Liberado",
+        )
+
+        LIBERACION_PARCIAL = (
+            "LIBERACION_PARCIAL",
+            "Liberación parcial",
+        )
+
+
 
         CANCELADO = (
             "CANCELADO",
@@ -1496,3 +1513,283 @@ class RegistroDescargaRespaldo(models.Model):
             self.total_bytes
         )
 
+
+# =============================================================================
+# ESP015 — LIBERACIÓN SEGURA
+# =============================================================================
+
+
+class LiberacionMantenimiento(models.Model):
+    """
+    Registra una ejecución destructiva ESP015.
+
+    Una liberación solamente puede ejecutarse después de:
+    - respaldo ESP013 completo;
+    - integridad del ZIP válida;
+    - descarga ESP014 verificada;
+    - candidatos todavía vigentes;
+    - rutas autorizadas para mantenimiento.
+    """
+
+    class Estado(models.TextChoices):
+
+        EJECUTANDO = (
+            "EJECUTANDO",
+            "Ejecutando",
+        )
+
+        COMPLETADA = (
+            "COMPLETADA",
+            "Completada",
+        )
+
+        PARCIAL = (
+            "PARCIAL",
+            "Parcial",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    lote = models.ForeignKey(
+        LoteCandidatosMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="liberaciones",
+    )
+
+
+    respaldo = models.ForeignKey(
+        RespaldoMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="liberaciones",
+    )
+
+
+    descarga_verificada = models.ForeignKey(
+        RegistroDescargaRespaldo,
+        on_delete=models.PROTECT,
+        related_name="liberaciones",
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.EJECUTANDO,
+    )
+
+
+    usuario = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+
+    total_candidatos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    liberados = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    omitidos = models.PositiveIntegerField(
+        default=0,
+    )
+
+
+    total_bytes_objetivo = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    total_bytes_liberados = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    confirmacion = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+
+    errores = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+
+    iniciado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    finalizado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_liberacion_mantenimiento"
+        )
+
+        ordering = [
+            "-iniciado_en",
+            "-id",
+        ]
+
+        permissions = [
+            (
+                "puede_liberar_archivos",
+                "Puede liberar archivos mediante Espaciómetro",
+            ),
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"Liberación #{self.pk} "
+            f"— lote #{self.lote_id}"
+        )
+
+
+    @property
+    def objetivo_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_objetivo
+        )
+
+
+    @property
+    def liberado_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_liberados
+        )
+
+
+
+class DetalleLiberacionMantenimiento(models.Model):
+    """
+    Resultado individual de cada archivo durante ESP015.
+    """
+
+    class Estado(models.TextChoices):
+
+        PENDIENTE = (
+            "PENDIENTE",
+            "Pendiente",
+        )
+
+        LIBERADO = (
+            "LIBERADO",
+            "Liberado",
+        )
+
+        OMITIDO = (
+            "OMITIDO",
+            "Omitido",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    liberacion = models.ForeignKey(
+        LiberacionMantenimiento,
+        on_delete=models.CASCADE,
+        related_name="detalles",
+    )
+
+
+    candidato = models.ForeignKey(
+        CandidatoMantenimiento,
+        on_delete=models.PROTECT,
+        related_name="detalles_liberacion",
+    )
+
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE,
+    )
+
+
+    ruta_relativa = models.TextField()
+
+
+    total_bytes_snapshot = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+
+    motivo = models.TextField(
+        blank=True,
+    )
+
+
+    liberado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_detalle_liberacion_mantenimiento"
+        )
+
+        ordering = [
+            "candidato__ruta_monitoreada__nombre",
+            "ruta_relativa",
+        ]
+
+        constraints = [
+
+            models.UniqueConstraint(
+                fields=[
+                    "liberacion",
+                    "candidato",
+                ],
+                name=(
+                    "esp_unique_liberacion_candidato"
+                ),
+            ),
+
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"{self.get_estado_display()} "
+            f"— candidato #{self.candidato_id}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes_snapshot
+        )

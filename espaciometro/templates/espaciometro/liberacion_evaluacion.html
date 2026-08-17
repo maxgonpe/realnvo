@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Evaluar liberación — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+
+        .section {
+            margin-top: 28px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .danger {
+            background: #b91c1c;
+        }
+
+        .danger:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .ok {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .bad {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .warning {
+            border-left: 5px solid #b91c1c;
+        }
+
+        .success {
+            border-left: 5px solid #15803d;
+        }
+
+        .metric {
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            font-size: 13px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 500px;
+            padding: 11px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-family: monospace;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 3px 6px;
+            border-radius: 5px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:detalle_lote_candidatos' evaluacion.lote.id %}"
+        >
+            ← Volver al lote
+        </a>
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+    <h1>
+        ESP015 — Evaluación de liberación
+    </h1>
+
+
+    <div class="card warning">
+
+        <strong>
+            Esta es una operación destructiva.
+        </strong>
+
+        <p>
+            La evaluación de esta pantalla todavía
+            no elimina nada.
+        </p>
+
+        <p>
+            Solo después de cumplir todas las
+            condiciones y escribir la frase exacta
+            podrá ejecutarse la liberación.
+        </p>
+
+    </div>
+
+
+    <div class="card section">
+
+        <h2>
+            {{ evaluacion.lote.nombre|default:"Lote" }}
+        </h2>
+
+        <p>
+            Archivos:
+            <strong>
+                {{ evaluacion.total_archivos }}
+            </strong>
+        </p>
+
+        <p>
+            Tamaño original potencialmente liberable:
+        </p>
+
+        <div class="metric">
+            {{ evaluacion.total_legible }}
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>
+            Condiciones de seguridad
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Condición</th>
+                        <th>Resultado</th>
+                        <th>Detalle</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for item in evaluacion.condiciones %}
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                {{ item.nombre }}
+                            </strong>
+                        </td>
+
+                        <td>
+
+                            {% if item.cumple %}
+
+                                <span class="ok">
+                                    ✓ Cumple
+                                </span>
+
+                            {% else %}
+
+                                <span class="bad">
+                                    ✗ No cumple
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ item.detalle }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>
+            Archivos originales
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Archivo</th>
+                        <th>Ruta</th>
+                        <th>Estado</th>
+                        <th>Mantenimiento</th>
+                        <th>Hardlinks</th>
+                        <th>Tamaño</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for item in evaluacion.candidatos %}
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                {{ item.candidato.nombre }}
+                            </strong>
+                        </td>
+
+                        <td>
+                            {{ item.candidato.ruta_relativa }}
+                        </td>
+
+                        <td>
+
+                            {% if item.vigente %}
+
+                                <span class="ok">
+                                    Vigente
+                                </span>
+
+                            {% else %}
+
+                                <span class="bad">
+                                    {{ item.estado }}
+                                </span>
+
+                            {% endif %}
+
+                            <div class="small">
+                                {{ item.detalle }}
+                            </div>
+
+                        </td>
+
+                        <td>
+
+                            {% if item.mantenimiento %}
+
+                                <span class="ok">
+                                    Autorizado
+                                </span>
+
+                            {% else %}
+
+                                <span class="bad">
+                                    No autorizado
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.hardlinks_ok %}
+
+                                <span class="ok">
+                                    1
+                                </span>
+
+                            {% else %}
+
+                                <span class="bad">
+                                    {{ item.enlaces|default:"?" }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ item.candidato.total_legible }}
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    {% if evaluacion.apto %}
+
+        <div class="card success section">
+
+            <h2>
+                APTO PARA LIBERACIÓN
+            </h2>
+
+            <p>
+                Todas las comprobaciones actuales
+                fueron satisfactorias.
+            </p>
+
+            <p>
+                Antes de eliminar el primer archivo,
+                ESP015 ejecutará nuevamente un
+                preflight completo.
+            </p>
+
+        </div>
+
+
+        {% if perms.espaciometro.puede_liberar_archivos %}
+
+            <div class="card warning section">
+
+                <h2>
+                    Confirmación final
+                </h2>
+
+                <p>
+                    Escriba exactamente:
+                </p>
+
+                <p>
+                    <code id="required-text">
+                        {{ evaluacion.frase_confirmacion }}
+                    </code>
+                </p>
+
+
+                <form
+                    method="post"
+                    action="{% url 'espaciometro:ejecutar_liberacion' evaluacion.lote.id %}"
+                    id="release-form"
+                >
+
+                    {% csrf_token %}
+
+                    <input
+                        type="text"
+                        name="confirmacion"
+                        id="confirmation"
+                        autocomplete="off"
+                        placeholder="{{ evaluacion.frase_confirmacion }}"
+                    >
+
+                    <div style="margin-top:15px;">
+
+                        <button
+                            class="button danger"
+                            type="submit"
+                            id="release-button"
+                            disabled
+                        >
+                            Liberar {{ evaluacion.total_legible }}
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <script>
+
+                const confirmation =
+                    document.getElementById(
+                        "confirmation"
+                    );
+
+                const releaseButton =
+                    document.getElementById(
+                        "release-button"
+                    );
+
+                const required =
+                    "{{ evaluacion.frase_confirmacion|escapejs }}";
+
+
+                function updateButton() {
+
+                    releaseButton.disabled =
+                        confirmation.value !== required;
+
+                }
+
+
+                confirmation.addEventListener(
+                    "input",
+                    updateButton
+                );
+
+
+                updateButton();
+
+            </script>
+
+
+        {% else %}
+
+            <div class="card warning section">
+
+                <strong>
+                    Su usuario no posee el permiso:
+                </strong>
+
+                <p>
+                    <code>
+                        espaciometro.puede_liberar_archivos
+                    </code>
+                </p>
+
+            </div>
+
+        {% endif %}
+
+
+    {% else %}
+
+        <div class="card warning section">
+
+            <h2>
+                NO APTO PARA LIBERACIÓN
+            </h2>
+
+            <p>
+                No se habilita ninguna operación
+                destructiva mientras exista una
+                condición de seguridad incumplida.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+</div>
+
+
+</body>
+
+</html>

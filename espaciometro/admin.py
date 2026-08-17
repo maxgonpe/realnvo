@@ -15,6 +15,8 @@ from .models import (
     RespaldoMantenimiento,
     DetalleRespaldoMantenimiento,
     RegistroDescargaRespaldo,
+    LiberacionMantenimiento,
+    DetalleLiberacionMantenimiento,
 )
 
 
@@ -377,4 +379,96 @@ class RegistroDescargaRespaldoAdmin(
         "detalle",
         "iniciada_en",
         "confirmada_en",
+    )
+
+# =============================================================================
+# ESP015
+# =============================================================================
+
+
+@admin.register(
+    LiberacionMantenimiento
+)
+class LiberacionMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "lote",
+        "respaldo",
+        "estado",
+        "usuario",
+        "liberados",
+        "omitidos",
+        "liberado_legible",
+        "iniciado_en",
+        "finalizado_en",
+    )
+
+    list_filter = (
+        "estado",
+        "iniciado_en",
+    )
+
+    search_fields = (
+        "lote__nombre",
+        "usuario",
+        "confirmacion",
+    )
+
+    readonly_fields = (
+        "lote",
+        "respaldo",
+        "descarga_verificada",
+        "estado",
+        "usuario",
+        "total_candidatos",
+        "liberados",
+        "omitidos",
+        "total_bytes_objetivo",
+        "total_bytes_liberados",
+        "confirmacion",
+        "errores",
+        "iniciado_en",
+        "finalizado_en",
+    )
+
+
+
+@admin.register(
+    DetalleLiberacionMantenimiento
+)
+class DetalleLiberacionMantenimientoAdmin(
+    admin.ModelAdmin
+):
+
+    list_display = (
+        "id",
+        "liberacion",
+        "candidato",
+        "estado",
+        "total_legible",
+        "liberado_en",
+    )
+
+    list_filter = (
+        "estado",
+        "creado_en",
+    )
+
+    search_fields = (
+        "candidato__nombre",
+        "ruta_relativa",
+    )
+
+    readonly_fields = (
+        "liberacion",
+        "candidato",
+        "estado",
+        "ruta_relativa",
+        "total_bytes_snapshot",
+        "motivo",
+        "liberado_en",
+        "creado_en",
     )

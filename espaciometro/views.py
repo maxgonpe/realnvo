@@ -1,6 +1,17 @@
 from django.contrib import messages
 from django.http import FileResponse
-from django.contrib.auth.decorators import login_required
+
+from django.contrib.auth.decorators import (
+    login_required,
+    permission_required,
+)
+
+from .release import (
+    evaluar_liberacion_lote,
+    ejecutar_liberacion_lote,
+    obtener_detalle_liberacion,
+)
+
 from django.shortcuts import (
     get_object_or_404,
     redirect,
@@ -36,6 +47,7 @@ from .models import (
     RutaMonitoreada,
     RespaldoMantenimiento,
     RegistroDescargaRespaldo,
+    LiberacionMantenimiento,
 )
 from .route_selector import (
     guardar_seleccion_rutas,
@@ -1063,4 +1075,161 @@ def confirmar_descarga_view(
         respaldo_id=(
             registro.respaldo_id
         ),
+    )
+
+# =============================================================================
+# ESP015 — LIBERACIÓN SEGURA
+# =============================================================================
+
+
+@login_required
+def evaluar_liberacion_view(
+    request,
+    lote_id,
+):
+
+    lote = get_object_or_404(
+        LoteCandidatosMantenimiento,
+        pk=lote_id,
+    )
+
+
+    evaluacion = (
+        evaluar_liberacion_lote(
+            lote
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/liberacion_evaluacion.html",
+        {
+            "evaluacion": evaluacion,
+        },
+    )
+
+
+
+@login_required
+@permission_required(
+    "espaciometro.puede_liberar_archivos",
+    raise_exception=True,
+)
+@require_POST
+def ejecutar_liberacion_view(
+    request,
+    lote_id,
+):
+
+    lote = get_object_or_404(
+        LoteCandidatosMantenimiento,
+        pk=lote_id,
+    )
+
+
+    usuario = (
+        request.user.get_username()
+        or str(
+            request.user
+        )
+    )
+
+
+    resultado = (
+        ejecutar_liberacion_lote(
+
+            lote=lote,
+
+            usuario=usuario,
+
+            confirmacion=(
+                request.POST.get(
+                    "confirmacion",
+                    "",
+                )
+            ),
+        )
+    )
+
+
+    liberacion = (
+        resultado[
+            "liberacion"
+        ]
+    )
+
+
+    if resultado[
+        "error"
+    ]:
+
+        messages.error(
+            request,
+            resultado[
+                "error"
+            ],
+        )
+
+
+        if liberacion:
+
+            return redirect(
+                "espaciometro:detalle_liberacion",
+                liberacion_id=(
+                    liberacion.pk
+                ),
+            )
+
+
+        return redirect(
+            "espaciometro:evaluar_liberacion",
+            lote_id=lote.pk,
+        )
+
+
+    messages.success(
+        request,
+        (
+            "Liberación completada. "
+            f"Archivos eliminados: "
+            f"{resultado['liberados']}."
+        ),
+    )
+
+
+    return redirect(
+        "espaciometro:detalle_liberacion",
+        liberacion_id=(
+            liberacion.pk
+        ),
+    )
+
+
+
+@login_required
+def detalle_liberacion_view(
+    request,
+    liberacion_id,
+):
+
+    liberacion = get_object_or_404(
+        LiberacionMantenimiento,
+        pk=liberacion_id,
+    )
+
+
+    detalle = (
+        obtener_detalle_liberacion(
+            liberacion
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/liberacion_detalle.html",
+        {
+            "detalle": detalle,
+        },
     )

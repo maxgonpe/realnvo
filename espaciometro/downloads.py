@@ -782,3 +782,61 @@ def confirmar_descarga(
 
 
     return resultado
+
+
+# =============================================================================
+# VALIDACIÓN PÚBLICA DE INTEGRIDAD
+# =============================================================================
+
+
+def validar_integridad_respaldo(
+    respaldo: RespaldoMantenimiento,
+) -> dict:
+    """
+    Revalida físicamente un paquete ESP013
+    sin iniciar una descarga.
+
+    ESP015 utiliza esta función antes de
+    considerar una liberación.
+    """
+
+    validacion = (
+        _abrir_y_validar_respaldo(
+            respaldo
+        )
+    )
+
+
+    archivo = (
+        validacion[
+            "archivo"
+        ]
+    )
+
+
+    try:
+
+        return {
+            "path": (
+                validacion[
+                    "path"
+                ]
+            ),
+
+            "tamano": (
+                validacion[
+                    "tamano"
+                ]
+            ),
+
+            "sha256": (
+                validacion[
+                    "sha256"
+                ]
+            ),
+        }
+
+
+    finally:
+
+        archivo.close()

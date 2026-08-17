@@ -139,5 +139,24 @@ urlpatterns = [
         views.confirmar_descarga_view,
         name="confirmar_descarga",
     ),
+
+        # ESP015
+    path(
+        "liberacion/lote/<int:lote_id>/",
+        views.evaluar_liberacion_view,
+        name="evaluar_liberacion",
+    ),
+
+    path(
+        "liberacion/lote/<int:lote_id>/ejecutar/",
+        views.ejecutar_liberacion_view,
+        name="ejecutar_liberacion",
+    ),
+
+    path(
+        "liberacion/<int:liberacion_id>/",
+        views.detalle_liberacion_view,
+        name="detalle_liberacion",
+    ),
     
 ]

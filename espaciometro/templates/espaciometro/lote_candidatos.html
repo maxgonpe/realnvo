@@ -793,6 +793,91 @@
 
 {% endif %}
 
+<!-- ================================================================
+     ESP015 — LIBERACIÓN SEGURA
+     ================================================================ -->
+
+{% if detalle.lote.estado == "PREPARADO" %}
+
+    <div class="card info-box section">
+
+        <strong>
+            ESP015 — Liberación segura
+        </strong>
+
+        <p>
+            Este lote posee un respaldo completo
+            preparado por ESP013.
+        </p>
+
+        <p>
+            Antes de permitir cualquier eliminación,
+            Espaciómetro comprobará nuevamente:
+        </p>
+
+        <ul>
+            <li>el respaldo ESP013;</li>
+            <li>la integridad SHA-256 del ZIP;</li>
+            <li>la descarga verificada mediante ESP014;</li>
+            <li>el estado actual de los archivos originales;</li>
+            <li>los permisos de mantenimiento de cada ruta;</li>
+            <li>la ausencia de enlaces duros.</li>
+        </ul>
+
+        <p>
+            <strong>
+                Esta evaluación todavía no elimina ningún archivo.
+            </strong>
+        </p>
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:evaluar_liberacion' detalle.lote.id %}"
+        >
+            Evaluar liberación
+        </a>
+
+    </div>
+
+
+{% elif detalle.lote.estado == "LIBERADO" %}
+
+    <div class="card info-box section">
+
+        <strong>
+            ESP015 — Lote liberado
+        </strong>
+
+        <p>
+            Los archivos originales de este lote
+            ya fueron procesados por ESP015.
+        </p>
+
+    </div>
+
+
+{% elif detalle.lote.estado == "LIBERACION_PARCIAL" %}
+
+    <div class="card info-box section">
+
+        <strong>
+            ESP015 — Liberación parcial
+        </strong>
+
+        <p>
+            Una ejecución anterior consiguió liberar
+            algunos archivos, pero no todos.
+        </p>
+
+        <p>
+            Revise el detalle de la liberación
+            antes de efectuar cualquier operación manual.
+        </p>
+
+    </div>
+
+{% endif %}
+
 
 </div>
 
