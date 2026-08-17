@@ -172,5 +172,47 @@ urlpatterns = [
         views.ejecutar_retiro_respaldo_view,
         name="ejecutar_retiro_respaldo",
     ),
+
+
+    # ESP016 — AUDITORÍA
+    
+    path(
+        "auditoria/",
+        views.auditoria_view,
+        name="auditoria",
+    ),
+
+    path(
+        "auditoria/lote/<int:lote_id>/",
+        views.auditoria_lote_view,
+        name="auditoria_lote",
+    ),
+
+
+    # ESP020 — INVENTARIO BASE DE DATOS
+    
+    path(
+        "base-datos/",
+        views.base_datos_view,
+        name="base_datos",
+    ),
+
+    path(
+    "base-datos/",
+    views.base_datos_view,
+    name="base_datos",
+    ),
+
+    path(
+        "base-datos/respaldo/crear/",
+        views.crear_respaldo_base_datos_view,
+        name="crear_respaldo_base_datos",
+    ),
+
+    path(
+        "base-datos/respaldo/<int:respaldo_id>/descargar/",
+        views.descargar_respaldo_base_datos_view,
+        name="descargar_respaldo_base_datos",
+    ),
     
 ]

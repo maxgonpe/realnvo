@@ -1936,3 +1936,124 @@ class RetiroRespaldoServidor(models.Model):
         return bytes_legibles(
             self.total_bytes_snapshot
         )
+
+
+class RespaldoBaseDatos(models.Model):
+
+    class Estado(models.TextChoices):
+        VERIFICADO = (
+            "VERIFICADO",
+            "Verificado",
+        )
+
+        ERROR = (
+            "ERROR",
+            "Error",
+        )
+
+
+    class Formato(models.TextChoices):
+        SQLITE_SQL = (
+            "SQLITE_SQL",
+            "SQLite SQL",
+        )
+
+        POSTGRES_CUSTOM = (
+            "POSTGRES_CUSTOM",
+            "PostgreSQL custom",
+        )
+
+
+    motor = models.CharField(
+        max_length=50,
+    )
+
+    nombre_base = models.CharField(
+        max_length=255,
+    )
+
+    formato = models.CharField(
+        max_length=30,
+        choices=Formato.choices,
+    )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.ERROR,
+    )
+
+    usuario = models.CharField(
+        max_length=150,
+        blank=True,
+    )
+
+    nombre_archivo = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    ruta_relativa = models.TextField(
+        blank=True,
+    )
+
+    total_bytes = models.PositiveBigIntegerField(
+        default=0,
+    )
+
+    sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+    detalle = models.TextField(
+        blank=True,
+    )
+
+    error = models.TextField(
+        blank=True,
+    )
+
+    creado_en = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    verificado_en = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+
+    class Meta:
+
+        db_table = (
+            "esp_respaldo_base_datos"
+        )
+
+        ordering = [
+            "-creado_en",
+            "-id",
+        ]
+
+        permissions = [
+            (
+                "puede_gestionar_respaldos_bd",
+                "Puede crear y descargar respaldos manuales de base de datos",
+            ),
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"Respaldo BD #{self.pk} "
+            f"— {self.nombre_base}"
+        )
+
+
+    @property
+    def total_legible(self):
+
+        return bytes_legibles(
+            self.total_bytes
+        )

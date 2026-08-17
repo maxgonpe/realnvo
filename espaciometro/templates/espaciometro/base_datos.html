@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Base de datos — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1700px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            border: 0;
+            padding: 10px 16px;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, .08);
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(190px, 1fr)
+                );
+
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .info {
+            border-left: 5px solid #2563eb;
+        }
+
+        .warning {
+            border-left: 5px solid #a16207;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom:
+                1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            margin: 2px;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 11px;
+            background: #e5e7eb;
+        }
+
+        .badge-temporal {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-project {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-django {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-esp {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        details {
+            margin-top: 8px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <!-- ================================================================
+         NAVEGACIÓN
+         ================================================================ -->
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:auditoria' %}"
+        >
+            Auditoría ESP016
+        </a>
+
+    </div>
+
+
+    <h1>
+        ESP020 — Inventario de base de datos
+    </h1>
+
+
+    <!-- ================================================================
+         SEGURIDAD
+         ================================================================ -->
+
+    <div class="card info">
+
+        <strong>
+            Observación únicamente.
+        </strong>
+
+        <p>
+
+            Espaciómetro utiliza la introspección
+            de la conexión activa de Django.
+
+        </p>
+
+        <p>
+
+            No importa modelos de las aplicaciones,
+            no crea relaciones con tablas externas
+            y no modifica registros.
+
+        </p>
+
+        <div class="small">
+
+            No se ejecutan DELETE, UPDATE,
+            INSERT ni ALTER TABLE.
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         INFORMACIÓN DE LA BASE
+         ================================================================ -->
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Motor
+            </div>
+
+            <div class="metric-value">
+                {{ inventario.motor }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Tablas detectadas
+            </div>
+
+            <div class="metric-value">
+                {{ inventario.total_tablas }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Tamaño BD
+            </div>
+
+            <div class="metric-value">
+                {{ inventario.tamano_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Columnas temporales
+            </div>
+
+            <div class="metric-value">
+                {{ inventario.total_columnas_temporales }}
+            </div>
+
+        </div>
+
+
+        {% if inventario.contando %}
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Registros observados
+                </div>
+
+                <div class="metric-value">
+                    {{ inventario.total_registros }}
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- ================================================================
+         IDENTIFICACIÓN
+         ================================================================ -->
+
+    <div class="card section">
+
+        <strong>
+            Base activa
+        </strong>
+
+        <p>
+            {{ inventario.nombre_base }}
+        </p>
+
+        <div class="small">
+
+            Backend Django:
+            {{ inventario.vendor }}
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+     ESP020-B — RESPALDO MANUAL DE BASE DE DATOS
+     ================================================================ -->
+
+<div class="section">
+
+    <h2>
+        Respaldo manual de base de datos
+    </h2>
+
+
+    <div class="card info">
+
+        <strong>
+            Copia completa bajo demanda
+        </strong>
+
+        <p>
+
+            Espaciómetro puede generar un respaldo
+            completo de la base de datos activa
+            cuando un usuario autorizado lo solicite.
+
+        </p>
+
+        <p>
+
+            La creación del respaldo no modifica
+            los registros de las aplicaciones.
+
+        </p>
+
+        <div class="small">
+
+            El respaldo queda en el área privada
+            de Espaciómetro y se registra con
+            tamaño, SHA-256, motor, fecha y usuario.
+
+        </div>
+
+    </div>
+
+
+    {% if ultimo_respaldo %}
+
+        <div class="grid section">
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Último respaldo
+                </div>
+
+                <div class="metric-value">
+                    #{{ ultimo_respaldo.id }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Estado
+                </div>
+
+                <div class="metric-value">
+                    {{ ultimo_respaldo.get_estado_display }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Tamaño
+                </div>
+
+                <div class="metric-value">
+                    {{ ultimo_respaldo.total_legible }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Fecha
+                </div>
+
+                <div style="margin-top:8px;font-weight:700;">
+
+                    {{ ultimo_respaldo.verificado_en|date:"d/m/Y H:i:s" }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="card section">
+
+            <div class="small">
+                SHA-256 del último respaldo
+            </div>
+
+            <div
+                style="
+                    margin-top:6px;
+                    font-family:monospace;
+                    word-break:break-all;
+                "
+            >
+                {{ ultimo_respaldo.sha256 }}
+            </div>
+
+        </div>
+
+
+    {% else %}
+
+        <div class="card section">
+
+            Todavía no existen respaldos manuales
+            verificados de la base de datos.
+
+        </div>
+
+    {% endif %}
+
+
+    <div class="card section">
+
+
+        {% if perms.espaciometro.puede_gestionar_respaldos_bd %}
+
+            <form
+                method="post"
+                action="{% url 'espaciometro:crear_respaldo_base_datos' %}"
+            >
+
+                {% csrf_token %}
+
+
+                <p>
+
+                    Esta operación solamente crea
+                    una nueva copia. No reemplaza
+                    ni elimina respaldos anteriores.
+
+                </p>
+
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Crear respaldo de BD ahora
+                </button>
+
+            </form>
+
+
+        {% else %}
+
+            <strong>
+                No tienes permiso para crear
+                respaldos de base de datos.
+            </strong>
+
+        {% endif %}
+
+
+    </div>
+
+
+    <div class="section">
+
+        <h3>
+            Historial de respaldos
+        </h3>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Motor</th>
+                        <th>Formato</th>
+                        <th>Estado</th>
+                        <th>Tamaño</th>
+                        <th>SHA-256</th>
+                        <th>Archivo</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for respaldo in respaldos_bd %}
+
+                    <tr>
+
+                        <td>
+                            #{{ respaldo.id }}
+                        </td>
+
+
+                        <td>
+                            {{ respaldo.creado_en|date:"d/m/Y H:i:s" }}
+                        </td>
+
+
+                        <td>
+                            {{ respaldo.usuario|default:"-" }}
+                        </td>
+
+
+                        <td>
+                            {{ respaldo.motor }}
+                        </td>
+
+
+                        <td>
+                            {{ respaldo.get_formato_display }}
+                        </td>
+
+
+                        <td>
+
+                            <strong>
+                                {{ respaldo.get_estado_display }}
+                            </strong>
+
+
+                            {% if respaldo.error %}
+
+                                <details>
+
+                                    <summary class="error">
+                                        Ver error
+                                    </summary>
+
+                                    <div style="margin-top:8px;">
+                                        {{ respaldo.error }}
+                                    </div>
+
+                                </details>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ respaldo.total_legible }}
+                        </td>
+
+
+                        <td>
+
+                            {% if respaldo.sha256 %}
+
+                                <span
+                                    style="
+                                        font-family:monospace;
+                                        font-size:11px;
+                                        word-break:break-all;
+                                    "
+                                >
+                                    {{ respaldo.sha256 }}
+                                </span>
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if respaldo.estado == "VERIFICADO" %}
+
+                                {% if perms.espaciometro.puede_gestionar_respaldos_bd %}
+
+                                    <a
+                                        class="button button-secondary"
+                                        href="{% url 'espaciometro:descargar_respaldo_base_datos' respaldo.id %}"
+                                    >
+                                        Descargar
+                                    </a>
+
+                                {% else %}
+
+                                    Protegido
+
+                                {% endif %}
+
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="9">
+
+                            Todavía no existen
+                            respaldos registrados.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+    <!-- ================================================================
+         CONTEO
+         ================================================================ -->
+
+    <div class="card warning section">
+
+        <strong>
+            Conteo de registros
+        </strong>
+
+
+        {% if inventario.contando %}
+
+            <p>
+
+                En esta consulta se ejecutó
+                COUNT(*) sobre cada tabla detectada.
+
+            </p>
+
+            <a
+                class="button button-secondary"
+                href="{% url 'espaciometro:base_datos' %}"
+            >
+                Volver sin contar
+            </a>
+
+
+        {% else %}
+
+            <p>
+
+                La carga normal de esta pantalla
+                no cuenta registros.
+
+            </p>
+
+            <p>
+
+                Esto evita consultas innecesariamente
+                costosas en bases de datos grandes.
+
+            </p>
+
+            <a
+                class="button"
+                href="{% url 'espaciometro:base_datos' %}?contar=1"
+            >
+                Contar registros ahora
+            </a>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ================================================================
+         ERRORES GENERALES
+         ================================================================ -->
+
+    {% if inventario.errores %}
+
+        <div class="card section">
+
+            <strong class="error">
+                Se detectaron errores
+            </strong>
+
+            {% for error in inventario.errores %}
+
+                <p>
+                    {{ error }}
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- ================================================================
+         TABLAS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Tablas detectadas
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Tabla</th>
+                        <th>Origen</th>
+                        <th>Columnas</th>
+                        <th>Fechas detectadas</th>
+                        <th>Registros</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for tabla in inventario.tablas %}
+
+                    <tr>
+
+
+                        <td>
+
+                            <strong>
+                                {{ tabla.nombre }}
+                            </strong>
+
+
+                            {% if tabla.error %}
+
+                                <div class="error">
+                                    {{ tabla.error }}
+                                </div>
+
+                            {% endif %}
+
+
+                            <details>
+
+                                <summary>
+                                    Ver estructura
+                                </summary>
+
+
+                                <div style="margin-top:8px;">
+
+                                    {% for columna in tabla.columnas %}
+
+                                        <span
+                                            class="
+                                                badge
+                                                {% if columna.temporal %}
+                                                    badge-temporal
+                                                {% endif %}
+                                            "
+                                        >
+
+                                            {{ columna.nombre }}
+
+                                            ·
+
+                                            {{ columna.tipo }}
+
+                                        </span>
+
+                                    {% empty %}
+
+                                        <span class="small">
+                                            Sin columnas disponibles.
+                                        </span>
+
+                                    {% endfor %}
+
+                                </div>
+
+                            </details>
+
+                        </td>
+
+
+                        <td>
+
+                            {% if tabla.clasificacion.codigo == "ESPACIOMETRO" %}
+
+                                <span class="badge badge-esp">
+                                    Espaciómetro
+                                </span>
+
+
+                            {% elif tabla.clasificacion.codigo == "DJANGO" %}
+
+                                <span class="badge badge-django">
+                                    Sistema Django
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="badge badge-project">
+                                    Aplicación / proyecto
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ tabla.columnas_total }}
+                        </td>
+
+
+                        <td>
+
+                            {% for columna in tabla.temporales %}
+
+                                <span class="badge badge-temporal">
+
+                                    {{ columna.nombre }}
+
+                                </span>
+
+                            {% empty %}
+
+                                -
+
+                            {% endfor %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if inventario.contando %}
+
+                                {% if tabla.registros != None %}
+
+                                    <strong>
+                                        {{ tabla.registros }}
+                                    </strong>
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+
+                            {% else %}
+
+                                <span class="small">
+                                    No medido
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="5">
+
+                            No se detectaron tablas.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

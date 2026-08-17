@@ -17,6 +17,7 @@ from django.shortcuts import (
     redirect,
     render,
 )
+
 from django.views.decorators.http import require_POST
 
 from .dashboard_ops import (
@@ -48,6 +49,7 @@ from .models import (
     RespaldoMantenimiento,
     RegistroDescargaRespaldo,
     LiberacionMantenimiento,
+    RespaldoBaseDatos,
 )
 from .route_selector import (
     guardar_seleccion_rutas,
@@ -77,6 +79,23 @@ from .backup_retirement import (
     evaluar_retiro_respaldo,
     ejecutar_retiro_respaldo,
 )
+
+from .audit import (
+    construir_auditoria_general,
+    construir_auditoria_lote,
+)
+
+
+from .database_monitor import (
+    inspeccionar_base_datos,
+)
+
+from .database_backup import (
+    ErrorRespaldoBaseDatos,
+    crear_respaldo_base_datos,
+    preparar_descarga_respaldo_bd,
+)
+
 
 from .scanner import ejecutar_medicion_completa
 from .services import obtener_dashboard_espaciometro
@@ -1343,4 +1362,242 @@ def ejecutar_retiro_respaldo_view(
     return redirect(
         "espaciometro:detalle_respaldo",
         respaldo_id=respaldo.pk,
+    )
+
+# =============================================================================
+# ESP016 — AUDITORÍA
+# =============================================================================
+
+
+@login_required
+def auditoria_view(
+    request,
+):
+
+    limite = (
+        request.GET.get(
+            "limite",
+            "100",
+        )
+    )
+
+
+    auditoria = (
+        construir_auditoria_general(
+            limite=limite
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/auditoria.html",
+        {
+            "auditoria": auditoria,
+        },
+    )
+
+
+
+@login_required
+def auditoria_lote_view(
+    request,
+    lote_id,
+):
+
+    lote = get_object_or_404(
+        LoteCandidatosMantenimiento,
+        pk=lote_id,
+    )
+
+
+    auditoria = (
+        construir_auditoria_lote(
+            lote
+        )
+    )
+
+
+    return render(
+        request,
+        "espaciometro/auditoria_lote.html",
+        {
+            "auditoria": auditoria,
+        },
+    )
+
+
+# =============================================================================
+# ESP020 — INVENTARIO DE BASE DE DATOS
+# =============================================================================
+
+
+@login_required
+def base_datos_view(
+    request,
+):
+
+    contar = (
+        request.GET.get(
+            "contar"
+        )
+        == "1"
+    )
+
+
+    inventario = (
+        inspeccionar_base_datos(
+            contar_registros=contar
+        )
+    )
+
+
+    respaldos_bd = (
+        RespaldoBaseDatos
+        .objects
+        .all()
+        .order_by(
+            "-creado_en",
+            "-id",
+        )[
+            :20
+        ]
+    )
+
+
+    ultimo_respaldo = (
+        RespaldoBaseDatos
+        .objects
+        .filter(
+            estado=(
+                RespaldoBaseDatos
+                .Estado
+                .VERIFICADO
+            )
+        )
+        .order_by(
+            "-verificado_en",
+            "-id",
+        )
+        .first()
+    )
+
+
+    return render(
+        request,
+        "espaciometro/base_datos.html",
+        {
+            "inventario": inventario,
+            "respaldos_bd": respaldos_bd,
+            "ultimo_respaldo": ultimo_respaldo,
+        },
+    )
+
+@login_required
+@permission_required(
+    "espaciometro.puede_gestionar_respaldos_bd",
+    raise_exception=True,
+)
+@require_POST
+def crear_respaldo_base_datos_view(
+    request,
+):
+
+    usuario = (
+        request.user.get_username()
+        if request.user.is_authenticated
+        else ""
+    )
+
+
+    try:
+
+        respaldo = (
+            crear_respaldo_base_datos(
+                usuario=usuario
+            )
+        )
+
+
+        messages.success(
+            request,
+            (
+                "Respaldo de base de datos "
+                f"#{respaldo.pk} creado y "
+                "verificado correctamente."
+            ),
+        )
+
+
+    except ErrorRespaldoBaseDatos as exc:
+
+        messages.error(
+            request,
+            (
+                "No fue posible crear "
+                "el respaldo de base "
+                f"de datos: {exc}"
+            ),
+        )
+
+
+    return redirect(
+        "espaciometro:base_datos"
+    )
+
+
+
+@login_required
+@permission_required(
+    "espaciometro.puede_gestionar_respaldos_bd",
+    raise_exception=True,
+)
+def descargar_respaldo_base_datos_view(
+    request,
+    respaldo_id,
+):
+
+    respaldo = get_object_or_404(
+        RespaldoBaseDatos,
+        pk=respaldo_id,
+    )
+
+
+    try:
+
+        entrega = (
+            preparar_descarga_respaldo_bd(
+                respaldo
+            )
+        )
+
+
+    except ErrorRespaldoBaseDatos as exc:
+
+        messages.error(
+            request,
+            str(
+                exc
+            ),
+        )
+
+
+        return redirect(
+            "espaciometro:base_datos"
+        )
+
+
+    return FileResponse(
+        entrega[
+            "archivo"
+        ],
+        as_attachment=True,
+        filename=(
+            entrega[
+                "nombre"
+            ]
+        ),
+        content_type=(
+            "application/octet-stream"
+        ),
     )

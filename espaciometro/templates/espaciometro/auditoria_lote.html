@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Auditoría de lote — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, .08);
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(200px, 1fr)
+                );
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            font-size: 25px;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .success-box {
+            border-left: 5px solid #15803d;
+        }
+
+        .warning-box {
+            border-left: 5px solid #a16207;
+        }
+
+        .timeline {
+            position: relative;
+        }
+
+        .event {
+            margin-bottom: 16px;
+            border-left: 5px solid #6b7280;
+        }
+
+        .ESP012 {
+            border-left-color: #2563eb;
+        }
+
+        .ESP013 {
+            border-left-color: #7c3aed;
+        }
+
+        .ESP014 {
+            border-left-color: #0891b2;
+        }
+
+        .ESP015 {
+            border-left-color: #15803d;
+        }
+
+        .event-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .stage {
+            font-weight: 800;
+        }
+
+        .hash {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom:
+                1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        .ok {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .no {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:auditoria' %}"
+        >
+            ← Auditoría
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:detalle_lote_candidatos' auditoria.lote.id %}"
+        >
+            Ver lote
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            Dashboard
+        </a>
+
+    </div>
+
+
+    <h1>
+        ESP016 — Auditoría del lote
+    </h1>
+
+
+    <h2>
+
+        {% if auditoria.lote.nombre %}
+
+            {{ auditoria.lote.nombre }}
+
+        {% else %}
+
+            Lote #{{ auditoria.lote.id }}
+
+        {% endif %}
+
+    </h2>
+
+
+    <div class="small">
+
+        Lote #{{ auditoria.lote.id }}
+
+        · Creado:
+
+        {{ auditoria.lote.creado_en|date:"d/m/Y H:i:s" }}
+
+        · Usuario:
+
+        {{ auditoria.lote.creado_por|default:"-" }}
+
+        · Estado:
+
+        {{ auditoria.lote.get_estado_display }}
+
+    </div>
+
+
+    <!-- ================================================================
+         RESULTADO GENERAL
+         ================================================================ -->
+
+    {% if auditoria.estado_ciclo.ciclo_completo %}
+
+        <div class="card success-box section">
+
+            <h2>
+                ✓ CICLO COMPLETO
+            </h2>
+
+            <p>
+
+                Existe evidencia registrada de respaldo,
+                descarga verificada, liberación de los
+                originales y retiro del ZIP temporal
+                del servidor.
+
+            </p>
+
+        </div>
+
+    {% else %}
+
+        <div class="card warning-box section">
+
+            <h2>
+                CICLO EN PROCESO
+            </h2>
+
+            <p>
+
+                Una o más etapas todavía no poseen
+                evidencia de cierre completo.
+
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- ================================================================
+         INDICADORES
+         ================================================================ -->
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                ESP013 respaldo
+            </div>
+
+            <div class="metric-value">
+
+                {% if auditoria.estado_ciclo.respaldo_listo %}
+
+                    <span class="ok">
+                        ✓
+                    </span>
+
+                {% else %}
+
+                    <span class="no">
+                        Pendiente
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                ESP014 descarga
+            </div>
+
+            <div class="metric-value">
+
+                {% if auditoria.estado_ciclo.descarga_verificada %}
+
+                    <span class="ok">
+                        ✓
+                    </span>
+
+                {% else %}
+
+                    <span class="no">
+                        Pendiente
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Originales liberados
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_originales_liberados_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                ZIP retirado
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_zip_retirado_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Total retirado del servidor
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_retirado_servidor_legible }}
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- ================================================================
+         LÍNEA DE TIEMPO
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Línea de tiempo
+        </h2>
+
+
+        <div class="timeline">
+
+
+            {% for evento in auditoria.eventos %}
+
+
+                <div
+                    class="
+                        card
+                        event
+                        {{ evento.etapa }}
+                    "
+                >
+
+
+                    <div class="event-header">
+
+                        <div>
+
+                            <span class="stage">
+                                {{ evento.etapa }}
+                            </span>
+
+                            —
+
+                            <strong>
+                                {{ evento.titulo }}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="small">
+
+                            {{ evento.fecha|date:"d/m/Y H:i:s" }}
+
+                        </div>
+
+                    </div>
+
+
+                    {% if evento.estado %}
+
+                        <p>
+
+                            Estado:
+
+                            <strong>
+                                {{ evento.estado }}
+                            </strong>
+
+                        </p>
+
+                    {% endif %}
+
+
+                    {% if evento.usuario %}
+
+                        <p>
+
+                            Usuario:
+
+                            <strong>
+                                {{ evento.usuario }}
+                            </strong>
+
+                        </p>
+
+                    {% endif %}
+
+
+                    {% if evento.detalle %}
+
+                        <p>
+                            {{ evento.detalle }}
+                        </p>
+
+                    {% endif %}
+
+
+                    {% if evento.total_bytes %}
+
+                        <p>
+
+                            Espacio:
+
+                            <strong>
+                                {{ evento.total_legible }}
+                            </strong>
+
+                        </p>
+
+                    {% endif %}
+
+
+                    {% if evento.sha256 %}
+
+                        <div class="small">
+                            SHA-256
+                        </div>
+
+                        <div class="hash">
+                            {{ evento.sha256 }}
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if evento.objeto_id %}
+
+                        <div
+                            class="small"
+                            style="margin-top:10px;"
+                        >
+
+                            Evidencia:
+
+                            {{ evento.objeto_tipo }}
+
+                            #{{ evento.objeto_id }}
+
+                        </div>
+
+                    {% endif %}
+
+
+                </div>
+
+
+            {% empty %}
+
+
+                <div class="card">
+
+                    No existen eventos registrados
+                    para este lote.
+
+                </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================================
+         ARCHIVOS REGISTRADOS POR ESP012
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Evidencia ESP012 — candidatos
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Archivo</th>
+                        <th>Ruta</th>
+                        <th>Tamaño snapshot</th>
+                        <th>Modificado snapshot</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for candidato in auditoria.candidatos %}
+
+                    <tr>
+
+                        <td>
+                            #{{ candidato.id }}
+                        </td>
+
+                        <td>
+                            {{ candidato.nombre }}
+                        </td>
+
+                        <td>
+                            {{ candidato.ruta_relativa }}
+                        </td>
+
+                        <td>
+                            {{ candidato.total_legible }}
+                        </td>
+
+                        <td>
+                            {{ candidato.modificado_snapshot|date:"d/m/Y H:i:s" }}
+                        </td>
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="5">
+                            El lote no posee candidatos registrados.
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

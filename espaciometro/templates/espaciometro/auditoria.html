@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Auditoría — Espaciómetro
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 7px;
+            background: #374151;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow:
+                0 1px 3px
+                rgba(0, 0, 0, .08);
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(200px, 1fr)
+                );
+            gap: 15px;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .metric-value {
+            margin-top: 4px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .small {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .success {
+            color: #15803d;
+            font-weight: 700;
+        }
+
+        .warning {
+            color: #a16207;
+            font-weight: 700;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 11px;
+            border-bottom:
+                1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 7px;
+            border-radius: 6px;
+            background: #e5e7eb;
+            font-size: 11px;
+        }
+
+        .badge-ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-no {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page">
+
+
+    <div class="nav">
+
+        <a
+            class="button"
+            href="{% url 'espaciometro:dashboard' %}"
+        >
+            ← Espaciómetro
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:candidatos' %}"
+        >
+            Candidatos
+        </a>
+
+        <a
+            class="button button-secondary"
+            href="{% url 'espaciometro:respaldos' %}"
+        >
+            Respaldos
+        </a>
+
+    </div>
+
+
+    <h1>
+        ESP016 — Auditoría
+    </h1>
+
+
+    <div class="card">
+
+        <strong>
+            Trazabilidad histórica de Espaciómetro
+        </strong>
+
+        <p>
+
+            Esta pantalla reconstruye los eventos
+            registrados por ESP012, ESP013,
+            ESP014 y ESP015.
+
+        </p>
+
+        <div class="small">
+
+            ESP016 es solamente de lectura.
+            Abrir esta pantalla no escanea,
+            modifica, mueve ni elimina archivos.
+
+        </div>
+
+    </div>
+
+
+    <div class="grid section">
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Lotes auditados
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_lotes }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Ciclos completos
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.ciclos_completos }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Originales liberados
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_originales_liberados_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                ZIP retirados
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_zip_retirado_legible }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="metric-label">
+                Espacio retirado del servidor
+            </div>
+
+            <div class="metric-value">
+                {{ auditoria.total_retirado_servidor_legible }}
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>
+            Lotes
+        </h2>
+
+
+        <div class="card table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Lote</th>
+                        <th>Creado</th>
+                        <th>Usuario</th>
+                        <th>Estado</th>
+                        <th>ESP013</th>
+                        <th>ESP014</th>
+                        <th>ESP015 originales</th>
+                        <th>ESP015 ZIP</th>
+                        <th>Espacio</th>
+                        <th>Resultado</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for item in auditoria.lotes %}
+
+                    <tr>
+
+
+                        <td>
+
+                            <a
+                                href="{% url 'espaciometro:auditoria_lote' item.lote.id %}"
+                            >
+
+                                <strong>
+
+                                    {% if item.lote.nombre %}
+
+                                        {{ item.lote.nombre }}
+
+                                    {% else %}
+
+                                        Lote #{{ item.lote.id }}
+
+                                    {% endif %}
+
+                                </strong>
+
+                            </a>
+
+                            <div class="small">
+                                #{{ item.lote.id }}
+                            </div>
+
+                        </td>
+
+
+                        <td>
+                            {{ item.lote.creado_en|date:"d/m/Y H:i:s" }}
+                        </td>
+
+
+                        <td>
+                            {{ item.lote.creado_por|default:"-" }}
+                        </td>
+
+
+                        <td>
+                            {{ item.lote.get_estado_display }}
+                        </td>
+
+
+                        <td>
+
+                            {% if item.estado_ciclo.respaldo_listo %}
+                                <span class="badge badge-ok">
+                                    ✓ LISTO
+                                </span>
+                            {% else %}
+                                <span class="badge badge-no">
+                                    Pendiente
+                                </span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if item.estado_ciclo.descarga_verificada %}
+                                <span class="badge badge-ok">
+                                    ✓ VERIFICADA
+                                </span>
+                            {% else %}
+                                <span class="badge badge-no">
+                                    Pendiente
+                                </span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if item.estado_ciclo.liberacion_completa %}
+                                <span class="badge badge-ok">
+                                    ✓ COMPLETADA
+                                </span>
+                            {% else %}
+                                <span class="badge badge-no">
+                                    Pendiente
+                                </span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if item.estado_ciclo.retiro_completo %}
+                                <span class="badge badge-ok">
+                                    ✓ RETIRADO
+                                </span>
+                            {% else %}
+                                <span class="badge badge-no">
+                                    Pendiente
+                                </span>
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ item.total_retirado_servidor_legible }}
+                        </td>
+
+
+                        <td>
+
+                            {% if item.estado_ciclo.ciclo_completo %}
+
+                                <span class="success">
+                                    ✓ CICLO COMPLETO
+                                </span>
+
+                            {% else %}
+
+                                <span class="warning">
+                                    EN PROCESO
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="10">
+                            Todavía no existen lotes auditables.
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>
