@@ -90,14 +90,22 @@ from .database_monitor import (
     inspeccionar_base_datos,
 )
 
+from .database_history import (
+    obtener_panel_historico_base_datos,
+)
+
 from .database_backup import (
     ErrorRespaldoBaseDatos,
     crear_respaldo_base_datos,
     preparar_descarga_respaldo_bd,
 )
 
+from .scanner import (
+    ejecutar_medicion_completa,
+    ejecutar_fotografia_base_datos,
+)
 
-from .scanner import ejecutar_medicion_completa
+
 from .services import obtener_dashboard_espaciometro
 from .structure import analizar_estructura_proyecto
 
@@ -1452,6 +1460,11 @@ def base_datos_view(
     )
 
 
+    historico_bd = (
+        obtener_panel_historico_base_datos()
+    )
+
+
     respaldos_bd = (
         RespaldoBaseDatos
         .objects
@@ -1488,10 +1501,12 @@ def base_datos_view(
         "espaciometro/base_datos.html",
         {
             "inventario": inventario,
+            "historico_bd": historico_bd,
             "respaldos_bd": respaldos_bd,
             "ultimo_respaldo": ultimo_respaldo,
         },
     )
+
 
 @login_required
 @permission_required(
@@ -1600,4 +1615,85 @@ def descargar_respaldo_base_datos_view(
         content_type=(
             "application/octet-stream"
         ),
+    )
+
+
+# =============================================================================
+# ESP021 — FOTOGRAFÍA HISTÓRICA DE BASE DE DATOS
+# =============================================================================
+
+
+@login_required
+@require_POST
+def tomar_fotografia_base_datos_view(
+    request,
+):
+
+    try:
+
+        ejecucion = (
+            ejecutar_fotografia_base_datos()
+        )
+
+
+        if (
+            ejecucion.estado
+            == EjecucionMedicion
+            .Estado
+            .COMPLETADA
+        ):
+
+            messages.success(
+                request,
+                (
+                    f"Fotografía histórica "
+                    f"#{ejecucion.pk} "
+                    "completada correctamente."
+                ),
+            )
+
+
+        elif (
+            ejecucion.estado
+            == EjecucionMedicion
+            .Estado
+            .PARCIAL
+        ):
+
+            messages.warning(
+                request,
+                (
+                    f"Fotografía histórica "
+                    f"#{ejecucion.pk} "
+                    "terminó parcialmente."
+                ),
+            )
+
+
+        else:
+
+            messages.error(
+                request,
+                (
+                    f"Fotografía histórica "
+                    f"#{ejecucion.pk} "
+                    "terminó con errores."
+                ),
+            )
+
+
+    except Exception as exc:
+
+        messages.error(
+            request,
+            (
+                "No fue posible tomar "
+                "la fotografía histórica: "
+                f"{type(exc).__name__}: {exc}"
+            ),
+        )
+
+
+    return redirect(
+        "espaciometro:base_datos"
     )

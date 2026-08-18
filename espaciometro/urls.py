@@ -198,10 +198,11 @@ urlpatterns = [
     ),
 
     path(
-    "base-datos/",
-    views.base_datos_view,
-    name="base_datos",
+    "base-datos/historico/tomar/",
+    views.tomar_fotografia_base_datos_view,
+    name="tomar_fotografia_base_datos",
     ),
+
 
     path(
         "base-datos/respaldo/crear/",

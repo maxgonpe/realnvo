@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-
-    <meta charset="UTF-8">
+ <meta charset="UTF-8">
 
     <meta
         name="viewport"
@@ -352,6 +347,450 @@
         </div>
 
     </div>
+
+            <!-- ================================================================
+         ESP021 — HISTÓRICO DE CRECIMIENTO DE BASE DE DATOS
+         ================================================================ -->
+
+    <div class="section">
+
+        <h2>
+            Histórico de crecimiento
+        </h2>
+
+
+        <div class="card info">
+
+            <strong>
+                Fotografías históricas de la base de datos
+            </strong>
+
+            <p>
+                Espaciómetro puede registrar una fotografía
+                de la cantidad de registros existente en cada
+                tabla y comparar su evolución en el tiempo.
+            </p>
+
+            <p>
+                Esta operación realiza únicamente consultas
+                de lectura sobre las tablas observadas.
+            </p>
+
+            <div class="small">
+                No modifica registros de las aplicaciones.
+            </div>
+
+        </div>
+
+
+        <div class="grid section">
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Fotografías
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.total_fotografias }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Tablas analizadas
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.tablas_analizadas }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Creciendo
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.creciendo }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Estables
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.estables }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Disminuyendo
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.disminuyendo }}
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="metric-label">
+                    Sin tendencia todavía
+                </div>
+
+                <div class="metric-value">
+                    {{ historico_bd.sin_datos }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        {% if historico_bd.ultima_fotografia %}
+
+            <div class="card section">
+
+                <strong>
+                    Última fotografía de la base de datos
+                </strong>
+
+                <p>
+                    Ejecución
+                    #{{ historico_bd.ultima_fotografia.ejecucion_id }}
+                </p>
+
+                <div class="small">
+
+                    Fecha:
+                    {{ historico_bd.ultima_fotografia.ejecucion.iniciada_en|date:"d/m/Y H:i:s" }}
+
+                </div>
+
+
+                <div class="grid section">
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Tablas fotografiadas
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.tablas_fotografiadas }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Registros fotografiados
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.registros_fotografiados }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Tablas analizadas
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.tablas_analizadas }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Registros analizados
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.registros_analizados }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Tablas internas excluidas
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.tablas_excluidas }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <div class="metric-label">
+                            Registros internos excluidos
+                        </div>
+
+                        <div class="metric-value">
+                            {{ historico_bd.registros_excluidos }}
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="small">
+
+                    Las tablas internas de Espaciómetro
+                    <strong>esp_*</strong> forman parte de la
+                    fotografía completa, pero se excluyen del
+                    cálculo de crecimiento para evitar que
+                    Espaciómetro mida su propia actividad.
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="card section">
+
+                <strong>
+                    Todavía no existen fotografías históricas.
+                </strong>
+
+                <p class="small">
+                    Tome la primera fotografía para comenzar
+                    a construir el histórico de crecimiento.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if not historico_bd.puede_calcular_crecimiento %}
+
+            <div class="card warning section">
+
+                <strong>
+                    Se necesita otra medición
+                </strong>
+
+                <p>
+                    Existe solamente una fotografía histórica
+                    válida. Espaciómetro necesita al menos dos
+                    fotografías para calcular crecimiento,
+                    disminución o estabilidad.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+
+        <div class="card section">
+
+            <form
+                method="post"
+                action="{% url 'espaciometro:tomar_fotografia_base_datos' %}"
+            >
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Tomar fotografía histórica
+                </button>
+
+            </form>
+
+
+            <div class="small" style="margin-top: 10px;">
+
+                El conteo puede tardar más que una medición
+                normal cuando existen tablas con muchos registros.
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================================
+             ESP021 — EVOLUCIÓN POR TABLA
+             ================================================================ -->
+
+        <div class="section">
+
+            <h3>
+                Evolución por tabla
+            </h3>
+
+
+            {% if historico_bd.tablas %}
+
+                <div class="card table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Tabla</th>
+                                <th>Registros actuales</th>
+                                <th>Cambio anterior</th>
+                                <th>Cambio total</th>
+                                <th>Variación total</th>
+                                <th>Tendencia</th>
+                                <th>Mediciones</th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for tabla in historico_bd.tablas %}
+
+                                <tr>
+
+                                    <td>
+                                        <strong>
+                                            {{ tabla.nombre_completo }}
+                                        </strong>
+                                    </td>
+
+
+                                    <td>
+                                        {{ tabla.resumen.valor_actual_legible }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ tabla.resumen.variacion_anterior_legible }}
+
+                                        {% if tabla.resumen.porcentaje_anterior_texto %}
+
+                                            <div class="small">
+                                                {{ tabla.resumen.porcentaje_anterior_texto }}
+                                            </div>
+
+                                        {% endif %}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ tabla.resumen.variacion_total_legible }}
+                                    </td>
+
+
+                                    <td>
+                                        {{ tabla.resumen.porcentaje_total_texto }}
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ tabla.tendencia.simbolo }}
+                                        {{ tabla.tendencia.texto }}
+
+                                    </td>
+
+
+                                    <td>
+                                        {{ tabla.resumen.mediciones }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div class="small" style="margin-top: 10px;">
+
+                    Las tablas internas
+                    <strong>esp_*</strong>
+                    no participan en este análisis.
+
+                    La variación total compara la primera
+                    fotografía válida con la más reciente.
+
+                    El cambio anterior compara solamente
+                    las dos últimas fotografías.
+
+                </div>
+
+
+            {% else %}
+
+                <div class="card">
+
+                    <strong>
+                        No existen tablas históricas disponibles.
+                    </strong>
+
+                    <p class="small">
+
+                        Tome una fotografía histórica para
+                        comenzar el seguimiento.
+
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+        </div>
+
+
+    </div>
+
 
 
     <!-- ================================================================

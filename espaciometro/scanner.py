@@ -6,12 +6,14 @@ from pathlib import Path
 
 from django.db import connections
 from django.utils import timezone
+from .database_monitor import inspeccionar_base_datos
 
 from .models import (
     EjecucionMedicion,
     MedicionBaseDatos,
     MedicionDisco,
     MedicionRuta,
+    MedicionTabla,
     RutaMonitoreada,
 )
 from .services import (
@@ -19,6 +21,7 @@ from .services import (
     obtener_estado_bases_datos,
     obtener_estado_disco,
 )
+
 
 
 # =============================================================================
@@ -514,6 +517,240 @@ def ejecutar_medicion_completa() -> EjecucionMedicion:
         f"{componentes_correctos}. "
         f"Componentes con error: "
         f"{componentes_fallidos}."
+    )
+
+    ejecucion.save(
+        update_fields=[
+            "estado",
+            "finalizada_en",
+            "errores",
+            "observaciones",
+        ]
+    )
+
+    return ejecucion
+
+# =============================================================================
+# ESP021 — FOTOGRAFÍA HISTÓRICA DE BASE DE DATOS
+# =============================================================================
+
+
+def ejecutar_fotografia_base_datos() -> EjecucionMedicion:
+    """
+    Toma una fotografía histórica explícita de las bases configuradas.
+
+    A diferencia de ESP004, esta operación realiza COUNT(*) sobre
+    las tablas porque su propósito es construir histórico de crecimiento.
+
+    Solo lectura sobre las tablas observadas.
+    Espaciómetro únicamente escribe en sus propias tablas internas.
+    """
+
+    ejecucion = EjecucionMedicion.objects.create(
+        iniciada_en=timezone.now(),
+        estado=EjecucionMedicion.Estado.EN_CURSO,
+        hostname=socket.gethostname(),
+        plataforma=platform.platform(),
+        version_python=platform.python_version(),
+        observaciones="Fotografía histórica de base de datos — ESP021.",
+    )
+
+    errores = []
+
+    bases_correctas = 0
+    bases_fallidas = 0
+    tablas_guardadas = 0
+
+    for alias in connections:
+
+        try:
+
+            inventario = inspeccionar_base_datos(
+                alias=alias,
+                contar_registros=True,
+            )
+
+            db_connection = connections[alias]
+
+            medicion_bd = MedicionBaseDatos.objects.create(
+                ejecucion=ejecucion,
+                alias=alias,
+                vendor=str(
+                    inventario.get("vendor", "")
+                    or ""
+                ),
+                engine=str(
+                    db_connection.settings_dict.get(
+                        "ENGINE",
+                        "",
+                    )
+                    or ""
+                ),
+                nombre_base_datos=str(
+                    inventario.get(
+                        "nombre_base",
+                        "",
+                    )
+                    or ""
+                ),
+                host=str(
+                    db_connection.settings_dict.get(
+                        "HOST",
+                        "",
+                    )
+                    or ""
+                ),
+                puerto=str(
+                    db_connection.settings_dict.get(
+                        "PORT",
+                        "",
+                    )
+                    or ""
+                ),
+                total_bytes=(
+                    inventario.get(
+                        "tamano_bytes"
+                    )
+                    or 0
+                ),
+                total_tablas=int(
+                    inventario.get(
+                        "total_tablas",
+                        0,
+                    )
+                    or 0
+                ),
+                total_registros=int(
+                    inventario.get(
+                        "total_registros",
+                        0,
+                    )
+                    or 0
+                ),
+                error="",
+            )
+
+            tablas_nuevas = []
+
+            for tabla in inventario.get(
+                "tablas",
+                [],
+            ):
+
+                error_tabla = str(
+                    tabla.get(
+                        "error",
+                        "",
+                    )
+                    or ""
+                )
+
+                if error_tabla:
+
+                    errores.append(
+                        f"BD {alias} / "
+                        f"tabla {tabla.get('nombre', '')}: "
+                        f"{error_tabla}"
+                    )
+
+                tablas_nuevas.append(
+                    MedicionTabla(
+                        medicion_bd=medicion_bd,
+                        esquema="",
+                        nombre_tabla=str(
+                            tabla.get(
+                                "nombre",
+                                "",
+                            )
+                            or ""
+                        ),
+                        total_registros=(
+                            tabla.get(
+                                "registros"
+                            )
+                        ),
+                        datos_bytes=None,
+                        indices_bytes=None,
+                        total_bytes=None,
+                    )
+                )
+
+            if tablas_nuevas:
+
+                MedicionTabla.objects.bulk_create(
+                    tablas_nuevas
+                )
+
+                tablas_guardadas += len(
+                    tablas_nuevas
+                )
+
+            errores_bd = inventario.get(
+                "errores",
+                [],
+            )
+
+            if errores_bd:
+
+                for error in errores_bd:
+
+                    errores.append(
+                        f"BD {alias}: {error}"
+                    )
+
+                medicion_bd.error = "; ".join(
+                    str(error)
+                    for error in errores_bd
+                )
+
+                medicion_bd.save(
+                    update_fields=[
+                        "error",
+                    ]
+                )
+
+                bases_fallidas += 1
+
+            else:
+
+                bases_correctas += 1
+
+        except Exception as exc:
+
+            bases_fallidas += 1
+
+            errores.append(
+                f"BD {alias}: "
+                f"{type(exc).__name__}: {exc}"
+            )
+
+    if bases_fallidas == 0:
+
+        estado_final = (
+            EjecucionMedicion.Estado.COMPLETADA
+        )
+
+    elif bases_correctas > 0:
+
+        estado_final = (
+            EjecucionMedicion.Estado.PARCIAL
+        )
+
+    else:
+
+        estado_final = (
+            EjecucionMedicion.Estado.ERROR
+        )
+
+    ejecucion.estado = estado_final
+    ejecucion.finalizada_en = timezone.now()
+    ejecucion.errores = errores
+
+    ejecucion.observaciones = (
+        "Fotografía histórica BD ESP021. "
+        f"Bases correctas: {bases_correctas}. "
+        f"Bases con error: {bases_fallidas}. "
+        f"Tablas registradas: {tablas_guardadas}."
     )
 
     ejecucion.save(

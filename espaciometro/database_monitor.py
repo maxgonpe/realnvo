@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from django.db import connection
+from django.db import connections
 
 from .models import bytes_legibles
 
 
 # =============================================================================
-# ESP020 — INVENTARIO DE BASE DE DATOS
+# ESP020 / ESP021 — INVENTARIO DE BASE DE DATOS
 # =============================================================================
 #
 # PRINCIPIOS:
@@ -18,6 +18,7 @@ from .models import bytes_legibles
 # - No utiliza ForeignKey hacia tablas externas.
 # - No ejecuta INSERT / UPDATE / DELETE / ALTER.
 # - No interpreta reglas de negocio.
+# - Puede inspeccionar cualquier conexión declarada en DATABASES.
 #
 # Espaciómetro observa la base mediante introspección SQL/Django.
 # =============================================================================
@@ -29,10 +30,17 @@ TIPOS_TEMPORALES = {
 }
 
 
-def _nombre_motor():
+# =============================================================================
+# MOTOR
+# =============================================================================
+
+
+def _nombre_motor(
+    db_connection,
+):
 
     vendor = (
-        connection.vendor
+        db_connection.vendor
         or ""
     ).lower()
 
@@ -98,15 +106,17 @@ def _clasificar_tabla(
 # =============================================================================
 
 
-def _nombre_base_datos():
+def _nombre_base_datos(
+    db_connection,
+):
 
     if (
-        connection.vendor
+        db_connection.vendor
         == "sqlite"
     ):
 
         nombre = (
-            connection
+            db_connection
             .settings_dict
             .get(
                 "NAME"
@@ -122,10 +132,10 @@ def _nombre_base_datos():
 
     try:
 
-        with connection.cursor() as cursor:
+        with db_connection.cursor() as cursor:
 
             if (
-                connection.vendor
+                db_connection.vendor
                 == "postgresql"
             ):
 
@@ -148,7 +158,7 @@ def _nombre_base_datos():
 
 
     return str(
-        connection
+        db_connection
         .settings_dict
         .get(
             "NAME",
@@ -157,19 +167,21 @@ def _nombre_base_datos():
     )
 
 
-def _tamano_base_datos():
+def _tamano_base_datos(
+    db_connection,
+):
 
     # =========================================================================
     # SQLITE
     # =========================================================================
 
     if (
-        connection.vendor
+        db_connection.vendor
         == "sqlite"
     ):
 
         nombre = (
-            connection
+            db_connection
             .settings_dict
             .get(
                 "NAME"
@@ -220,13 +232,13 @@ def _tamano_base_datos():
     # =========================================================================
 
     if (
-        connection.vendor
+        db_connection.vendor
         == "postgresql"
     ):
 
         try:
 
-            with connection.cursor() as cursor:
+            with db_connection.cursor() as cursor:
 
                 cursor.execute(
                     """
@@ -263,6 +275,7 @@ def _tamano_base_datos():
 
 
 def _columnas_tabla(
+    db_connection,
     cursor,
     tabla,
 ):
@@ -275,7 +288,7 @@ def _columnas_tabla(
     try:
 
         descripcion = (
-            connection
+            db_connection
             .introspection
             .get_table_description(
                 cursor,
@@ -305,7 +318,7 @@ def _columnas_tabla(
         try:
 
             tipo_django = (
-                connection
+                db_connection
                 .introspection
                 .get_field_type(
                     campo.type_code,
@@ -373,12 +386,13 @@ def _columnas_tabla(
 
 
 def _contar_registros(
+    db_connection,
     cursor,
     tabla,
 ):
 
     nombre_seguro = (
-        connection
+        db_connection
         .ops
         .quote_name(
             tabla
@@ -408,34 +422,53 @@ def _contar_registros(
 
 def inspeccionar_base_datos(
     *,
+    alias="default",
     contar_registros=False,
 ):
     """
-    Inspección genérica de la base activa configurada
+    Inspección genérica de una conexión configurada
     en Django.
+
+    Por compatibilidad, si no se indica alias utiliza
+    la conexión "default".
 
     No importa modelos del proyecto y no modifica datos.
     """
 
-    connection.ensure_connection()
+    db_connection = (
+        connections[
+            alias
+        ]
+    )
+
+
+    db_connection.ensure_connection()
 
 
     tamano_bd = (
-        _tamano_base_datos()
+        _tamano_base_datos(
+            db_connection
+        )
     )
 
 
     resultado = {
+        "alias": alias,
+
         "motor": (
-            _nombre_motor()
+            _nombre_motor(
+                db_connection
+            )
         ),
 
         "vendor": (
-            connection.vendor
+            db_connection.vendor
         ),
 
         "nombre_base": (
-            _nombre_base_datos()
+            _nombre_base_datos(
+                db_connection
+            )
         ),
 
         "tamano_bytes": (
@@ -470,10 +503,10 @@ def inspeccionar_base_datos(
 
     try:
 
-        with connection.cursor() as cursor:
+        with db_connection.cursor() as cursor:
 
             tablas = (
-                connection
+                db_connection
                 .introspection
                 .table_names(
                     cursor
@@ -497,6 +530,7 @@ def inspeccionar_base_datos(
 
                 estructura = (
                     _columnas_tabla(
+                        db_connection,
                         cursor,
                         tabla,
                     )
@@ -514,6 +548,7 @@ def inspeccionar_base_datos(
 
                         cantidad = (
                             _contar_registros(
+                                db_connection,
                                 cursor,
                                 tabla,
                             )
