@@ -20,3 +20,6 @@ _pycache/
 
 # Configuración específica de cada máquina
 myproject/local_settings.py
+
+# Archivos media generados/cargados por la aplicacion
+/media/
