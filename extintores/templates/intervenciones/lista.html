@@ -60,6 +60,20 @@
             <a href="{% url 'alertas' %}" class="btn btn-outline-warning">
                 <i class="bi bi-bell"></i> Alertas
             </a>
+
+            {% if user.username == 'maxgonpe' %}
+            <a href="{% url 'espaciometro:dashboard' %}" class="btn btn-outline-info">
+                <i class="bi bi-speedometer2"></i> Espaciómetro
+            </a>
+            {% else %}
+            <button type="button"
+                    class="btn btn-outline-info"
+                    disabled
+                    title="Disponible solo para maxgonpe">
+                <i class="bi bi-speedometer2"></i> Espaciómetro
+            </button>
+            {% endif %}
+
             {% if user.is_superuser or user.username == 'andres' %}
             <a href="{% url 'usuarios_simple' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-person-gear"></i> Usuarios

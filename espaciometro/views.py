@@ -1,4 +1,7 @@
+from functools import wraps
+
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import FileResponse
 
 from django.contrib.auth.decorators import (
@@ -111,11 +114,28 @@ from .structure import analizar_estructura_proyecto
 
 
 # =============================================================================
+# CONTROL DE ACCESO DEL MÓDULO
+# =============================================================================
+
+def solo_maxgonpe(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.get_username() != "maxgonpe":
+            raise PermissionDenied(
+                "El módulo Espaciómetro está disponible únicamente para maxgonpe."
+            )
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+
+# =============================================================================
 # DASHBOARD — ESP007
 # =============================================================================
 
 
 @login_required
+@solo_maxgonpe
 def dashboard(request):
 
     datos = (
@@ -168,6 +188,7 @@ def dashboard(request):
 
 
 @login_required
+@solo_maxgonpe
 def estructura(request):
 
     datos = (
@@ -190,6 +211,7 @@ def estructura(request):
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def ejecutar_medicion(request):
 
@@ -252,6 +274,7 @@ def ejecutar_medicion(request):
 
 
 @login_required
+@solo_maxgonpe
 def configurar_rutas(request):
 
     datos = (
@@ -269,6 +292,7 @@ def configurar_rutas(request):
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def guardar_rutas(request):
 
@@ -330,6 +354,7 @@ def guardar_rutas(request):
 
 
 @login_required
+@solo_maxgonpe
 def configurar_tipos(request):
 
     datos = (
@@ -347,6 +372,7 @@ def configurar_tipos(request):
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def guardar_tipos(request):
 
@@ -380,6 +406,7 @@ def guardar_tipos(request):
 
 
 @login_required
+@solo_maxgonpe
 def detalle_ruta(
     request,
     ruta_id,
@@ -423,6 +450,7 @@ def detalle_ruta(
 
 
 @login_required
+@solo_maxgonpe
 def historico(request):
 
     datos = (
@@ -440,6 +468,7 @@ def historico(request):
 
 
 @login_required
+@solo_maxgonpe
 def evolucion_ruta(
     request,
     ruta_id,
@@ -474,6 +503,7 @@ def evolucion_ruta(
 
 
 @login_required
+@solo_maxgonpe
 def inventario(request):
 
     configuracion = (
@@ -513,6 +543,7 @@ def inventario(request):
 
 
 @login_required
+@solo_maxgonpe
 def ciclo_vida(request):
     """
     La pantalla no escanea automáticamente.
@@ -557,6 +588,7 @@ def ciclo_vida(request):
 
 
 @login_required
+@solo_maxgonpe
 def candidatos(request):
     """
     Abrir la pantalla no ejecuta búsqueda.
@@ -604,6 +636,7 @@ def candidatos(request):
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def crear_lote_candidatos_view(
     request,
@@ -700,6 +733,7 @@ def crear_lote_candidatos_view(
 
 
 @login_required
+@solo_maxgonpe
 def detalle_lote_candidatos(
     request,
     lote_id,
@@ -741,6 +775,7 @@ def detalle_lote_candidatos(
 
 
 @login_required
+@solo_maxgonpe
 def respaldos(request):
 
     datos = (
@@ -759,6 +794,7 @@ def respaldos(request):
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def preparar_respaldo(
     request,
@@ -866,6 +902,7 @@ def preparar_respaldo(
 
 
 @login_required
+@solo_maxgonpe
 def detalle_respaldo(
     request,
     respaldo_id,
@@ -907,6 +944,7 @@ def detalle_respaldo(
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def descargar_respaldo(
     request,
@@ -1021,6 +1059,7 @@ def descargar_respaldo(
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def confirmar_descarga_view(
     request,
@@ -1115,6 +1154,7 @@ def confirmar_descarga_view(
 
 
 @login_required
+@solo_maxgonpe
 def evaluar_liberacion_view(
     request,
     lote_id,
@@ -1144,6 +1184,7 @@ def evaluar_liberacion_view(
 
 
 @login_required
+@solo_maxgonpe
 @permission_required(
     "espaciometro.puede_liberar_archivos",
     raise_exception=True,
@@ -1240,6 +1281,7 @@ def ejecutar_liberacion_view(
 
 
 @login_required
+@solo_maxgonpe
 def detalle_liberacion_view(
     request,
     liberacion_id,
@@ -1273,6 +1315,7 @@ def detalle_liberacion_view(
 
 
 @login_required
+@solo_maxgonpe
 def evaluar_retiro_respaldo_view(
     request,
     respaldo_id,
@@ -1302,6 +1345,7 @@ def evaluar_retiro_respaldo_view(
 
 
 @login_required
+@solo_maxgonpe
 @permission_required(
     "espaciometro.puede_liberar_archivos",
     raise_exception=True,
@@ -1378,6 +1422,7 @@ def ejecutar_retiro_respaldo_view(
 
 
 @login_required
+@solo_maxgonpe
 def auditoria_view(
     request,
 ):
@@ -1408,6 +1453,7 @@ def auditoria_view(
 
 
 @login_required
+@solo_maxgonpe
 def auditoria_lote_view(
     request,
     lote_id,
@@ -1441,6 +1487,7 @@ def auditoria_lote_view(
 
 
 @login_required
+@solo_maxgonpe
 def base_datos_view(
     request,
 ):
@@ -1509,6 +1556,7 @@ def base_datos_view(
 
 
 @login_required
+@solo_maxgonpe
 @permission_required(
     "espaciometro.puede_gestionar_respaldos_bd",
     raise_exception=True,
@@ -1563,6 +1611,7 @@ def crear_respaldo_base_datos_view(
 
 
 @login_required
+@solo_maxgonpe
 @permission_required(
     "espaciometro.puede_gestionar_respaldos_bd",
     raise_exception=True,
@@ -1624,6 +1673,7 @@ def descargar_respaldo_base_datos_view(
 
 
 @login_required
+@solo_maxgonpe
 @require_POST
 def tomar_fotografia_base_datos_view(
     request,
