@@ -23,3 +23,6 @@ myproject/local_settings.py
 
 # Archivos media generados/cargados por la aplicacion
 /media/
+
+# Archivos static generados por collectstatic
+/staticfiles/
