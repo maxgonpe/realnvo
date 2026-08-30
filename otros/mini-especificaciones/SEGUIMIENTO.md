@@ -15,7 +15,7 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 
 | EXT-008 | Arquitectura y frontend | Completada | Regresion tecnica y validacion manual de temas, formsets, stock, Mantencion, Recarga y errores de stock completadas; 43 tests correctos | Commit pendiente |
 
-| EXT-009 | Plan de pruebas y regresion | En progreso | `extintores`: 41 tests OK; suite global ejecutable tras instalar `django-braces` | Migracion pendiente externa de `django_summernote`; 3 tests legacy highcharts incompatibles |
+| EXT-009 | Plan de pruebas y regresion | Completada localmente | Componentes legacy retirados; suite global: 43 tests OK; `check`, `migrate --plan`, `collectstatic --clear` y `diff --check` correctos | `push` y despliegue de produccion pendientes por el usuario |
 
 ## Formato de actualizacion
 

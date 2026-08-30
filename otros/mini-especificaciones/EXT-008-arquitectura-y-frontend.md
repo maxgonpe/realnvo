@@ -38,8 +38,8 @@
 - Se extrajo la galeria, lightbox, filtro y navegacion de `detalle_intervencion.html` a `static/extintores/js/detalle-intervencion.js`.
 - Se reemplazaron los `print()` de `views.py` por `logging`, conservando mensajes de validacion como `warning` y diagnostico como `debug`.
 - La auditoria de imports y `urls.py` confirma que las rutas activas importan exclusivamente desde `views.py`; `views_fin.py` y `viewsjulio.py` quedan pendientes de retirada tras regresion comparativa.
-- La aplicacion no usa actualmente `highcharts`; la carpeta `highcharts/` y `django-braces` quedan como candidatos de retirada en una limpieza posterior, despues de confirmar que no son necesarios fuera de los tests legacy.
-- Regresion tecnica de cierre: 41 tests de `extintores`, `check`, `diff --check`, `findstatic` y `collectstatic` correctos. La suite global arranca con `django-braces`, pero conserva 3 fallos legacy de `highcharts`.
+- La aplicacion no usa actualmente `highcharts` ni `fusioncharts`; ambos componentes legacy fueron retirados durante `EXT-009`, junto con `django-braces`.
+- Regresion tecnica de cierre: 43 tests globales, `check`, `diff --check`, `findstatic` y `collectstatic` correctos.
 - Cierre manual: temas, formularios, galerias y busquedas verificadas en navegador; stock finito, servicios ilimitados y errores de stock validados.
 - Validacion manual realizada: temas, stock insuficiente, Mantencion y Recarga con `stock=None`; Recarga 40/75/100% se muestra y registra sin descontar inventario.
 - El despliegue de recursos estaticos requiere ejecutar `collectstatic` en cada servidor.

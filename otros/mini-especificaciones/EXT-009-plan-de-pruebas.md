@@ -23,3 +23,12 @@
 - Migraciones consistentes.
 - Verificacion manual documentada.
 - Commit independiente con alcance claro.
+
+## Cierre local
+
+- Suite global: 43 tests OK.
+- `python manage.py check`: correcto.
+- `python manage.py migrate --plan`: sin operaciones pendientes en este entorno.
+- `python manage.py collectstatic --clear --noinput`: correcto.
+- Componentes legacy `highcharts` y `fusioncharts` retirados; `django-braces` eliminado de dependencias.
+- El `push` y la aplicacion en produccion quedan pendientes del responsable del despliegue.
