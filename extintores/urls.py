@@ -66,8 +66,9 @@ urlpatterns = [
     path('factor/<int:pk>/editar/', factorajustecliente_editar, name='factorajustecliente_editar'),
     path('factor/<int:pk>/eliminar/', factorajustecliente_eliminar, name='factorajustecliente_eliminar'),
     path('estadisticas/generar/', generar_estadisticas_view, name='generar_estadisticas'),
-    path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),  # Ajusta esto
-    path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),  # Agrega esta línea
+    # La ruta fija debe preceder al parametro generico para no capturar "ver" como mes.
+    path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),
+    path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),
     path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
     path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
     path('usuarios/', usuarios_simple, name='usuarios_simple'),

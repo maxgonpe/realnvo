@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        fetch(`/ajax/buscar-clientes/?q=${encodeURIComponent(query)}`)
+        fetch(`{% url 'buscar_clientes_ajax' %}?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
                 currentResults = data.clientes;
