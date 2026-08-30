@@ -6,7 +6,7 @@ from .models import Cliente, Intervencion, DetalleIntervencion,\
                     TechnicianProfile,CompatibilidadProducto,\
                     CategoriaProducto,ImagenIntervencion,\
                     Bitacora, FactorAjusteCliente, IngresoStock,\
-                    DetalleIngreso, EstadisticaMensual, EstadisticaDetalleExtintor,\
+                     DetalleIngreso, ImagenServicio, EstadisticaMensual, EstadisticaDetalleExtintor,\
                     EstadisticaDetalleProducto, HistorialServicio,ItemIntervencion 
 
 User = get_user_model()
@@ -67,6 +67,7 @@ admin.site.register(Producto,ProductoAdmin)
 admin.site.register(ItemOdt,ItemOdtAdmin)
 admin.site.register(CategoriaProducto)
 admin.site.register(ImagenIntervencion)
+admin.site.register(ImagenServicio)
 admin.site.register(Bitacora,BitacoraAdmin)
 admin.site.register(FactorAjusteCliente)
 admin.site.register(DetalleIngreso)

@@ -11,7 +11,8 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 | EXT-005 | Perfiles y permisos | En progreso | Checklist, roles base, permisos por area y 9 tests nuevos; suite total: 19 tests | Validar UX manual y revisar permisos de cada boton |
 | EXT-006 | Estadisticas y exportaciones | Completada | Filtros multidimensionales, comparacion, agrupacion, tendencia y exportaciones; `check` y 28 tests correctos | Nuevas metricas requeriran futuras entregas |
 
-| EXT-007 | Imagenes del servicio | Pendiente | Decision tecnica y prueba de migracion | Inventario de imagenes actuales |
+| EXT-007 | Imagenes del servicio | Completada | Modelo nuevo, migracion, carga multiple, galeria, PDF, gestion individual y validacion manual | Validacion avanzada de archivos y retiro futuro del legacy |
+
 | EXT-008 | Arquitectura y frontend | Pendiente | Regresion funcional | Comparar vistas legacy |
 | EXT-009 | Plan de pruebas y regresion | Pendiente | Suite completa y reporte | Estabilizacion previa |
 

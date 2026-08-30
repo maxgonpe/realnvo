@@ -448,6 +448,31 @@ class ImagenIntervencion(models.Model):
         return f"intervenciones/{fecha.strftime('%Y-%m')}/intervencion_{instance.intervencion.pk}/{filename}"
 
 
+def imagen_servicio_upload_path(instance, filename):
+    fecha = instance.intervencion.fecha.strftime('%Y-%m')
+    return f'intervenciones/{fecha}/intervencion_{instance.intervencion_id}/{filename}'
+
+
+class ImagenServicio(models.Model):
+    """Una imagen por registro para permitir una cantidad extensible por servicio."""
+    intervencion = models.ForeignKey(
+        Intervencion, related_name='imagenes_nuevas', on_delete=models.CASCADE
+    )
+    archivo = models.ImageField(upload_to=imagen_servicio_upload_path)
+    orden = models.PositiveIntegerField(default=1)
+    descripcion = models.CharField(max_length=200, blank=True)
+    fecha_carga = models.DateTimeField(auto_now_add=True)
+    usuario_carga = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    class Meta:
+        ordering = ('orden', 'id')
+
+    def __str__(self):
+        return f'Imagen {self.orden} de intervencion #{self.intervencion_id}'
+
+
 class Bitacora(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     accion = models.CharField(max_length=255)

@@ -20,7 +20,8 @@ from .views import IntervencionListView, crear_intervencion,\
                    odt_editar_items, ingreso_stock_nuevo, lista_comprado, comprado_editar, comprado_eliminar,\
                    exportar_inventario_pdf, exportar_inventario_excel, generar_estadisticas_view,\
                     generar_estadisticas_mensuales, ver_estadisticas_view,\
-                    exportar_estadisticas_excel, exportar_estadisticas_pdf,\
+                     exportar_estadisticas_excel, exportar_estadisticas_pdf,\
+                     editar_imagen_servicio, eliminar_imagen_servicio,\
                    alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
                    usuarios_simple
 from .permissions import (
@@ -78,6 +79,8 @@ urlpatterns = [
     path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),
     path('estadisticas/<str:mes>/excel/', exportar_estadisticas_excel, name='exportar_estadisticas_excel'),
     path('estadisticas/<str:mes>/pdf/', exportar_estadisticas_pdf, name='exportar_estadisticas_pdf'),
+    path('imagen/<int:pk>/editar/', editar_imagen_servicio, name='editar_imagen_servicio'),
+    path('imagen/<int:pk>/eliminar/', eliminar_imagen_servicio, name='eliminar_imagen_servicio'),
     path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
     path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
     path('usuarios/', usuarios_simple, name='usuarios_simple'),
@@ -142,6 +145,8 @@ _route_permissions = {
     'generar_estadisticas': PERM_VER_REPORTES,
     'ver_estadisticas_redirect': PERM_VER_REPORTES,
     'ver_estadisticas': PERM_VER_REPORTES,
+    'editar_imagen_servicio': PERM_GESTIONAR_OPERACIONES,
+    'eliminar_imagen_servicio': PERM_GESTIONAR_OPERACIONES,
     'buscar_clientes_ajax': PERM_VER_OPERACIONES,
     'buscar_productos_ajax': PERM_VER_OPERACIONES,
 }

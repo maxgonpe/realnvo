@@ -863,7 +863,28 @@
         <h2>Haz clic en las miniaturas para ver las imágenes en tamaño completo</h2>
     </div>
 
-    {% if intervencion.imagenes.first %}
+    {% if intervencion.imagenes_nuevas.exists %}
+        <div class="gallery-grid">
+        {% for imagen in intervencion.imagenes_nuevas.all %}
+            <div class="gallery-item">
+                <img class="gallery-img" src="{{ imagen.archivo.url }}" alt="{{ imagen.descripcion|default:'Fotografía del servicio' }}">
+                <div class="gallery-caption">{{ imagen.descripcion|default:'Fotografía' }}</div>
+                {% if perms.extintores.manage_operations %}
+                <form method="post" action="{% url 'editar_imagen_servicio' imagen.pk %}" class="p-2 bg-white">
+                    {% csrf_token %}
+                    <input type="text" name="descripcion" value="{{ imagen.descripcion }}" class="form-control form-control-sm mb-1" placeholder="Descripción">
+                    <input type="number" name="orden" value="{{ imagen.orden }}" min="1" class="form-control form-control-sm mb-1" aria-label="Orden">
+                    <button class="btn btn-sm btn-primary" type="submit">Guardar</button>
+                </form>
+                <form method="post" action="{% url 'eliminar_imagen_servicio' imagen.pk %}" onsubmit="return confirm('¿Eliminar esta imagen?');" class="p-2 bg-white">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+    {% elif intervencion.imagenes.first %}
         {% with imagenes=intervencion.imagenes.first %}
             <div class="gallery-grid" id="service-gallery">
                 {% if imagenes.imagen1 %}

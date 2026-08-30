@@ -47,7 +47,7 @@ from .models import (
     ItemOdt, CategoriaProducto, Bitacora, FactorAjusteCliente,
     IngresoStock, DetalleIngreso, EstadisticaMensual,
     EstadisticaDetalleExtintor, EstadisticaDetalleProducto, ItemIntervencion,
-    TechnicianProfile,
+    TechnicianProfile, ImagenServicio,
 )
 
 # === FORMULARIOS ===
@@ -802,6 +802,13 @@ def crear_intervencion(request):
                 imagen_instance = imagenes_form.save(commit=False)
                 imagen_instance.intervencion = intervencion
                 imagen_instance.save()
+                for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=1):
+                    ImagenServicio.objects.create(
+                        intervencion=intervencion,
+                        archivo=archivo,
+                        orden=orden,
+                        usuario_carga=request.user,
+                    )
                 
                 # Crear ODT si aplica
                 if intervencion.con_odt:
@@ -951,6 +958,14 @@ def editar_intervencion(request, pk):
             imagen_instance = imagenes_form.save(commit=False)
             imagen_instance.intervencion = intervencion
             imagen_instance.save()
+            siguiente_orden = intervencion.imagenes_nuevas.order_by('-orden').values_list('orden', flat=True).first() or 0
+            for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=siguiente_orden + 1):
+                ImagenServicio.objects.create(
+                    intervencion=intervencion,
+                    archivo=archivo,
+                    orden=orden,
+                    usuario_carga=request.user,
+                )
 
             # ✅ Ahora sí, detalles guardados — podemos crear la ODT
             if intervencion.con_odt and not hasattr(intervencion, 'odt_rel'):
@@ -1474,6 +1489,7 @@ class IntervencionPDF(View):
             'intervencion': intervencion,
             'detalles': detalles,
             'imagenes': imagenes,
+            'imagenes_nuevas': intervencion.imagenes_nuevas.all(),
             'estadistica': estadistica,
             'total_extintores': total,
             'conteo_agente': dict(conteo_agente),
@@ -2458,6 +2474,35 @@ def exportar_estadisticas_pdf(request, mes):
         output.seek(0)
         response.write(output.read())
     return response
+
+
+@login_required
+def editar_imagen_servicio(request, pk):
+    imagen = get_object_or_404(ImagenServicio, pk=pk)
+    if request.method == 'POST':
+        imagen.descripcion = request.POST.get('descripcion', '').strip()
+        try:
+            orden = int(request.POST.get('orden', imagen.orden))
+            if orden < 1:
+                raise ValueError
+            imagen.orden = orden
+        except (TypeError, ValueError):
+            messages.error(request, 'El orden debe ser un numero positivo.')
+        else:
+            imagen.save(update_fields=['descripcion', 'orden'])
+            messages.success(request, 'Imagen actualizada.')
+    return redirect('intervencion_detalle', pk=imagen.intervencion_id)
+
+
+@login_required
+def eliminar_imagen_servicio(request, pk):
+    imagen = get_object_or_404(ImagenServicio, pk=pk)
+    intervencion_id = imagen.intervencion_id
+    if request.method == 'POST':
+        imagen.archivo.delete(save=False)
+        imagen.delete()
+        messages.success(request, 'Imagen eliminada.')
+    return redirect('intervencion_detalle', pk=intervencion_id)
 
 
 def _queryset_clientes_ultimo_servicio():

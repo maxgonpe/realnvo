@@ -160,6 +160,11 @@
 
     <hr>
     <h4 class="mt-4">Fotografías del servicio (máximo 9)</h4>
+    <div class="alert alert-info small">Puedes adjuntar seis o más fotografías. Estas se guardarán en el nuevo sistema de imágenes.</div>
+    <div class="mb-3">
+        <label class="form-label" for="imagenes_nuevas">Fotografías adicionales</label>
+        <input class="form-control" type="file" id="imagenes_nuevas" name="imagenes_nuevas" accept="image/*" multiple>
+    </div>
     <div class="row">
         {{ imagenes_form.non_field_errors }}
         {% for field in imagenes_form %}

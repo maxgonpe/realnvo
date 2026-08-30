@@ -81,6 +81,8 @@
     <hr>
     <h4 class="mt-4">Fotografías del servicio</h4>
     <div class="row">
+        <div class="alert alert-info small">Las nuevas fotografías se agregarán sin alterar las fotografías históricas.</div>
+        <input class="form-control mb-3" type="file" name="imagenes_nuevas" accept="image/*" multiple>
         {{ imagenes_form.non_field_errors }}
         {% for field in imagenes_form %}
             <div class="col-md-4 mb-4">

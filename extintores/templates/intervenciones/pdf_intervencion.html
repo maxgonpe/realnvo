@@ -591,7 +591,19 @@
         <p>Firma no disponible</p>
     {% endif %}
 </div>
-{% if intervencion.imagenes.first %}
+{% if imagenes_nuevas %}
+    <hr style="margin: 10px 0;">
+    <h3 style="text-align:center; font-size:9px;">Fotografías del Servicio</h3>
+    <table style="width: 100%; table-layout: fixed; border: none;"><tr>
+    {% for imagen in imagenes_nuevas %}
+        <td style="text-align: center; padding: 5px;">
+            <img src="file://{{ imagen.archivo.path }}" style="width: 100%; max-width: 200px;"><br>
+            <small>{{ imagen.descripcion|default:'Foto' }} {{ imagen.orden }}</small>
+        </td>
+        {% if forloop.counter|divisibleby:3 and not forloop.last %}</tr><tr>{% endif %}
+    {% endfor %}
+    </tr></table>
+{% elif intervencion.imagenes.first %}
     <hr style="margin: 10px 0;">
     <h3 style="text-align:center; font-size:9px;">Fotografías del Servicio</h3>
 
@@ -677,4 +689,3 @@
 
 </body>
 </html>
-

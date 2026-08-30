@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 
 from .models import (
     Cliente, CategoriaProducto, Intervencion, Odt, Producto, ItemIntervencion,
-    EstadisticaDetalleExtintor,
+    EstadisticaDetalleExtintor, ImagenServicio,
 )
 from .views import generar_estadisticas_mensuales
 from .services.stock import StockInsuficiente, ajustar_stock, guardar_consumo_item, eliminar_consumo_item
@@ -324,6 +324,49 @@ class StatisticsExportTests(TestCase):
         detalle = EstadisticaDetalleExtintor.objects.get(mes='2026-08')
         self.assertEqual(detalle.cantidad, 1)
         self.assertEqual(EstadisticaDetalleExtintor.objects.filter(mes='2026-08').count(), 1)
+
+
+class ImagenServicioTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username='imagenes-admin', password='password123')
+        self.client.force_login(self.user)
+        cliente = Cliente.objects.create(nombre='Cliente imagen')
+        self.intervencion = Intervencion.objects.create(
+            cliente=cliente, tipo='revision', alias='INT-IMG'
+        )
+
+    def test_new_image_model_supports_order_and_description(self):
+        imagen = ImagenServicio.objects.create(
+            intervencion=self.intervencion,
+            archivo='intervenciones/2026-08/intervencion_1/foto.jpg',
+            orden=2,
+            descripcion='Placa del extintor',
+        )
+
+        self.assertEqual(self.intervencion.imagenes_nuevas.get(), imagen)
+        self.assertEqual(imagen.descripcion, 'Placa del extintor')
+
+    def test_image_description_and_order_can_be_edited(self):
+        imagen = ImagenServicio.objects.create(
+            intervencion=self.intervencion, archivo='foto.jpg', orden=1
+        )
+        response = self.client.post(reverse('editar_imagen_servicio', args=[imagen.pk]), {
+            'descripcion': 'Sello de seguridad', 'orden': '3',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        imagen.refresh_from_db()
+        self.assertEqual(imagen.descripcion, 'Sello de seguridad')
+        self.assertEqual(imagen.orden, 3)
+
+    def test_image_can_be_deleted_individually(self):
+        imagen = ImagenServicio.objects.create(
+            intervencion=self.intervencion, archivo='foto.jpg'
+        )
+        response = self.client.post(reverse('eliminar_imagen_servicio', args=[imagen.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ImagenServicio.objects.filter(pk=imagen.pk).exists())
 
     def test_technician_can_operate_but_not_manage_catalog(self):
         user = User.objects.create_user(username='tecnico-ruta')
