@@ -74,7 +74,7 @@
             </button>
             {% endif %}
 
-            {% if user.is_superuser or user.username == 'andres' %}
+            {% if perms.extintores.manage_users %}
             <a href="{% url 'usuarios_simple' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-person-gear"></i> Usuarios
             </a>
@@ -161,4 +161,3 @@
 })();
 </script>
 {% endblock %}
-

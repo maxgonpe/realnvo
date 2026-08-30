@@ -192,6 +192,19 @@ class Intervencion(models.Model):
     con_odt = models.BooleanField(default=False)
     alias = models.CharField(max_length=50, unique=True, blank=True, null=True)
     notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        permissions = [
+            ('manage_users', 'Puede gestionar usuarios y roles'),
+            ('manage_permissions', 'Puede gestionar permisos'),
+            ('sign_documents', 'Puede firmar documentos de intervenciones'),
+            ('view_financial_data', 'Puede ver datos financieros'),
+            ('view_operations', 'Puede consultar operaciones'),
+            ('manage_operations', 'Puede modificar operaciones'),
+            ('manage_catalog', 'Puede modificar clientes y catalogo'),
+            ('manage_inventory', 'Puede modificar inventario'),
+            ('view_reports', 'Puede consultar reportes y exportaciones'),
+        ]
     
 
     def __str__(self):

@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, Permission, User
 from django.db import transaction
 from django.db.models import Q, F, Sum, Count, OuterRef, Subquery
 from django.db.models.signals import post_save
@@ -46,7 +46,8 @@ from .models import (
     Odt, DetalleOdt, Producto, Cliente, CompatibilidadProducto,
     ItemOdt, CategoriaProducto, Bitacora, FactorAjusteCliente,
     IngresoStock, DetalleIngreso, EstadisticaMensual,
-    EstadisticaDetalleExtintor, EstadisticaDetalleProducto,ItemIntervencion
+    EstadisticaDetalleExtintor, EstadisticaDetalleProducto, ItemIntervencion,
+    TechnicianProfile,
 )
 
 # === FORMULARIOS ===
@@ -66,6 +67,12 @@ from .services.stock import (
     ajustar_stock,
     guardar_consumo_item,
     eliminar_consumo_item,
+)
+from .permissions import (
+    ROLE_ADMINISTRADOR, ROLE_SUPERVISOR, ROLE_TECNICO, ROLE_INVENTARIO,
+    ROLE_SOLO_LECTURA, PERM_GESTIONAR_USUARIOS, PERM_GESTIONAR_PERMISOS,
+    PERM_FIRMAR_DOCUMENTOS, PERM_VER_FINANZAS,
+    ROLE_DEFAULT_PERMISSIONS,
 )
 
 from django.template.loader import render_to_string
@@ -2537,11 +2544,11 @@ def buscar_productos_ajax(request):
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
-# === GESTIÓN SIMPLE DE USUARIOS (solo andres o superuser) ===
+# === GESTIÓN SIMPLE DE USUARIOS (permiso manage_users) ===
 @login_required
 @solo_gestor_usuarios
 def usuarios_simple(request):
-    """Lista todos los usuarios. Crear, editar, asignar contraseña y eliminar. Acceso: superuser o usuario 'andres'."""
+    """Lista y administra usuarios según permisos Django."""
     usuarios = User.objects.all().order_by('username')
 
     if request.method == 'POST':
@@ -2573,6 +2580,30 @@ def usuarios_simple(request):
                 user.email = email
                 user.is_active = is_active
                 user.save()
+                selected_roles = request.POST.getlist('roles')
+                role_groups = [
+                    Group.objects.get_or_create(name=name)[0]
+                    for name in selected_roles
+                ]
+                for group in role_groups:
+                    default_codes = {
+                        code.split('.', 1)[1]
+                        for code in ROLE_DEFAULT_PERMISSIONS.get(group.name, set())
+                    }
+                    group.permissions.set(Permission.objects.filter(
+                        content_type__app_label='extintores',
+                        codename__in=default_codes,
+                    ))
+                user.groups.set(role_groups)
+                permission_codes = request.POST.getlist('permissions')
+                user.user_permissions.set(Permission.objects.filter(
+                    content_type__app_label='extintores',
+                    codename__in=[code.split('.', 1)[-1] for code in permission_codes],
+                ))
+                if request.POST.get('is_technician') == 'on':
+                    TechnicianProfile.objects.get_or_create(user=user)
+                else:
+                    TechnicianProfile.objects.filter(user=user).delete()
                 messages.success(request, f"Datos de '{user.username}' actualizados.")
             except User.DoesNotExist:
                 messages.error(request, "Usuario no encontrado.")
@@ -2609,4 +2640,26 @@ def usuarios_simple(request):
 
         return redirect('usuarios_simple')
 
-    return render(request, 'usuarios_simple.html', {'usuarios': usuarios})
+    roles = [
+        ROLE_ADMINISTRADOR, ROLE_SUPERVISOR, ROLE_TECNICO,
+        ROLE_INVENTARIO, ROLE_SOLO_LECTURA,
+    ]
+    managed_permissions = [
+        (PERM_GESTIONAR_USUARIOS, 'Gestionar usuarios'),
+        (PERM_GESTIONAR_PERMISOS, 'Gestionar permisos'),
+        (PERM_FIRMAR_DOCUMENTOS, 'Firmar documentos'),
+        (PERM_VER_FINANZAS, 'Ver datos financieros'),
+    ]
+    for user in usuarios:
+        user.role_names = set(user.groups.values_list('name', flat=True))
+        user.permission_codes = {
+            f'{permission.content_type.app_label}.{permission.codename}'
+            for permission in user.user_permissions.filter(
+                content_type__app_label='extintores'
+            ).select_related('content_type')
+        }
+    return render(request, 'usuarios_simple.html', {
+        'usuarios': usuarios,
+        'roles': roles,
+        'managed_permissions': managed_permissions,
+    })

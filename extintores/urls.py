@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.conf.urls.static import static
 from django.utils.timezone import now
@@ -21,6 +22,11 @@ from .views import IntervencionListView, crear_intervencion,\
                    generar_estadisticas_mensuales, ver_estadisticas_view,\
                    alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
                    usuarios_simple
+from .permissions import (
+    PERM_GESTIONAR_CATALOGO, PERM_GESTIONAR_INVENTARIO,
+    PERM_GESTIONAR_OPERACIONES, PERM_VER_OPERACIONES, PERM_VER_REPORTES,
+    requiere_permiso,
+)
 
 urlpatterns = [
     path('', IntervencionListView.as_view(), name='intervencion_lista'),
@@ -80,3 +86,64 @@ urlpatterns = [
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Toda la superficie funcional de esta app requiere autenticacion. Los
+# permisos especificos se aplican en las vistas sensibles y en la UI.
+for _pattern in urlpatterns:
+    if hasattr(_pattern, 'callback'):
+        _pattern.callback = login_required(_pattern.callback)
+
+_route_permissions = {
+    'intervencion_lista': PERM_VER_OPERACIONES,
+    'ajax_intervenciones': PERM_VER_OPERACIONES,
+    'intervencion_crear': PERM_GESTIONAR_OPERACIONES,
+    'intervencion_editar': PERM_GESTIONAR_OPERACIONES,
+    'eliminar_intervencion': PERM_GESTIONAR_OPERACIONES,
+    'intervencion_detalle': PERM_VER_OPERACIONES,
+    'intervencion_excel': PERM_VER_REPORTES,
+    'intervencion_pdf': PERM_VER_REPORTES,
+    'editar_consumos_intervencion': PERM_GESTIONAR_INVENTARIO,
+    'odt_lista': PERM_VER_OPERACIONES,
+    'odt_editar': PERM_GESTIONAR_OPERACIONES,
+    'odt_detalle': PERM_VER_OPERACIONES,
+    'odt_excel': PERM_VER_REPORTES,
+    'odt_pdf': PERM_VER_REPORTES,
+    'eliminar_odt': PERM_GESTIONAR_OPERACIONES,
+    'agregar_item_odt': PERM_GESTIONAR_OPERACIONES,
+    'odt_agregar_productos': PERM_GESTIONAR_OPERACIONES,
+    'odt_editar_items': PERM_GESTIONAR_OPERACIONES,
+    'lista_clientes': PERM_VER_OPERACIONES,
+    'agregar_cliente': PERM_GESTIONAR_CATALOGO,
+    'modificar_cliente': PERM_GESTIONAR_CATALOGO,
+    'eliminar_cliente': PERM_GESTIONAR_CATALOGO,
+    'lista_productos': PERM_VER_OPERACIONES,
+    'consulta_stock_productos': PERM_VER_OPERACIONES,
+    'lista_comprado': PERM_VER_REPORTES,
+    'agregar_producto': PERM_GESTIONAR_CATALOGO,
+    'modificar_producto': PERM_GESTIONAR_CATALOGO,
+    'eliminar_producto': PERM_GESTIONAR_CATALOGO,
+    'ingreso_stock_nuevo': PERM_GESTIONAR_INVENTARIO,
+    'comprado_editar': PERM_GESTIONAR_INVENTARIO,
+    'comprado_eliminar': PERM_GESTIONAR_INVENTARIO,
+    'inventario_excel': PERM_VER_REPORTES,
+    'inventario_pdf': PERM_VER_REPORTES,
+    'lista_categorias': PERM_VER_OPERACIONES,
+    'agregar_categoria': PERM_GESTIONAR_CATALOGO,
+    'modificar_categoria': PERM_GESTIONAR_CATALOGO,
+    'eliminar_categoria': PERM_GESTIONAR_CATALOGO,
+    'factorajustecliente_lista': PERM_VER_OPERACIONES,
+    'factorajustecliente_crear': PERM_GESTIONAR_CATALOGO,
+    'factorajustecliente_editar': PERM_GESTIONAR_CATALOGO,
+    'factorajustecliente_eliminar': PERM_GESTIONAR_CATALOGO,
+    'alertas': PERM_VER_REPORTES,
+    'generar_estadisticas': PERM_VER_REPORTES,
+    'ver_estadisticas_redirect': PERM_VER_REPORTES,
+    'ver_estadisticas': PERM_VER_REPORTES,
+    'buscar_clientes_ajax': PERM_VER_OPERACIONES,
+    'buscar_productos_ajax': PERM_VER_OPERACIONES,
+}
+for _pattern in urlpatterns:
+    if hasattr(_pattern, 'callback') and _pattern.name in _route_permissions:
+        _pattern.callback = login_required(requiere_permiso(
+            _route_permissions[_pattern.name]
+        )(_pattern.callback))

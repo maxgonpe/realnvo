@@ -48,6 +48,8 @@
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Activo</th>
+                            <th>Roles</th>
+                            <th>Técnico/Firma</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -62,9 +64,11 @@
                             <td>{{ u.get_full_name|default:"—" }}</td>
                             <td>{{ u.email|default:"—" }}</td>
                             <td>{% if u.is_active %}Sí{% else %}No{% endif %}</td>
+                            <td>{{ u.role_names|join:", "|default:"Sin roles" }}</td>
+                            <td>{% if u.technician_profile %}Sí{% else %}No{% endif %}</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditar"
-                                    data-id="{{ u.id }}" data-username="{{ u.username }}" data-first="{{ u.first_name }}" data-last="{{ u.last_name }}" data-email="{{ u.email|default:'' }}" data-active="{{ u.is_active|yesno:'1,0' }}">
+                                    data-id="{{ u.id }}" data-username="{{ u.username }}" data-first="{{ u.first_name }}" data-last="{{ u.last_name }}" data-email="{{ u.email|default:'' }}" data-active="{{ u.is_active|yesno:'1,0' }}" data-technician="{% if u.technician_profile %}1{% else %}0{% endif %}" data-roles="{{ u.role_names|join:',' }}" data-permissions="{{ u.permission_codes|join:',' }}">
                                     <i class="bi bi-pencil"></i> Editar
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#modalPassword"
@@ -126,6 +130,29 @@
                         <input type="checkbox" class="form-check-input" name="is_active" id="editar_is_active" value="on">
                         <label class="form-check-label" for="editar_is_active">Usuario activo (puede entrar al sistema)</label>
                     </div>
+                    <hr>
+                    <fieldset>
+                        <legend class="fs-6">Roles</legend>
+                        {% for role in roles %}
+                        <div class="form-check">
+                            <input class="form-check-input role-check" type="checkbox" name="roles" value="{{ role }}" id="role_{{ forloop.counter }}">
+                            <label class="form-check-label" for="role_{{ forloop.counter }}">{{ role }}</label>
+                        </div>
+                        {% endfor %}
+                    </fieldset>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input" name="is_technician" id="editar_is_technician" value="on">
+                        <label class="form-check-label" for="editar_is_technician">Puede firmar como técnico</label>
+                    </div>
+                    <fieldset class="mt-3">
+                        <legend class="fs-6">Permisos individuales</legend>
+                        {% for code, label in managed_permissions %}
+                        <div class="form-check">
+                            <input class="form-check-input permission-check" type="checkbox" name="permissions" value="{{ code }}" id="permission_{{ forloop.counter }}">
+                            <label class="form-check-label" for="permission_{{ forloop.counter }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                    </fieldset>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -181,6 +208,15 @@
             document.getElementById('editar_last_name').value = btn.dataset.last || '';
             document.getElementById('editar_email').value = btn.dataset.email || '';
             document.getElementById('editar_is_active').checked = btn.dataset.active === '1';
+            document.getElementById('editar_is_technician').checked = btn.dataset.technician === '1';
+            var selectedRoles = (btn.dataset.roles || '').split(',').filter(Boolean);
+            document.querySelectorAll('#modalEditar .role-check').forEach(function(input) {
+                input.checked = selectedRoles.indexOf(input.value) !== -1;
+            });
+            var selectedPermissions = (btn.dataset.permissions || '').split(',').filter(Boolean);
+            document.querySelectorAll('#modalEditar .permission-check').forEach(function(input) {
+                input.checked = selectedPermissions.indexOf(input.value) !== -1;
+            });
         });
     }
     var modalPassword = document.getElementById('modalPassword');
