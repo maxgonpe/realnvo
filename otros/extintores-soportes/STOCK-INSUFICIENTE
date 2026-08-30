@@ -1,0 +1,25 @@
+StockInsuficiente at /odt/109/agregar-productos/
+
+Stock insuficiente para CINTILLO PLASTICO VENTA: disponible 0, solicitado 3.
+
+Request Method: 	POST
+Request URL: 	http://localhost:8000/odt/109/agregar-productos/
+Django Version: 	5.2.1
+Exception Type: 	StockInsuficiente
+Exception Value: 	
+
+Stock insuficiente para CINTILLO PLASTICO VENTA: disponible 0, solicitado 3.
+
+Exception Location: 	/home/maxgonpe/extintores/realnvo/extintores/services/stock.py, line 20, in ajustar_stock
+Raised during: 	extintores.views.odt_agregar_productos
+Python Executable: 	/home/maxgonpe/extintores/env/bin/python3
+Python Version: 	3.11.2
+Python Path: 	
+
+['/home/maxgonpe/extintores/realnvo',
+ '/usr/lib/python311.zip',
+ '/usr/lib/python3.11',
+ '/usr/lib/python3.11/lib-dynload',
+ '/home/maxgonpe/extintores/env/lib/python3.11/site-packages']
+
+Server time: 	Sun, 30 Aug 2026 01:32:51 -0400

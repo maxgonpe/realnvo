@@ -44,6 +44,25 @@ class ExtintoresUrlIntegrityTests(SimpleTestCase):
 
 
 class ExtintoresTemplateIntegrityTests(SimpleTestCase):
+    def test_intervencion_detail_logic_is_externalized(self):
+        template = (Path(__file__).parent / 'templates' / 'intervenciones' / 'detalle_intervencion.html').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertIn(
+            "src=\"{% static 'extintores/js/detalle-intervencion.js' %}?v=1\"",
+            template,
+        )
+        self.assertNotIn('<script>\n    // Filtro de tarjetas', template)
+
+    def test_intervencion_formset_logic_is_externalized(self):
+        template = (Path(__file__).parent / 'templates' / 'intervenciones' / 'crear.html').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertIn("extintores/js/intervencion-formset.js", template)
+        self.assertNotIn("document.addEventListener('DOMContentLoaded'", template)
+
     def test_statistics_template_has_no_empty_download_links(self):
         template_path = (
             Path(__file__).parent / 'templates' / 'estadisticas' / 'generar.html'
@@ -63,6 +82,26 @@ class ExtintoresTemplateIntegrityTests(SimpleTestCase):
         for template_path in templates:
             template = template_path.read_text(encoding='utf-8')
             self.assertNotIn('fetch(`/ajax/', template)
+
+    def test_consumos_uses_external_common_and_specific_formset_modules(self):
+        template = (Path(__file__).parent / 'templates' / 'intervenciones' / 'editar_consumos.html').read_text(
+            encoding='utf-8'
+        )
+        self.assertIn("data-producto-formset", template)
+        self.assertIn("data-consumo-formset", template)
+        self.assertIn("extintores/js/producto-formset.js", template)
+        self.assertIn("extintores/js/consumo-formset.js", template)
+
+        common = (Path(__file__).parent / 'static' / 'extintores' / 'js' / 'producto-formset.js').read_text(
+            encoding='utf-8'
+        )
+        specific = (Path(__file__).parent / 'static' / 'extintores' / 'js' / 'consumo-formset.js').read_text(
+            encoding='utf-8'
+        )
+        self.assertNotIn('modal-stock-bajo', common)
+        self.assertIn('modal-stock-bajo', specific)
+        self.assertIn('producto-clear', common)
+        self.assertIn('producto-clear', template)
 
 
 class IntervencionOdtTests(TestCase):
@@ -133,6 +172,20 @@ class StockServiceTests(TestCase):
         self.producto.refresh_from_db()
         self.assertEqual(self.producto.stock, 10)
         item.delete()
+
+    def test_none_stock_is_unlimited_for_recarga_and_mantencion(self):
+        for nombre in ('Recarga', 'Recarga 40%', 'Mantención'):
+            categoria = CategoriaProducto.objects.create(nombre=nombre)
+            producto = Producto.objects.create(nombre=nombre, categoria=categoria, stock=None)
+            ajustar_stock(producto.pk, -100)
+            producto.refresh_from_db()
+            self.assertIsNone(producto.stock)
+
+    def test_none_stock_is_zero_for_other_categories(self):
+        categoria = CategoriaProducto.objects.create(nombre='Repuesto')
+        producto = Producto.objects.create(nombre='Repuesto', categoria=categoria, stock=None)
+        with self.assertRaises(StockInsuficiente):
+            ajustar_stock(producto.pk, -1)
 
 
 class PermissionTests(TestCase):
@@ -367,6 +420,63 @@ class ImagenServicioTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertFalse(ImagenServicio.objects.filter(pk=imagen.pk).exists())
+
+
+class FrontendStructureTests(TestCase):
+    def test_client_autocomplete_is_external_and_keeps_named_url(self):
+        template = (Path(__file__).parent / 'templates' / 'intervenciones' / 'crear.html').read_text(
+            encoding='utf-8'
+        )
+        script = (Path(__file__).parent / 'static' / 'extintores' / 'js' / 'cliente-autocomplete.js').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertIn("{% static 'extintores/js/cliente-autocomplete.js' %}", template)
+        self.assertIn("data-search-url=\"{% url 'buscar_clientes_ajax' %}\"", template)
+        self.assertNotIn("fetch(`{% url 'buscar_clientes_ajax' %}", template)
+        self.assertIn('dataset.searchUrl', script)
+        self.assertIn('cliente-clear', script)
+
+    def test_active_base_loads_external_theme_script(self):
+        template = (Path(__file__).parent / 'templates' / 'base.html').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertIn("{% load static %}", template)
+        self.assertIn("{% static 'extintores/js/theme.js' %}?v=3", template)
+        self.assertIn(' defer', template)
+        self.assertNotIn('document.querySelectorAll(".theme-btn")', template)
+
+    def test_theme_script_limits_theme_values(self):
+        script = (Path(__file__).parent / 'static' / 'extintores' / 'js' / 'theme.js').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertIn("['red', 'yellow', 'blue', 'gray']", script)
+        self.assertIn("localStorage.setItem('theme', theme)", script)
+        self.assertIn("document.readyState === 'loading'", script)
+        self.assertIn("document.addEventListener('DOMContentLoaded', initialize)", script)
+        self.assertIn('Use the default theme when storage is unavailable.', script)
+
+    def test_odt_list_loads_external_search_script(self):
+        template = (Path(__file__).parent / 'templates' / 'odt' / 'lista.html').read_text(encoding='utf-8')
+        self.assertIn("{% static 'extintores/js/odt-search.js' %}?v=1", template)
+        self.assertNotIn('new XMLHttpRequest()', template)
+
+    def test_intervention_list_loads_external_search_script(self):
+        template = (Path(__file__).parent / 'templates' / 'intervenciones' / 'lista.html').read_text(encoding='utf-8')
+        self.assertIn("{% static 'extintores/js/intervencion-search.js' %}?v=1", template)
+        self.assertIn("data-ajax-url=\"{% url 'ajax_intervenciones' %}\"", template)
+
+    def test_odt_edit_loads_external_formset_script(self):
+        template = (Path(__file__).parent / 'templates' / 'odt' / 'editar.html').read_text(encoding='utf-8')
+        self.assertIn("{% static 'extintores/js/odt-formset.js' %}?v=1", template)
+        self.assertNotIn("getElementById('add-formset').addEventListener", template)
+
+    def test_odt_general_loads_external_formset_script(self):
+        template = (Path(__file__).parent / 'templates' / 'odt' / 'editar-general.html').read_text(encoding='utf-8')
+        self.assertIn("{% static 'extintores/js/odt-general-formsets.js' %}?v=1", template)
+        self.assertIn('data-add-formset', template)
 
     def test_technician_can_operate_but_not_manage_catalog(self):
         user = User.objects.create_user(username='tecnico-ruta')

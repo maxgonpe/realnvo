@@ -1,0 +1,51 @@
+http://localhost:8000/odt/110/editar-items/
+
+
+StockInsuficiente at /odt/110/editar-items/
+
+Stock insuficiente para MANGUERA CARGA CO2 (2): disponible 0, solicitado 1.
+
+Request Method: 	POST
+Request URL: 	http://localhost:8000/odt/110/editar-items/
+Django Version: 	5.2.1
+Exception Type: 	StockInsuficiente
+Exception Value: 	
+
+Stock insuficiente para MANGUERA CARGA CO2 (2): disponible 0, solicitado 1.
+
+Exception Location: 	/home/maxgonpe/extintores/realnvo/extintores/services/stock.py, line 33, in ajustar_stock
+Raised during: 	extintores.views.odt_editar_items
+Python Executable: 	/home/maxgonpe/extintores/env/bin/python3
+Python Version: 	3.11.2
+Python Path: 	
+
+['/home/maxgonpe/extintores/realnvo',
+ '/usr/lib/python311.zip',
+ '/usr/lib/python3.11',
+ '/usr/lib/python3.11/lib-dynload',
+ '/home/maxgonpe/extintores/env/lib/python3.11/site-packages']
+
+Server time: 	Sun, 30 Aug 2026 16:53:35 -0400
+Traceback Switch to copy-and-paste view
+
+    /home/maxgonpe/extintores/env/lib/python3.11/site-packages/django/core/handlers/exception.py, line 55, in inner
+
+                        response = get_response(request)
+                                       ^^^^^^^^^^^^^^^^^^^^^
+
+         …
+    Local vars
+    	
+    	
+
+    	
+
+    	
+
+    /home/maxgonpe/extintores/env/lib/python3.11/site-packages/django/core/handlers/base.py, line 197, in _get_response
+
+                        response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+         …
+    Local vars

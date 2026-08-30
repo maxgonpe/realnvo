@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">CLI-LISTA-{% now "d-m-y" %}</label>{% endblock %}
 {% block content %}
 <h2>Clientes</h2>
@@ -37,24 +38,6 @@
 
 <a href="{% url 'intervencion_lista' %}" class="btn btn-sm btn-warning">Regresar</a>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const filterInput = document.getElementById('filterInput');
-    const cards = document.querySelectorAll('.card');
-
-    filterInput.addEventListener('keyup', function () {
-        const filterValue = filterInput.value.toLowerCase();
-
-        cards.forEach(function (card) {
-            const text = card.textContent.toLowerCase();
-            if (text.includes(filterValue)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    });
-});
-</script>
+<script src="{% static 'extintores/js/card-filter.js' %}?v=1" defer></script>
 
 {% endblock %}

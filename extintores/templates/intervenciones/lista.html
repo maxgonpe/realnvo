@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">INT-LISTA-15-07-26</label>{% endblock %}
 
 {% block content %}
@@ -38,7 +39,7 @@
             </a>
         </div>
 
-        <input type="text" id="searchInput" class="form-control mb-3" placeholder="🔍 Cliente, técnico, tipo o fecha (16/03/2026, 09/2025, ??/05/???, ??/??/2026)" autocomplete="off">
+        <input type="text" id="searchInput" class="form-control mb-3" data-ajax-url="{% url 'ajax_intervenciones' %}" placeholder="🔍 Cliente, técnico, tipo o fecha (16/03/2026, 09/2025, ??/05/???, ??/??/2026)" autocomplete="off">
 
         <div id="intervenciones-container">
             {% include 'intervenciones/partials/intervenciones_list.html' %}
@@ -123,41 +124,5 @@
     </div>
 </div>
 
-<script>
-(function() {
-    const searchInput = document.getElementById('searchInput');
-    const container = document.getElementById('intervenciones-container');
-    const ajaxUrl = "{% url 'ajax_intervenciones' %}";
-    let searchTimer = null;
-
-    function cargarIntervenciones(query) {
-        const params = new URLSearchParams();
-        params.set('q', query);
-        fetch(`${ajaxUrl}?${params.toString()}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en la búsqueda');
-                }
-                return response.json();
-            })
-            .then(data => {
-                container.innerHTML = data.html;
-            })
-            .catch(() => {
-                /* Si falla el AJAX, no dejamos la lista vacía por error de red */
-            });
-    }
-
-    searchInput.addEventListener('input', function() {
-        const query = this.value;
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => cargarIntervenciones(query), 200);
-    });
-
-    /* Al refrescar, si el navegador conserva texto en el input, re-sincronizar */
-    if (searchInput.value.trim()) {
-        cargarIntervenciones(searchInput.value);
-    }
-})();
-</script>
+<script src="{% static 'extintores/js/intervencion-search.js' %}?v=1" defer></script>
 {% endblock %}

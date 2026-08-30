@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">INT-EDITAR-{% now "d-m-y" %}</label>{% endblock %}
 {% load crispy_forms_tags %}
 
@@ -70,19 +71,5 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('add-form').addEventListener('click', function () {
-        const container = document.getElementById('form-container');
-        const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
-        const emptyFormHtml = document.getElementById('empty-form').innerHTML;
-        const newFormIndex = parseInt(totalForms.value);
-
-        // Reemplazar __prefix__ con el nuevo índice
-        let newFormHtml = emptyFormHtml.replace(/__prefix__/g, newFormIndex);
-        container.insertAdjacentHTML('beforeend', newFormHtml);
-
-        // Actualizar TOTAL_FORMS
-        totalForms.value = newFormIndex + 1;
-    });
-</script>
+<script src="{% static 'extintores/js/intervencion-edit-formset.js' %}?v=1" defer></script>
 {% endblock %}

@@ -1,4 +1,5 @@
 from decimal import Decimal
+import unicodedata
 
 from django.db import transaction
 
@@ -9,11 +10,23 @@ class StockInsuficiente(Exception):
     """La operacion solicita mas unidades de las disponibles."""
 
 
+def stock_es_ilimitado(producto):
+    """None means unlimited only for Recarga and Mantencion services."""
+    nombre = producto.categoria.nombre if producto.categoria else ''
+    nombre = ''.join(c for c in unicodedata.normalize('NFD', nombre.lower())
+                     if unicodedata.category(c) != 'Mn')
+    return producto.stock is None and (
+        nombre.startswith('recarga') or nombre.startswith('mantencion')
+    )
+
+
 def ajustar_stock(producto_id, delta):
     """Aplica un delta atomico y rechaza saldos negativos."""
     delta = Decimal(str(delta))
     with transaction.atomic():
         producto = Producto.objects.select_for_update().get(pk=producto_id)
+        if stock_es_ilimitado(producto):
+            return None
         actual = producto.stock or Decimal('0')
         nuevo = actual + delta
         if nuevo < 0:
@@ -40,6 +53,8 @@ def ajustar_cambio_item(producto_anterior_id, cantidad_anterior, producto_nuevo_
             (producto_nuevo_id, -Decimal(str(cantidad_nueva))),
         ):
             producto = productos[producto_id]
+            if stock_es_ilimitado(producto):
+                continue
             nuevo = (producto.stock or Decimal('0')) + delta
             if nuevo < 0:
                 raise StockInsuficiente(

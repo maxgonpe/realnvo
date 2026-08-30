@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">USU-USUARIOS_SIMPLE-{% now "d-m-y" %}</label>{% endblock %}
 
 {% block title %}Usuarios{% endblock %}
@@ -195,39 +196,5 @@
     </div>
 </div>
 
-<script>
-(function() {
-    var modalEditar = document.getElementById('modalEditar');
-    if (modalEditar) {
-        modalEditar.addEventListener('show.bs.modal', function(e) {
-            var btn = e.relatedTarget;
-            if (!btn) return;
-            document.getElementById('editar_user_id').value = btn.dataset.id;
-            document.getElementById('editar_username_display').textContent = btn.dataset.username || '';
-            document.getElementById('editar_first_name').value = btn.dataset.first || '';
-            document.getElementById('editar_last_name').value = btn.dataset.last || '';
-            document.getElementById('editar_email').value = btn.dataset.email || '';
-            document.getElementById('editar_is_active').checked = btn.dataset.active === '1';
-            document.getElementById('editar_is_technician').checked = btn.dataset.technician === '1';
-            var selectedRoles = (btn.dataset.roles || '').split(',').filter(Boolean);
-            document.querySelectorAll('#modalEditar .role-check').forEach(function(input) {
-                input.checked = selectedRoles.indexOf(input.value) !== -1;
-            });
-            var selectedPermissions = (btn.dataset.permissions || '').split(',').filter(Boolean);
-            document.querySelectorAll('#modalEditar .permission-check').forEach(function(input) {
-                input.checked = selectedPermissions.indexOf(input.value) !== -1;
-            });
-        });
-    }
-    var modalPassword = document.getElementById('modalPassword');
-    if (modalPassword) {
-        modalPassword.addEventListener('show.bs.modal', function(e) {
-            var btn = e.relatedTarget;
-            if (!btn) return;
-            document.getElementById('password_user_id').value = btn.dataset.id;
-            document.getElementById('password_username_display').textContent = btn.dataset.username || '';
-        });
-    }
-})();
-</script>
+<script src="{% static 'extintores/js/usuarios-modal.js' %}?v=1" defer></script>
 {% endblock %}

@@ -7,14 +7,15 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 | EXT-001 | Inventario y linea base | Completada | `EXT-001-linea-base.md`; `check` correcto; migraciones extintores aplicadas | Migracion pendiente de `django_summernote`; tests iniciales aun no existian |
 | EXT-002 | URLs, botones y enlaces | Completada | 5 tests; `check`; `git diff --check` correctos | Exportaciones estadisticas pendientes en EXT-006 |
 | EXT-003 | Intervencion y ODT | Completada | Migracion 0028 aplicada; 8 tests y `check` correctos | Pendiente definir UX de desvinculacion |
-| EXT-004 | Stock transaccional | En progreso | Servicio atomico y 3 tests nuevos; suite total: 11 tests | Integrar completamente ItemOdt y feedback de errores |
+| EXT-004 | Stock transaccional | En progreso | Operaciones ODT atomicas, diferencias de cantidad corregidas y error visible; suite actual: 39 tests | Integrar completamente ItemOdt y ampliar pruebas de vistas |
 | EXT-005 | Perfiles y permisos | En progreso | Checklist, roles base, permisos por area y 9 tests nuevos; suite total: 19 tests | Validar UX manual y revisar permisos de cada boton |
 | EXT-006 | Estadisticas y exportaciones | Completada | Filtros multidimensionales, comparacion, agrupacion, tendencia y exportaciones; `check` y 28 tests correctos | Nuevas metricas requeriran futuras entregas |
 
 | EXT-007 | Imagenes del servicio | Completada | Modelo nuevo, migracion, carga multiple, galeria, PDF, gestion individual y validacion manual | Validacion avanzada de archivos y retiro futuro del legacy |
 
-| EXT-008 | Arquitectura y frontend | Pendiente | Regresion funcional | Comparar vistas legacy |
-| EXT-009 | Plan de pruebas y regresion | Pendiente | Suite completa y reporte | Estabilizacion previa |
+| EXT-008 | Arquitectura y frontend | Completada | Regresion tecnica y validacion manual de temas, formsets, stock, Mantencion, Recarga y errores de stock completadas; 43 tests correctos | Commit pendiente |
+
+| EXT-009 | Plan de pruebas y regresion | En progreso | `extintores`: 41 tests OK; suite global ejecutable tras instalar `django-braces` | Migracion pendiente externa de `django_summernote`; 3 tests legacy highcharts incompatibles |
 
 ## Formato de actualizacion
 

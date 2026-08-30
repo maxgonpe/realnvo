@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">ODT-EDITAR_GENERAL-{% now "d-m-y" %}</label>{% endblock %}
 {% load crispy_forms_tags %}
 
@@ -19,7 +20,7 @@
             </div>
         {% endfor %}
     </div>
-    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-formset">+ Agregar Detalle</button>
+    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-formset" data-add-formset data-total-id="id_{{ formset_prefix }}-TOTAL_FORMS" data-container-id="formset-container" data-template-id="empty-formset">+ Agregar Detalle</button>
 
     <!-- ---------- PRODUCTOS ASOCIADOS ----------- -->
     <h4 class="mt-4">Productos / Servicios</h4>
@@ -31,7 +32,7 @@
             </div>
         {% endfor %}
     </div>
-    <button type="button" class="btn btn-sm btn-secondary mt-3" id="add-itemset">+ Agregar Producto</button>
+    <button type="button" class="btn btn-sm btn-secondary mt-3" id="add-itemset" data-add-formset data-total-id="id_{{ itemset_prefix }}-TOTAL_FORMS" data-container-id="itemset-container" data-template-id="empty-itemset">+ Agregar Producto</button>
 
     <!-- BOTONES DE ACCIÓN -->
     <div class="d-flex justify-content-end gap-2 mt-4">
@@ -53,26 +54,7 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    function setupAddButton(buttonId, containerId, emptyId, prefixBase) {
-        const totalInput = document.getElementById(`id_${prefixBase}-TOTAL_FORMS`);
-        const container = document.getElementById(containerId);
-        const emptyTemplate = document.getElementById(emptyId).innerHTML;
-        let count = parseInt(totalInput.value);
-
-        document.getElementById(buttonId).addEventListener('click', function() {
-            const newForm = emptyTemplate.replace(/__prefix__/g, count);
-            container.insertAdjacentHTML('beforeend', newForm);
-            count++;
-            totalInput.value = count;
-        });
-    }
-
-    setupAddButton('add-formset', 'formset-container', 'empty-formset', '{{ formset_prefix }}');
-    setupAddButton('add-itemset', 'itemset-container', 'empty-itemset', '{{ itemset_prefix }}');
-});
-</script>
+<script src="{% static 'extintores/js/odt-general-formsets.js' %}?v=1" defer></script>
 
 
 {% endblock %}

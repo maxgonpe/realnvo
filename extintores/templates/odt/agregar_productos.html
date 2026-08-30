@@ -63,7 +63,7 @@
 
 
 
-                        {% if item.nombre|lower in producto.nombre|lower or item.nombre|lower in producto.categoria.nombre|lower %}
+                        {% if item.nombre|lower in producto.nombre|lower or item.nombre|lower in producto.categoria.nombre|lower or item.nombre|lower == 'recarga' and 'recarga' in producto.categoria.nombre|lower or item.nombre|lower == 'mantencion' and 'mantencion' in producto.categoria.nombre|lower or item.nombre|lower == 'mantención' and 'mantencion' in producto.categoria.nombre|lower %}
 
                         
                             <option value="{{ producto.pk }}">{{ producto.nombre }} - {{ producto.categoria.nombre }}</option>

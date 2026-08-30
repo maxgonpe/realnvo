@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">PRO-COMPRADO_EDITAR-{% now "d-m-y" %}</label>{% endblock %}
 {% load crispy_forms_tags %}
+{% load static %}
 {% block content %}
 <h3>Editar compra #{{ ingreso.pk }}</h3>
 <p class="text-muted">Fecha: {{ ingreso.fecha|date:"d/m/Y" }}</p>
@@ -10,7 +11,7 @@
     {{ form|crispy }}
 
     {{ formset.management_form }}
-    <div id="formset-container">
+    <div id="formset-container" data-producto-formset data-search-url="{% url 'buscar_productos_ajax' %}" data-total-forms-id="id_detalleingreso_set-TOTAL_FORMS">
         {% for form in formset %}
             <div class="card p-3 mt-3 bg-light formset-row">
                 <h5>Producto #{{ forloop.counter }}</h5>
@@ -109,107 +110,5 @@
     </div>
 </form>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('formset-container');
-    const emptyFormTpl = document.getElementById('empty-form');
-    const totalForms = document.getElementById('id_detalleingreso_set-TOTAL_FORMS');
-    const addFormBtn = document.getElementById('add-form');
-
-    function escapeAttr(s) {
-        if (s == null) return '';
-        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function buscarProductos(query, searchInput) {
-        if (query.length < 2) {
-            var results = searchInput.parentElement.querySelector('.producto-results');
-            if (results) results.style.display = 'none';
-            return;
-        }
-        fetch("{% url 'buscar_productos_ajax' %}?q=" + encodeURIComponent(query))
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                var results = searchInput.parentElement.querySelector('.producto-results');
-                if (!results) return;
-                if (!data.productos || data.productos.length === 0) {
-                    results.innerHTML = '<div class="p-2 text-muted">No se encontraron productos</div>';
-                } else {
-                    results.innerHTML = data.productos.map(function(p) {
-                        return '<div class="producto-result-item p-2 border-bottom" data-producto-id="' + p.id + '" data-producto-nombre="' + escapeAttr(p.nombre) + '" data-producto-categoria="' + escapeAttr(p.categoria) + '" data-producto-precio="' + (p.precio || 0) + '" data-producto-stock="' + (p.stock || 0) + '">' +
-                            '<div class="producto-result-name fw-bold">' + escapeAttr(p.nombre) + '</div>' +
-                            '<small class="text-muted">' + escapeAttr(p.categoria) + ' | $' + (p.precio || 0) + ' | Stock: ' + (p.stock || 0) + '</small></div>';
-                    }).join('');
-                }
-                results.style.display = 'block';
-            })
-            .catch(function() {
-                var results = searchInput.parentElement.querySelector('.producto-results');
-                if (results) results.style.display = 'none';
-            });
-    }
-
-    var searchTimeouts = {};
-    document.addEventListener('input', function(e) {
-        if (!e.target.classList.contains('producto-search')) return;
-        var searchInput = e.target;
-        var query = searchInput.value;
-        var key = searchInput.dataset.formPrefix || searchInput.getAttribute('data-form-prefix');
-        clearTimeout(searchTimeouts[key]);
-        searchTimeouts[key] = setTimeout(function() { buscarProductos(query, searchInput); }, 300);
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.producto-result-item')) return;
-        var item = e.target.closest('.producto-result-item');
-        var container = item.closest('.producto-search-container');
-        var searchInput = container.querySelector('.producto-search');
-        var prefix = searchInput.dataset.formPrefix || searchInput.getAttribute('data-form-prefix');
-        var producto = {
-            id: item.dataset.productoId,
-            nombre: item.dataset.productoNombre || item.querySelector('.producto-result-name').textContent,
-            categoria: item.dataset.productoCategoria || '',
-            precio: item.dataset.productoPrecio || 0,
-            stock: item.dataset.productoStock || 0
-        };
-        var field = document.querySelector('input[name="' + prefix + '-producto"]');
-        if (!field) field = document.querySelector('#id_' + prefix.replace(/-/g, '_') + '_producto');
-        if (field) field.value = producto.id;
-        container.querySelector('.producto-nombre').textContent = producto.nombre;
-        container.querySelector('.producto-details').textContent = producto.categoria + ' | $' + producto.precio + ' | Stock: ' + producto.stock;
-        searchInput.style.display = 'none';
-        container.querySelector('.producto-results').style.display = 'none';
-        container.querySelector('.producto-selected').style.display = 'block';
-    });
-
-    document.addEventListener('click', function(e) {
-        if (!e.target.classList.contains('producto-clear')) return;
-        var sel = e.target.closest('.producto-selected');
-        var container = sel.closest('.producto-search-container');
-        var searchInput = container.querySelector('.producto-search');
-        var prefix = searchInput.dataset.formPrefix || searchInput.getAttribute('data-form-prefix');
-        var field = document.querySelector('input[name="' + prefix + '-producto"]');
-        if (!field) field = document.querySelector('#id_' + prefix.replace(/-/g, '_') + '_producto');
-        if (field) field.value = '';
-        searchInput.value = '';
-        searchInput.style.display = 'block';
-        sel.style.display = 'none';
-        container.querySelector('.producto-results').style.display = 'none';
-    });
-
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.producto-search-container')) return;
-        document.querySelectorAll('.producto-results').forEach(function(el) { el.style.display = 'none'; });
-    });
-
-    addFormBtn.addEventListener('click', function() {
-        var index = parseInt(totalForms.value, 10);
-        var html = emptyFormTpl.innerHTML.replace(/detalleingreso_set-__prefix__/g, 'detalleingreso_set-' + index).replace(/__prefix__/g, index);
-        var wrap = document.createElement('div');
-        wrap.innerHTML = html;
-        container.appendChild(wrap.firstElementChild);
-        totalForms.value = index + 1;
-    });
-});
-</script>
+<script src="{% static 'extintores/js/producto-formset.js' %}"></script>
 {% endblock %}

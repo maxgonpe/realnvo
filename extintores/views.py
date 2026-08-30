@@ -1,5 +1,6 @@
 # === IMPORTS GENERALES ===
 import re
+import logging
 from datetime import timedelta
 from decimal import Decimal
 from collections import Counter
@@ -23,6 +24,8 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.timezone import now
 from collections import Counter
+
+logger = logging.getLogger(__name__)
 from django.db.models import Sum
 from datetime import datetime
 from django.views import View
@@ -176,9 +179,9 @@ def editar_odt(request, pk):
 
             return redirect('odt_lista')
         else:
-            print("Errores form:", form.errors)
-            print("Errores detalle formset:", formset.errors)
-            print("Errores itemset:", itemset.errors)
+            logger.warning("Errores form: %s", form.errors)
+            logger.warning("Errores detalle formset: %s", formset.errors)
+            logger.warning("Errores itemset: %s", itemset.errors)
 
     else:
         form = OdtForm(instance=odt)
@@ -306,33 +309,31 @@ def odt_agregar_productos(request, pk):
 
     # --- Procesar formulario POST ---
     if request.method == 'POST':
-        for sug in sugerencias:
-            detalle = sug['extintor']
-            for problema in sug['problemas']:
-                campo = problema['campo']
-                key_sel = f'seleccionado_{detalle.pk}_{campo}'
-                key_prod = f'producto_id_{detalle.pk}_{campo}'
-                key_cant = f'cantidad_{detalle.pk}_{campo}'
-                if request.POST.get(key_sel) and request.POST.get(key_prod):
-                    producto_id = request.POST.get(key_prod)
-                    cantidad = int(request.POST.get(key_cant, 1))
-                    producto = Producto.objects.get(pk=producto_id)
-
-                    item, created = ItemOdt.objects.get_or_create(
-                        odt=odt,
-                        producto=producto,
-                        defaults={'cantidad': cantidad}
-                    )
-                    if not created:
-                        diferencia = cantidad - item.cantidad
-                        item.cantidad = cantidad
-                        item.save()
-                        if diferencia > 0:
-                            descontar_stock(producto, diferencia)
-                    else:
-                        descontar_stock(producto, cantidad)
-
-        return redirect('odt_agregar_productos', pk=odt.pk)
+        try:
+            with transaction.atomic():
+                for sug in sugerencias:
+                    detalle = sug['extintor']
+                    for problema in sug['problemas']:
+                        campo = problema['campo']
+                        key_sel = f'seleccionado_{detalle.pk}_{campo}'
+                        key_prod = f'producto_id_{detalle.pk}_{campo}'
+                        key_cant = f'cantidad_{detalle.pk}_{campo}'
+                        if request.POST.get(key_sel) and request.POST.get(key_prod):
+                            producto = Producto.objects.get(pk=request.POST[key_prod])
+                            cantidad = int(request.POST.get(key_cant, 1))
+                            item, created = ItemOdt.objects.get_or_create(
+                                odt=odt, producto=producto,
+                                defaults={'cantidad': cantidad}
+                            )
+                            if created:
+                                ajustar_stock(producto.pk, -cantidad)
+                            else:
+                                ajustar_stock(producto.pk, item.cantidad - cantidad)
+                                item.cantidad = cantidad
+                                item.save(update_fields=['cantidad'])
+            return redirect('odt_agregar_productos', pk=odt.pk)
+        except StockInsuficiente as exc:
+            messages.error(request, str(exc))
 
     # --- Calcular total ---
     total = sum(item.subtotal for item in odt.items.all())
@@ -353,8 +354,8 @@ def odt_agregar_productos(request, pk):
     resumen_agrupado.sort(key=lambda x: (x['problema'], x['agente'], x['peso']))
 
     # --- Render final ---
-    print("DEBUG - sugerencias count:", len(sugerencias))
-    print("DEBUG - sugerencias_agrupadas keys:", list(sugerencias_agrupadas.keys()))
+    logger.debug("sugerencias count: %s", len(sugerencias))
+    logger.debug("sugerencias_agrupadas keys: %s", list(sugerencias_agrupadas.keys()))
 
     return render(request, 'odt/agregar_productos.html', {
         'odt': odt,
@@ -382,23 +383,26 @@ def odt_editar_items(request, pk):
 
     if request.method == 'POST':
         if formset.is_valid():
-            original_items = {item.pk: item for item in queryset}
+            try:
+                with transaction.atomic():
+                    original_items = {item.pk: item for item in queryset}
 
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.odt = odt
-                instance.save()
+                    instances = formset.save(commit=False)
+                    for instance in instances:
+                        instance.odt = odt
+                        item_original = original_items.get(instance.pk)
+                        actualizar_stock_item_odt(instance, item_original)
+                        instance.save()
 
-                item_original = original_items.get(instance.pk)
-                actualizar_stock_item_odt(instance, item_original)
+                    for obj in formset.deleted_objects:
+                        revertir_stock(obj.producto, obj.cantidad)
+                        obj.delete()
 
-            for obj in formset.deleted_objects:
-                revertir_stock(obj.producto, obj.cantidad)
-                obj.delete()
-
-            return redirect('odt_editar_items', pk=odt.pk)
+                return redirect('odt_editar_items', pk=odt.pk)
+            except StockInsuficiente as exc:
+                formset._non_form_errors = forms.utils.ErrorList([str(exc)])
         else:
-            print("Errores:", formset.errors)
+            logger.warning("Errores formset: %s", formset.errors)
 
     total = sum(item.subtotal for item in queryset)
 
@@ -867,10 +871,10 @@ def crear_intervencion(request):
                 return redirect('intervencion_lista')
         else:
             # Manejo de errores detallado
-            print("Formulario no válido")
-            print("Errores en IntervencionForm:", form.errors)
-            print("Errores en Formset:", formset.errors)
-            print("Errores en ImagenIntervencionForm:", imagenes_form.errors)
+            logger.warning("Formulario no válido")
+            logger.warning("Errores en IntervencionForm: %s", form.errors)
+            logger.warning("Errores en Formset: %s", formset.errors)
+            logger.warning("Errores en ImagenIntervencionForm: %s", imagenes_form.errors)
             
             # Renderizar nuevamente con errores
             return render(request, 'intervenciones/crear.html', {
@@ -1017,10 +1021,10 @@ def editar_intervencion(request, pk):
 
             return redirect('intervencion_detalle', pk=intervencion.pk)
         else:
-            print("Formulario no válido")
-            print("Errores en IntervencionForm:", form.errors)
-            print("Errores en Formset:", formset.errors)
-            print("Errores en ImagenIntervencionForm:", imagenes_form.errors)
+            logger.warning("Formulario no válido")
+            logger.warning("Errores en IntervencionForm: %s", form.errors)
+            logger.warning("Errores en Formset: %s", formset.errors)
+            logger.warning("Errores en ImagenIntervencionForm: %s", imagenes_form.errors)
     else:
         form = IntervencionForm(instance=intervencion)
         formset = DetalleIntervencionFormSet(instance=intervencion, prefix='detalles')
@@ -2761,7 +2765,7 @@ def buscar_productos_ajax(request):
                 'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
                 'codigo': 'N/A',  # Campo no disponible en el modelo
                 'precio': float(producto.precio_unitario) if producto.precio_unitario else 0,
-                'stock': producto.stock or 0,
+                'stock': producto.stock,
                 'display': f"{producto.nombre} - {producto.categoria.nombre if producto.categoria else 'Sin categoría'}"
             })
         

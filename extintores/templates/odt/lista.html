@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block template_label %}<label class="badge bg-secondary text-uppercase">ODT-LISTA-{% now "d-m-y" %}</label>{% endblock %}
 {% block content %}
 <h2>Órdenes de Trabajo</h2>
@@ -9,21 +10,5 @@
     {% include 'odt/includes/odt_resultados.html' %}
 </div>
 
-<script>
-document.getElementById("busqueda").addEventListener("keyup", function() {
-    const valor = this.value;
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "?q=" + encodeURIComponent(valor), true);
-    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            const datos = JSON.parse(xhr.responseText);
-            document.getElementById("resultados-odt").innerHTML = datos.html;
-        }
-    };
-
-    xhr.send();
-});
-</script>
+<script src="{% static 'extintores/js/odt-search.js' %}?v=1" defer></script>
 {% endblock %}
