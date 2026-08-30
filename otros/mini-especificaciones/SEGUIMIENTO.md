@@ -9,7 +9,8 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 | EXT-003 | Intervencion y ODT | Completada | Migracion 0028 aplicada; 8 tests y `check` correctos | Pendiente definir UX de desvinculacion |
 | EXT-004 | Stock transaccional | En progreso | Servicio atomico y 3 tests nuevos; suite total: 11 tests | Integrar completamente ItemOdt y feedback de errores |
 | EXT-005 | Perfiles y permisos | En progreso | Checklist, roles base, permisos por area y 9 tests nuevos; suite total: 19 tests | Validar UX manual y revisar permisos de cada boton |
-| EXT-006 | Estadisticas y exportaciones | Pendiente | Dataset de referencia y exportaciones | Definir indicadores prioritarios |
+| EXT-006 | Estadisticas y exportaciones | Completada | Filtros multidimensionales, comparacion, agrupacion, tendencia y exportaciones; `check` y 28 tests correctos | Nuevas metricas requeriran futuras entregas |
+
 | EXT-007 | Imagenes del servicio | Pendiente | Decision tecnica y prueba de migracion | Inventario de imagenes actuales |
 | EXT-008 | Arquitectura y frontend | Pendiente | Regresion funcional | Comparar vistas legacy |
 | EXT-009 | Plan de pruebas y regresion | Pendiente | Suite completa y reporte | Estabilizacion previa |
@@ -71,6 +72,13 @@ Usar commits pequenos por entrega, por ejemplo `extintores: corrige integridad d
 - Verificacion: `python manage.py test extintores` paso con 13 tests.
 - Verificacion: `python manage.py check` correcto.
 
+## Actualizacion EXT-006-3
+
+- Se agrego comparacion opcional mediante el parametro `comparar=YYYY-MM`.
+- La comparacion aplica los mismos filtros de tipo, estado, cliente, agente y peso.
+- Se agrego prueba de total y variacion entre dos meses.
+- Verificacion: `python manage.py test extintores` paso con 24 tests.
+
 ## Actualizacion EXT-005
 
 - La pantalla de usuarios permite asignar roles combinables y permisos individuales.
@@ -113,9 +121,66 @@ Usar commits pequenos por entrega, por ejemplo `extintores: corrige integridad d
 - La plantilla usa el permiso `extintores.manage_users` para mostrar ese control.
 - Verificacion: `python manage.py test extintores` paso con 19 tests.
 
+## Actualizacion EXT-006-1
+
+- Los totales principales respetan el filtro de tipo de intervencion.
+- Se agrego validacion de mes para la pantalla y ambas exportaciones.
+- Se agregaron pruebas de contenido XLSX, firma PDF y mes invalido.
+- Verificacion: `python manage.py test extintores` paso con 22 tests.
+
+## Actualizacion EXT-006-2
+
+- Se agregaron filtros por cliente, agente y peso.
+- Se actualizaron los endpoints Excel y PDF para respetar todos los filtros.
+- Se agrego prueba de exportacion con filtros combinados.
+- Verificacion: `python manage.py test extintores` paso con 23 tests.
+- Verificacion: `python manage.py check` correcto.
+
 ## Actualizacion EXT-005-7
 
 - Se creo `extintores/templates/403.html` como respuesta amigable para permisos insuficientes.
 - El template informa la restriccion, el permiso requerido y ofrece volver al inicio o atras.
 - Se mantiene el codigo HTTP `403` y los usuarios anonimos siguen siendo redirigidos al login.
 - Verificacion: `python manage.py test extintores` paso con 19 tests.
+
+## Registro EXT-006
+
+- Se agregaron filtros estadisticos por tipo de intervencion y estado.
+- Se agregaron las rutas `exportar_estadisticas_excel` y `exportar_estadisticas_pdf`.
+- Se agrego la plantilla `extintores/templates/estadisticas/pdf.html`.
+- Se corrigio una suma estadistica que usaba `Count` en vez de `Sum`.
+- Verificacion: `python manage.py check` correcto.
+- Verificacion: `python manage.py test extintores` paso con 19 tests.
+
+## Actualizacion EXT-006-4
+
+- Se agrego agrupacion seleccionable por estado, agente, peso, tipo y cliente.
+- Se agrego visualizacion proporcional tipo barras sin nueva dependencia frontend.
+- Se agrego prueba de agregacion por agente.
+- Verificacion: `python manage.py test extintores` paso con 25 tests.
+
+## Actualizacion EXT-006-5
+
+- Se hizo idempotente la regeneracion mensual, eliminando el corte anterior.
+- Se excluyeron ODT independientes del calculo que requiere cliente.
+- Se elimino una actualizacion de resumen de productos que usaba claves incorrectas.
+- Se agrego prueba de regeneracion repetida.
+- Verificacion: `python manage.py test extintores` paso con 26 tests.
+
+## Actualizacion EXT-006-6
+
+- Excel puede exportar la agrupacion seleccionada mediante `agrupar`.
+- La salida agrupada incluye etiqueta y cantidad agregada.
+- Se agrego prueba de equivalencia entre agrupacion visual y Excel.
+- Verificacion: `python manage.py test extintores` paso con 27 tests.
+
+## Actualizacion EXT-006-7
+
+- Se habilito exportacion PDF de agrupaciones.
+- Se agrego tendencia historica de hasta 12 meses.
+- Se agrego prueba de PDF agrupado.
+- Se cerro la implementacion base de filtros, comparaciones, agrupaciones y exportaciones.
+- Verificacion: `python manage.py test extintores` paso con 28 tests.
+- Verificacion: `python manage.py check` correcto.
+- Verificacion: `python manage.py check` correcto.
+- Verificacion: `python manage.py check` correcto.

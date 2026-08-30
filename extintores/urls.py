@@ -19,7 +19,8 @@ from .views import IntervencionListView, crear_intervencion,\
                    factorajustecliente_eliminar,odt_agregar_productos,\
                    odt_editar_items, ingreso_stock_nuevo, lista_comprado, comprado_editar, comprado_eliminar,\
                    exportar_inventario_pdf, exportar_inventario_excel, generar_estadisticas_view,\
-                   generar_estadisticas_mensuales, ver_estadisticas_view,\
+                    generar_estadisticas_mensuales, ver_estadisticas_view,\
+                    exportar_estadisticas_excel, exportar_estadisticas_pdf,\
                    alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
                    usuarios_simple
 from .permissions import (
@@ -75,6 +76,8 @@ urlpatterns = [
     # La ruta fija debe preceder al parametro generico para no capturar "ver" como mes.
     path('estadisticas/ver/', ver_estadisticas_view, name='ver_estadisticas_redirect'),
     path('estadisticas/<str:mes>/', ver_estadisticas_view, name='ver_estadisticas'),
+    path('estadisticas/<str:mes>/excel/', exportar_estadisticas_excel, name='exportar_estadisticas_excel'),
+    path('estadisticas/<str:mes>/pdf/', exportar_estadisticas_pdf, name='exportar_estadisticas_pdf'),
     path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
     path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
     path('usuarios/', usuarios_simple, name='usuarios_simple'),

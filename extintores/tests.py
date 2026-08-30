@@ -1,11 +1,17 @@
+from io import BytesIO
 from pathlib import Path
 
 from django.contrib.auth.models import Group, Permission, User
 from django.test import SimpleTestCase
 from django.test import TestCase
 from django.urls import resolve, reverse
+from openpyxl import load_workbook
 
-from .models import Cliente, CategoriaProducto, Intervencion, Odt, Producto, ItemIntervencion
+from .models import (
+    Cliente, CategoriaProducto, Intervencion, Odt, Producto, ItemIntervencion,
+    EstadisticaDetalleExtintor,
+)
+from .views import generar_estadisticas_mensuales
 from .services.stock import StockInsuficiente, ajustar_stock, guardar_consumo_item, eliminar_consumo_item
 from .models import TechnicianProfile
 from .permissions import (
@@ -195,6 +201,129 @@ class PermissionTests(TestCase):
 
         self.assertIn('perms.extintores.manage_users', template)
         self.assertNotIn("user.username == 'andres'", template)
+
+
+class StatisticsExportTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username='stats-admin', password='password123'
+        )
+        self.client.force_login(self.user)
+        cliente = Cliente.objects.create(nombre='Cliente estadisticas')
+        EstadisticaDetalleExtintor.objects.create(
+            mes='2026-08', tipo_intervencion='revision', agente='PQS_40%',
+            peso='6 Kg', estado='operativo', cantidad=4, cliente=cliente,
+        )
+
+    def test_excel_export_contains_month_and_quantity(self):
+        response = self.client.get(reverse(
+            'exportar_estadisticas_excel', kwargs={'mes': '2026-08'}
+        ))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        rows = list(workbook.active.values)
+        self.assertIn('2026-08', rows[1])
+        self.assertIn(4, rows[1])
+
+    def test_pdf_export_returns_pdf(self):
+        response = self.client.get(reverse(
+            'exportar_estadisticas_pdf', kwargs={'mes': '2026-08'}
+        ))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.content.startswith(b'%PDF'))
+
+    def test_grouped_pdf_returns_pdf(self):
+        response = self.client.get(
+            reverse('exportar_estadisticas_pdf', kwargs={'mes': '2026-08'}),
+            {'agrupar': 'agente'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.content.startswith(b'%PDF'))
+
+    def test_invalid_month_is_rejected(self):
+        response = self.client.get(reverse(
+            'exportar_estadisticas_excel', kwargs={'mes': 'agosto'}
+        ))
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_excel_export_applies_dimension_filters(self):
+        response = self.client.get(
+            reverse('exportar_estadisticas_excel', kwargs={'mes': '2026-08'}),
+            {'agente': 'PQS_40%', 'peso': '6 Kg'},
+        )
+
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        rows = list(workbook.active.values)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1][2:5], ('operativo', 'PQS_40%', '6 Kg'))
+
+    def test_statistics_view_compares_filtered_months(self):
+        EstadisticaDetalleExtintor.objects.create(
+            mes='2026-07', tipo_intervencion='revision', agente='PQS_40%',
+            peso='6 Kg', estado='operativo', cantidad=2,
+        )
+        response = self.client.get(
+            reverse('ver_estadisticas', kwargs={'mes': '2026-08'}),
+            {'comparar': '2026-07', 'agente': 'PQS_40%', 'peso': '6 Kg'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_actual'], 4)
+        self.assertEqual(response.context['comparacion']['total'], 2)
+        self.assertEqual(response.context['comparacion']['variacion'], 2)
+
+    def test_statistics_view_groups_filtered_results(self):
+        EstadisticaDetalleExtintor.objects.create(
+            mes='2026-08', tipo_intervencion='revision', agente='CO2',
+            peso='6 Kg', estado='operativo', cantidad=3,
+        )
+        response = self.client.get(
+            reverse('ver_estadisticas', kwargs={'mes': '2026-08'}),
+            {'agrupar': 'agente'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        grouped = {row['etiqueta']: row['total'] for row in response.context['agrupacion']}
+        self.assertEqual(grouped['PQS_40%'], 4)
+        self.assertEqual(grouped['CO2'], 3)
+
+    def test_grouped_excel_matches_screen_aggregation(self):
+        response = self.client.get(
+            reverse('exportar_estadisticas_excel', kwargs={'mes': '2026-08'}),
+            {'agrupar': 'agente'},
+        )
+
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        rows = list(workbook.active.values)
+        self.assertEqual(rows[0], ('Agrupacion', 'Cantidad'))
+        self.assertEqual(rows[1], ('PQS_40%', 4))
+
+    def test_monthly_generation_is_idempotent(self):
+        cliente = Cliente.objects.create(nombre='Cliente generacion')
+        intervencion = Intervencion.objects.create(
+            cliente=cliente, tipo='revision', fecha='2026-08-10', alias='INT-GEN'
+        )
+        from .models import DetalleIntervencion
+        DetalleIntervencion.objects.create(
+            intervencion=intervencion, agente='PQS_40%', peso='6 Kg',
+            estado='operativo', presion='120'
+        )
+
+        generar_estadisticas_mensuales('2026-08')
+        generar_estadisticas_mensuales('2026-08')
+
+        detalle = EstadisticaDetalleExtintor.objects.get(mes='2026-08')
+        self.assertEqual(detalle.cantidad, 1)
+        self.assertEqual(EstadisticaDetalleExtintor.objects.filter(mes='2026-08').count(), 1)
 
     def test_technician_can_operate_but_not_manage_catalog(self):
         user = User.objects.create_user(username='tecnico-ruta')

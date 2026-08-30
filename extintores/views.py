@@ -15,7 +15,7 @@ from django.db.models import Q, F, Sum, Count, OuterRef, Subquery
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import inlineformset_factory, modelformset_factory
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string, get_template
 from django.templatetags.static import static
@@ -1988,13 +1988,17 @@ def exportar_inventario_pdf(request):
 
 
 def generar_estadisticas_mensuales(mes=None):
-    print("Entrando en la función de los extintores")
     if mes is None:
         mes = now().strftime('%Y-%m')
 
     fecha_inicio = datetime.strptime(mes, "%Y-%m")
     fecha_fin = datetime(fecha_inicio.year + int(fecha_inicio.month == 12), 
                          fecha_inicio.month % 12 + 1, 1)
+
+    # La regeneracion debe reemplazar el corte anterior, no acumularlo.
+    EstadisticaMensual.objects.filter(mes=mes).delete()
+    EstadisticaDetalleExtintor.objects.filter(mes=mes).delete()
+    EstadisticaDetalleProducto.objects.filter(mes=mes).delete()
 
     # Inicializar contadores para productos
     total_productos_utilizados = 0
@@ -2024,7 +2028,8 @@ def generar_estadisticas_mensuales(mes=None):
     # Recopilar estadísticas de ODTs
     odts_queryset = Odt.objects.filter(
         fecha__gte=fecha_inicio,
-        fecha__lt=fecha_fin
+        fecha__lt=fecha_fin,
+        intervencion__isnull=False,
     ).select_related('intervencion__cliente')
 
     for odt in odts_queryset:
@@ -2119,15 +2124,6 @@ def generar_estadisticas_mensuales(mes=None):
         )
 
 
-    # Actualizar la estadística mensual con los totales
-    for cliente_id in productos_dict.keys():
-        estadistica = EstadisticaMensual.objects.filter(mes=mes, tipo='productos', cliente=cliente_id).first()
-        if estadistica:
-            estadistica.total_productos_utilizados += total_productos_utilizados
-            estadistica.categoria_producto = productos_dict[cliente_id]['categoria']  # Asignar la categoría
-            estadistica.save()
-
-
 @login_required
 def generar_estadisticas_view(request):
     if request.method == 'POST':
@@ -2161,7 +2157,7 @@ def generar_estadisticas_view(request):
         EstadisticaDetalleExtintor.objects
         .filter(mes=mes_actual, estado__in=estados_interes)
         .values('estado')
-        .annotate(total=Count('cantidad'))
+        .annotate(total=Sum('cantidad'))
         .order_by('estado')
     )
 
@@ -2198,15 +2194,91 @@ def generar_estadisticas_view(request):
 def ver_estadisticas_view(request, mes=None):
     if mes is None:
         mes = now().strftime("%Y-%m")
+    try:
+        datetime.strptime(mes, '%Y-%m')
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
+
+    tipo_filtro = request.GET.get('tipo', '').strip()
+    estado_filtro = request.GET.get('estado', '').strip()
+    cliente_filtro = request.GET.get('cliente', '').strip()
+    agente_filtro = request.GET.get('agente', '').strip()
+    peso_filtro = request.GET.get('peso', '').strip()
+    comparar_mes = request.GET.get('comparar', '').strip()
+    agrupar_por = request.GET.get('agrupar', 'estado').strip()
+    campos_agrupacion = {
+        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
+        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
+    }
+    if agrupar_por not in campos_agrupacion:
+        agrupar_por = 'estado'
+    detalle_extintores = EstadisticaDetalleExtintor.objects.filter(mes=mes)
+    if tipo_filtro:
+        detalle_extintores = detalle_extintores.filter(tipo_intervencion=tipo_filtro)
+    if estado_filtro:
+        detalle_extintores = detalle_extintores.filter(estado=estado_filtro)
+    if cliente_filtro.isdigit():
+        detalle_extintores = detalle_extintores.filter(cliente_id=cliente_filtro)
+    if agente_filtro:
+        detalle_extintores = detalle_extintores.filter(agente=agente_filtro)
+    if peso_filtro:
+        detalle_extintores = detalle_extintores.filter(peso=peso_filtro)
+
+    total_actual = detalle_extintores.aggregate(total=Sum('cantidad'))['total'] or 0
+    campo_agrupacion = campos_agrupacion[agrupar_por]
+    agrupacion = list(
+        detalle_extintores.values(campo_agrupacion)
+        .annotate(total=Sum('cantidad'))
+        .order_by('-total', campo_agrupacion)
+    )
+    maximo_agrupacion = max((item['total'] for item in agrupacion), default=0)
+    for item in agrupacion:
+        item['etiqueta'] = item.get(campo_agrupacion) or 'Sin dato'
+        item['porcentaje'] = (item['total'] / maximo_agrupacion * 100) if maximo_agrupacion else 0
+    tendencia = list(
+        EstadisticaDetalleExtintor.objects.values('mes')
+        .annotate(total=Sum('cantidad')).order_by('-mes')[:12]
+    )
+    tendencia.reverse()
+    comparacion = None
+    if comparar_mes:
+        try:
+            datetime.strptime(comparar_mes, '%Y-%m')
+        except ValueError:
+            return HttpResponseBadRequest('El mes de comparacion debe tener formato YYYY-MM.')
+        detalle_comparacion = EstadisticaDetalleExtintor.objects.filter(mes=comparar_mes)
+        if tipo_filtro:
+            detalle_comparacion = detalle_comparacion.filter(tipo_intervencion=tipo_filtro)
+        if estado_filtro:
+            detalle_comparacion = detalle_comparacion.filter(estado=estado_filtro)
+        if cliente_filtro.isdigit():
+            detalle_comparacion = detalle_comparacion.filter(cliente_id=cliente_filtro)
+        if agente_filtro:
+            detalle_comparacion = detalle_comparacion.filter(agente=agente_filtro)
+        if peso_filtro:
+            detalle_comparacion = detalle_comparacion.filter(peso=peso_filtro)
+        total_comparacion = detalle_comparacion.aggregate(total=Sum('cantidad'))['total'] or 0
+        variacion = total_actual - total_comparacion
+        comparacion = {
+            'mes': comparar_mes,
+            'total': total_comparacion,
+            'variacion': variacion,
+            'porcentaje': (variacion / total_comparacion * 100) if total_comparacion else None,
+        }
 
     # 1) Totales generales
-    cantidad_intervenciones = EstadisticaMensual.objects.filter(
-        mes=mes, tipo='intervencion'
-    ).aggregate(total=Sum('cantidad_intervenciones'))['total'] or 0
+    resumen_query = EstadisticaMensual.objects.filter(mes=mes, tipo='intervencion')
+    if tipo_filtro:
+        resumen_query = resumen_query.filter(tipo_intervencion=tipo_filtro)
+    if cliente_filtro.isdigit():
+        resumen_query = resumen_query.filter(cliente_id=cliente_filtro)
+    cantidad_intervenciones = resumen_query.aggregate(
+        total=Sum('cantidad_intervenciones')
+    )['total'] or 0
 
-    cantidad_extintores = EstadisticaMensual.objects.filter(
-        mes=mes, tipo='intervencion'
-    ).aggregate(total=Sum('cantidad_extintores'))['total'] or 0
+    cantidad_extintores = resumen_query.aggregate(
+        total=Sum('cantidad_extintores')
+    )['total'] or 0
 
     cantidad_odt = EstadisticaMensual.objects.filter(
         mes=mes, tipo='odt'
@@ -2234,8 +2306,7 @@ def ver_estadisticas_view(request, mes=None):
         'baja/oxido', 'extin./abo.', 'habili.+1', 'nuevo'
     ]
 
-    conteo_por_estado = EstadisticaDetalleExtintor.objects.filter(
-        mes=mes,
+    conteo_por_estado = detalle_extintores.filter(
         estado__in=estados_a_contar
     ).values('estado').annotate(total=Sum('cantidad'))
 
@@ -2244,16 +2315,12 @@ def ver_estadisticas_view(request, mes=None):
         estadisticas_estado[fila['estado']] = fila['total']
 
     # 3) Detalle de extintores por estado + agente + peso
-    extintores = EstadisticaDetalleExtintor.objects.filter(
-        mes=mes
-    ).values('estado', 'agente', 'peso').annotate(
+    extintores = detalle_extintores.values('estado', 'agente', 'peso').annotate(
         cantidad=Sum('cantidad')
     ).order_by('estado', 'agente', 'peso')
 
     # 4) Totales por estado
-    totales_por_estado = EstadisticaDetalleExtintor.objects.filter(
-        mes=mes
-    ).values('estado').annotate(
+    totales_por_estado = detalle_extintores.values('estado').annotate(
         total=Sum('cantidad')
     )
     total_dict = {item['estado']: item['total'] for item in totales_por_estado}
@@ -2276,7 +2343,121 @@ def ver_estadisticas_view(request, mes=None):
             "recarga": cantidad_recarga,
         },
         "estadisticas_estado": estadisticas_estado,
+        "tipo_filtro": tipo_filtro,
+        "estado_filtro": estado_filtro,
+        "cliente_filtro": cliente_filtro,
+        "agente_filtro": agente_filtro,
+        "peso_filtro": peso_filtro,
+        "comparar_mes": comparar_mes,
+        "total_actual": total_actual,
+        "comparacion": comparacion,
+        "agrupar_por": agrupar_por,
+        "agrupacion": agrupacion,
+        "opciones_agrupacion": campos_agrupacion.keys(),
+        "tendencia": tendencia,
+        "clientes_filtro": Cliente.objects.order_by('nombre'),
+        "agentes_filtro": EstadisticaDetalleExtintor.objects.filter(mes=mes).values_list('agente', flat=True).distinct().order_by('agente'),
+        "pesos_filtro": EstadisticaDetalleExtintor.objects.filter(mes=mes).values_list('peso', flat=True).distinct().order_by('peso'),
     })
+
+
+@login_required
+def exportar_estadisticas_excel(request, mes):
+    try:
+        datetime.strptime(mes, '%Y-%m')
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
+    detalle = EstadisticaDetalleExtintor.objects.filter(mes=mes)
+    tipo = request.GET.get('tipo', '').strip()
+    estado = request.GET.get('estado', '').strip()
+    cliente = request.GET.get('cliente', '').strip()
+    agente = request.GET.get('agente', '').strip()
+    peso = request.GET.get('peso', '').strip()
+    agrupar = request.GET.get('agrupar', '').strip()
+    if tipo:
+        detalle = detalle.filter(tipo_intervencion=tipo)
+    if estado:
+        detalle = detalle.filter(estado=estado)
+    if cliente.isdigit():
+        detalle = detalle.filter(cliente_id=cliente)
+    if agente:
+        detalle = detalle.filter(agente=agente)
+    if peso:
+        detalle = detalle.filter(peso=peso)
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Estadisticas'
+    agrupaciones = {
+        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
+        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
+    }
+    if agrupar in agrupaciones:
+        campo = agrupaciones[agrupar]
+        sheet.append(['Agrupacion', 'Cantidad'])
+        for row in detalle.values(campo).annotate(total=Sum('cantidad')).order_by('-total', campo):
+            sheet.append([row.get(campo) or 'Sin dato', row['total']])
+    else:
+        sheet.append(['Mes', 'Tipo', 'Estado', 'Agente', 'Peso', 'Cantidad', 'Cliente'])
+        for row in detalle.select_related('cliente').order_by('estado', 'agente', 'peso'):
+            sheet.append([
+                row.mes, row.tipo_intervencion, row.estado or '', row.agente,
+                row.peso, row.cantidad, row.cliente.nombre if row.cliente else '',
+            ])
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename=Estadisticas_{mes}.xlsx'
+    workbook.save(response)
+    return response
+
+
+@login_required
+def exportar_estadisticas_pdf(request, mes):
+    try:
+        datetime.strptime(mes, '%Y-%m')
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
+    detalle = EstadisticaDetalleExtintor.objects.filter(mes=mes)
+    tipo = request.GET.get('tipo', '').strip()
+    estado = request.GET.get('estado', '').strip()
+    cliente = request.GET.get('cliente', '').strip()
+    agente = request.GET.get('agente', '').strip()
+    peso = request.GET.get('peso', '').strip()
+    agrupar = request.GET.get('agrupar', '').strip()
+    if tipo:
+        detalle = detalle.filter(tipo_intervencion=tipo)
+    if estado:
+        detalle = detalle.filter(estado=estado)
+    if cliente.isdigit():
+        detalle = detalle.filter(cliente_id=cliente)
+    if agente:
+        detalle = detalle.filter(agente=agente)
+    if peso:
+        detalle = detalle.filter(peso=peso)
+    total = detalle.aggregate(total=Sum('cantidad'))['total'] or 0
+    agrupaciones = {
+        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
+        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
+    }
+    agrupado = None
+    if agrupar in agrupaciones:
+        campo = agrupaciones[agrupar]
+        agrupado = list(detalle.values(campo).annotate(total=Sum('cantidad')).order_by('-total', campo))
+        for row in agrupado:
+            row['etiqueta'] = row.get(campo) or 'Sin dato'
+    html_string = render_to_string('estadisticas/pdf.html', {
+        'mes': mes, 'detalle': detalle.select_related('cliente'),
+        'agrupado': agrupado, 'agrupar': agrupar,
+        'total': total, 'tipo_filtro': tipo, 'estado_filtro': estado,
+    })
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename=Estadisticas_{mes}.pdf'
+    with tempfile.NamedTemporaryFile(delete=True) as output:
+        HTML(string=html_string).write_pdf(output.name)
+        output.seek(0)
+        response.write(output.read())
+    return response
 
 
 def _queryset_clientes_ultimo_servicio():

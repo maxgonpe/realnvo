@@ -7,6 +7,91 @@
 
   <h2 class="mb-4 text-center">📆 Estadísticas de {{ mes }}</h2>
 
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+      <label class="form-label" for="tipo">Tipo de intervención</label>
+      <select class="form-select" id="tipo" name="tipo">
+        <option value="">Todos</option>
+        <option value="revision" {% if tipo_filtro == 'revision' %}selected{% endif %}>Revisión</option>
+        <option value="mantencion" {% if tipo_filtro == 'mantencion' %}selected{% endif %}>Mantención</option>
+        <option value="recarga" {% if tipo_filtro == 'recarga' %}selected{% endif %}>Recarga</option>
+        <option value="venta" {% if tipo_filtro == 'venta' %}selected{% endif %}>Venta</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="agrupar">Agrupar resultados por</label>
+      <select class="form-select" id="agrupar" name="agrupar">
+        <option value="estado" {% if agrupar_por == 'estado' %}selected{% endif %}>Estado</option>
+        <option value="agente" {% if agrupar_por == 'agente' %}selected{% endif %}>Agente</option>
+        <option value="peso" {% if agrupar_por == 'peso' %}selected{% endif %}>Peso</option>
+        <option value="tipo" {% if agrupar_por == 'tipo' %}selected{% endif %}>Tipo de intervención</option>
+        <option value="cliente" {% if agrupar_por == 'cliente' %}selected{% endif %}>Cliente</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="estado">Estado</label>
+      <input class="form-control" id="estado" name="estado" value="{{ estado_filtro }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="cliente">Cliente</label>
+      <select class="form-select" id="cliente" name="cliente">
+        <option value="">Todos</option>
+        {% for cliente in clientes_filtro %}<option value="{{ cliente.pk }}" {% if cliente_filtro == cliente.pk|stringformat:'s' %}selected{% endif %}>{{ cliente.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="agente">Agente</label>
+      <select class="form-select" id="agente" name="agente"><option value="">Todos</option>{% for agente in agentes_filtro %}<option value="{{ agente }}" {% if agente_filtro == agente %}selected{% endif %}>{{ agente }}</option>{% endfor %}</select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="peso">Peso</label>
+      <select class="form-select" id="peso" name="peso"><option value="">Todos</option>{% for peso in pesos_filtro %}<option value="{{ peso }}" {% if peso_filtro == peso %}selected{% endif %}>{{ peso }}</option>{% endfor %}</select>
+    </div>
+    <div class="col-md-4 d-flex align-items-end gap-2">
+      <button class="btn btn-primary" type="submit">Filtrar</button>
+      <a class="btn btn-outline-success" href="{% url 'exportar_estadisticas_excel' mes=mes %}?tipo={{ tipo_filtro }}&estado={{ estado_filtro }}&cliente={{ cliente_filtro }}&agente={{ agente_filtro }}&peso={{ peso_filtro }}">Excel</a>
+      <a class="btn btn-outline-danger" href="{% url 'exportar_estadisticas_pdf' mes=mes %}?tipo={{ tipo_filtro }}&estado={{ estado_filtro }}&cliente={{ cliente_filtro }}&agente={{ agente_filtro }}&peso={{ peso_filtro }}">PDF</a>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="comparar">Comparar con mes</label>
+      <input class="form-control" id="comparar" name="comparar" placeholder="YYYY-MM" value="{{ comparar_mes }}">
+    </div>
+  </form>
+
+  {% if comparacion %}
+  <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><strong>{{ mes }}</strong>: {{ total_actual }} extintores | <strong>{{ comparacion.mes }}</strong>: {{ comparacion.total }} extintores</span>
+    <span>Variación: <strong>{{ comparacion.variacion }}</strong>{% if comparacion.porcentaje is not None %} ({{ comparacion.porcentaje|floatformat:1 }}%){% endif %}</span>
+  </div>
+  {% endif %}
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-info text-white">Tendencia histórica</div>
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+      {% for item in tendencia %}
+        <div class="col text-center" style="min-width: 58px;">
+          <div class="small fw-semibold">{{ item.total }}</div>
+          <div class="bg-info rounded-top mx-auto" style="height: {{ item.total|default:0 }}px; max-height: 140px; width: 28px;" title="{{ item.mes }}: {{ item.total }}"></div>
+          <div class="small text-muted mt-1">{{ item.mes }}</div>
+        </div>
+      {% empty %}<p class="text-muted mb-0">No hay historial suficiente.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white">Resumen agrupado</div>
+    <div class="card-body">
+      {% for item in agrupacion %}
+      <div class="mb-2">
+        <div class="d-flex justify-content-between"><span>{{ item.etiqueta }}</span><strong>{{ item.total }}</strong></div>
+        <div class="progress" role="progressbar" aria-label="{{ item.etiqueta }}" aria-valuenow="{{ item.porcentaje|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ item.porcentaje }}%"></div></div>
+      </div>
+      {% empty %}<p class="text-muted mb-0">No hay datos para agrupar.</p>{% endfor %}
+    </div>
+  </div>
+
   <!-- Resumen mensual -->
   {% if resumen_datos %}
     <div class="card mb-4 shadow-sm">
