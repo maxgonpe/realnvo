@@ -61,6 +61,12 @@ from .utils import obtener_factor, descontar_stock,\
                    revertir_stock, actualizar_stock_item_odt,\
                    generar_estadisticas_mensuales
 from .decorators import solo_gestor_usuarios
+from .services.stock import (
+    StockInsuficiente,
+    ajustar_stock,
+    guardar_consumo_item,
+    eliminar_consumo_item,
+)
 
 from django.template.loader import render_to_string
 from weasyprint import HTML
@@ -1828,11 +1834,13 @@ def ingreso_stock_nuevo(request):
 
     if request.method == 'POST':
         if form.is_valid() and formset.is_valid():
-            ingreso = form.save()
-            detalles = formset.save(commit=False)
-            for d in detalles:
-                d.ingreso = ingreso
-                d.save()
+            with transaction.atomic():
+                ingreso = form.save()
+                detalles = formset.save(commit=False)
+                for d in detalles:
+                    d.ingreso = ingreso
+                    d.save()
+                    ajustar_stock(d.producto_id, d.cantidad)
             return redirect('lista_productos')  # o redirige donde prefieras
 
     return render(request, 'producto/ingreso_form.html', {
@@ -1878,19 +1886,18 @@ def comprado_editar(request, pk):
 
     if request.method == 'POST':
         if form.is_valid() and formset.is_valid():
-            # Restar del stock actual las cantidades de los detalles existentes (antes de guardar formset)
-            for d in ingreso.detalles.all():
-                p = d.producto
-                if p.stock is not None:
-                    p.stock = max(0, (p.stock or 0) - d.cantidad)
-                else:
-                    p.stock = 0
-                p.save()
-            form.save()
-            detalles = formset.save(commit=False)
-            for d in detalles:
-                d.ingreso = ingreso
-                d.save()
+            with transaction.atomic():
+                # Revertir el ingreso anterior y aplicar el nuevo estado.
+                for d in ingreso.detalles.select_related('producto'):
+                    ajustar_stock(d.producto_id, -d.cantidad)
+                form.save()
+                detalles = formset.save(commit=False)
+                for d in detalles:
+                    d.ingreso = ingreso
+                    d.save()
+                    ajustar_stock(d.producto_id, d.cantidad)
+                for d in formset.deleted_objects:
+                    d.delete()
             return redirect('comprado_lista')
     return render(request, 'producto/comprado_editar.html', {
         'form': form,
@@ -1903,14 +1910,10 @@ def comprado_eliminar(request, pk):
     """Eliminar una compra y restar del stock las cantidades de sus detalles."""
     ingreso = get_object_or_404(IngresoStock.objects.prefetch_related('detalles__producto'), pk=pk)
     if request.method == 'POST':
-        for d in ingreso.detalles.all():
-            p = d.producto
-            if p.stock is not None:
-                p.stock = max(0, (p.stock or 0) - d.cantidad)
-            else:
-                p.stock = 0
-            p.save()
-        ingreso.delete()
+        with transaction.atomic():
+            for d in ingreso.detalles.select_related('producto'):
+                ajustar_stock(d.producto_id, -d.cantidad)
+            ingreso.delete()
         return redirect('comprado_lista')
     return render(request, 'producto/comprado_eliminar.html', {'ingreso': ingreso})
 
@@ -2430,32 +2433,23 @@ def editar_consumos_intervencion(request, pk):
         formset = ItemFormSet(request.POST, queryset=queryset)
 
         if formset.is_valid():
-            print("TOTAL FORMS:", formset.total_form_count())
-            print("DELETED FORMS:", len(formset.deleted_forms))
+            try:
+                with transaction.atomic():
+                    for form in formset.forms:
+                        if form not in formset.deleted_forms and form.cleaned_data.get('producto'):
+                            item = form.save(commit=False)
+                            item.intervencion = intervencion
+                            guardar_consumo_item(item)
 
-            # Guardar los que no están marcados para eliminar Y tienen producto
-            for idx, form in enumerate(formset.forms):
-                print(f"[{idx}] cleaned_data:", form.cleaned_data)
-                print(f"[{idx}] DELETE marked:", form.cleaned_data.get('DELETE'))
-                print(f"[{idx}] instance pk:", form.instance.pk)
-
-                if form not in formset.deleted_forms:
-                    # Verificar que el formulario tiene producto antes de guardar
-                    if form.cleaned_data.get('producto'):
-                        item = form.save(commit=False)
-                        item.intervencion = intervencion
-                        item.save()
-                        print(f"[{idx}] Guardado ItemIntervencion con producto: {item.producto}")
-                    else:
-                        print(f"[{idx}] Formulario sin producto, ignorado")
-
-            # Eliminar los marcados si tienen pk (existen en DB)
-            for form in formset.deleted_forms:
-                if form.instance.pk:
-                    print(f"Deleting ItemIntervencion pk={form.instance.pk}")
-                    form.instance.delete()
-                else:
-                    print("Intento de eliminar objeto sin PK, ignorado.")
+                    for form in formset.deleted_forms:
+                        if form.instance.pk:
+                            eliminar_consumo_item(form.instance)
+            except StockInsuficiente as exc:
+                formset._non_form_errors = forms.utils.ErrorList([str(exc)])
+                return render(request, 'intervenciones/editar_consumos.html', {
+                    'formset': formset,
+                    'intervencion': intervencion,
+                })
 
             return redirect('intervencion_detalle', pk=intervencion.pk)
 
@@ -2616,4 +2610,3 @@ def usuarios_simple(request):
         return redirect('usuarios_simple')
 
     return render(request, 'usuarios_simple.html', {'usuarios': usuarios})
-

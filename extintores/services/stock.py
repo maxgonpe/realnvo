@@ -1,0 +1,75 @@
+from decimal import Decimal
+
+from django.db import transaction
+
+from ..models import Producto
+
+
+class StockInsuficiente(Exception):
+    """La operacion solicita mas unidades de las disponibles."""
+
+
+def ajustar_stock(producto_id, delta):
+    """Aplica un delta atomico y rechaza saldos negativos."""
+    delta = Decimal(str(delta))
+    with transaction.atomic():
+        producto = Producto.objects.select_for_update().get(pk=producto_id)
+        actual = producto.stock or Decimal('0')
+        nuevo = actual + delta
+        if nuevo < 0:
+            raise StockInsuficiente(
+                f'Stock insuficiente para {producto.nombre}: '
+                f'disponible {actual}, solicitado {abs(delta)}.'
+            )
+        Producto.objects.filter(pk=producto.pk).update(stock=nuevo)
+        return nuevo
+
+
+def ajustar_cambio_item(producto_anterior_id, cantidad_anterior, producto_nuevo_id, cantidad_nueva):
+    """Revierte el consumo anterior y aplica el nuevo sin dejar cambios parciales."""
+    with transaction.atomic():
+        ids = sorted({producto_anterior_id, producto_nuevo_id})
+        productos = {
+            p.pk: p for p in Producto.objects.select_for_update().filter(pk__in=ids)
+        }
+        if len(productos) != len(ids):
+            raise Producto.DoesNotExist
+
+        for producto_id, delta in (
+            (producto_anterior_id, Decimal(str(cantidad_anterior))),
+            (producto_nuevo_id, -Decimal(str(cantidad_nueva))),
+        ):
+            producto = productos[producto_id]
+            nuevo = (producto.stock or Decimal('0')) + delta
+            if nuevo < 0:
+                raise StockInsuficiente(
+                    f'Stock insuficiente para {producto.nombre}: '
+                    f'disponible {producto.stock or 0}, solicitado {abs(delta)}.'
+                )
+            producto.stock = nuevo
+        Producto.objects.bulk_update(productos.values(), ['stock'])
+
+
+def guardar_consumo_item(item):
+    """Ajusta stock y persiste un consumo, todo dentro de una transaccion."""
+    from ..models import ItemIntervencion
+
+    with transaction.atomic():
+        if item.pk:
+            anterior = ItemIntervencion.objects.select_for_update().get(pk=item.pk)
+            if anterior.producto_id == item.producto_id:
+                ajustar_stock(item.producto_id, anterior.cantidad - item.cantidad)
+            else:
+                ajustar_cambio_item(
+                    anterior.producto_id, anterior.cantidad,
+                    item.producto_id, item.cantidad,
+                )
+        else:
+            ajustar_stock(item.producto_id, -item.cantidad)
+        item.save()
+
+
+def eliminar_consumo_item(item):
+    with transaction.atomic():
+        ajustar_stock(item.producto_id, item.cantidad)
+        item.delete()

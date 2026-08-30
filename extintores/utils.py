@@ -155,14 +155,12 @@ def revertir_stock3(producto, cantidad):
     producto.save()
 
 def descontar_stock(producto, cantidad):
-    if producto.stock is not None:
-        producto.stock = max(0, producto.stock - cantidad)
-        producto.save()
+    from .services.stock import ajustar_stock
+    return ajustar_stock(producto.pk, -cantidad)
 
 def revertir_stock(producto, cantidad):
-    if producto.stock is not None:
-        producto.stock += cantidad
-        producto.save()
+    from .services.stock import ajustar_stock
+    return ajustar_stock(producto.pk, cantidad)
 
 def actualizar_stock_item_odt(item_nuevo, item_original=None):
     """
@@ -187,5 +185,4 @@ def actualizar_stock_item_odt(item_nuevo, item_original=None):
             revertir_stock(item_original.producto, item_original.cantidad)
             # Descontar stock del nuevo producto
             descontar_stock(item_nuevo.producto, item_nuevo.cantidad)
-
 

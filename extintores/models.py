@@ -371,44 +371,12 @@ class ItemIntervencion(models.Model):
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Detectar si ya existía antes de guardar
-        if self.pk:
-            old = ItemIntervencion.objects.get(pk=self.pk)
-            diff = self.cantidad - old.cantidad
-        else:
-            diff = self.cantidad  # todo el consumo es nuevo
-
-        # Ajustar stock si hay diferencia - con verificación defensiva
-        try:
-            if self.producto and diff != 0:
-                self.producto.stock = (self.producto.stock or 0) - diff
-                self.producto.save()
-        except ItemIntervencion.producto.RelatedObjectDoesNotExist:
-            # El item no tiene producto asociado (línea en blanco)
-            # Continuar sin procesar el producto
-            pass
-
-        # Snapshot precio y subtotal - con verificación defensiva
-        try:
-            if self.producto:
-                self.precio_unitario = self.producto.precio_unitario
-                self.subtotal = (self.precio_unitario or 0) * self.cantidad
-            else:
-                # Si no hay producto, usar valores por defecto
-                self.precio_unitario = 0
-                self.subtotal = 0
-        except ItemIntervencion.producto.RelatedObjectDoesNotExist:
-            # El item no tiene producto asociado (línea en blanco)
-            self.precio_unitario = 0
-            self.subtotal = 0
+        self.precio_unitario = self.producto.precio_unitario
+        self.subtotal = (self.precio_unitario or 0) * self.cantidad
 
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        """Al eliminar, devolver stock del producto"""
-        if self.producto and self.cantidad:
-            self.producto.stock = (self.producto.stock or 0) + self.cantidad
-            self.producto.save()
         super().delete(*args, **kwargs)
 
     def __str__(self):
@@ -500,10 +468,6 @@ class DetalleIngreso(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Al guardar, suma al stock del producto
-        if self.producto.stock is None:
-            self.producto.stock = 0
-        self.producto.stock += self.cantidad
         self.producto.save()
 
     def __str__(self):

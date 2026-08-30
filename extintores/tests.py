@@ -4,7 +4,8 @@ from django.test import SimpleTestCase
 from django.test import TestCase
 from django.urls import resolve, reverse
 
-from .models import Cliente, Intervencion, Odt
+from .models import Cliente, CategoriaProducto, Intervencion, Odt, Producto, ItemIntervencion
+from .services.stock import StockInsuficiente, ajustar_stock, guardar_consumo_item, eliminar_consumo_item
 
 
 class ExtintoresUrlIntegrityTests(SimpleTestCase):
@@ -77,3 +78,43 @@ class IntervencionOdtTests(TestCase):
 
         self.assertEqual(intervencion.odt_rel, odt)
         self.assertEqual(Odt.objects.filter(intervencion=intervencion).count(), 1)
+
+
+class StockServiceTests(TestCase):
+    def setUp(self):
+        categoria = CategoriaProducto.objects.create(nombre='Prueba')
+        self.producto = Producto.objects.create(
+            nombre='Producto de prueba', categoria=categoria, stock=10
+        )
+        self.cliente = Cliente.objects.create(nombre='Cliente de stock')
+        self.intervencion = Intervencion.objects.create(
+            cliente=self.cliente, tipo='revision', alias='INT-STOCK'
+        )
+
+    def test_consumption_rejects_insufficient_stock_without_changes(self):
+        with self.assertRaises(StockInsuficiente):
+            ajustar_stock(self.producto.pk, -11)
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 10)
+
+    def test_consumption_and_deletion_restore_stock(self):
+        item = ItemIntervencion(
+            intervencion=self.intervencion, producto=self.producto, cantidad=3
+        )
+        guardar_consumo_item(item)
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 7)
+
+        eliminar_consumo_item(item)
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 10)
+
+    def test_item_model_save_does_not_change_stock_directly(self):
+        item = ItemIntervencion.objects.create(
+            intervencion=self.intervencion, producto=self.producto, cantidad=3
+        )
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 10)
+        item.delete()

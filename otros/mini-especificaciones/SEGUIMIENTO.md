@@ -7,7 +7,7 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 | EXT-001 | Inventario y linea base | Completada | `EXT-001-linea-base.md`; `check` correcto; migraciones extintores aplicadas | Migracion pendiente de `django_summernote`; tests iniciales aun no existian |
 | EXT-002 | URLs, botones y enlaces | Completada | 5 tests; `check`; `git diff --check` correctos | Exportaciones estadisticas pendientes en EXT-006 |
 | EXT-003 | Intervencion y ODT | Completada | Migracion 0028 aplicada; 8 tests y `check` correctos | Pendiente definir UX de desvinculacion |
-| EXT-004 | Stock transaccional | Pendiente | Tests de saldo, concurrencia y rollback | Inventario historico |
+| EXT-004 | Stock transaccional | En progreso | Servicio atomico y 3 tests nuevos; suite total: 11 tests | Integrar completamente ItemOdt y feedback de errores |
 | EXT-005 | Perfiles y permisos | Pendiente | Matriz y tests por perfil | Confirmar permisos de tecnico |
 | EXT-006 | Estadisticas y exportaciones | Pendiente | Dataset de referencia y exportaciones | Definir indicadores prioritarios |
 | EXT-007 | Imagenes del servicio | Pendiente | Decision tecnica y prueba de migracion | Inventario de imagenes actuales |
@@ -49,3 +49,13 @@ Usar commits pequenos por entrega, por ejemplo `extintores: corrige integridad d
 - `python manage.py check` paso sin problemas.
 - La suite crea y destruye la base temporal correctamente; 8 tests pasan.
 - La base de pruebas ya pudo crearse; se corrigio un error real del historial cuando la intervencion no tiene alias.
+
+## Registro EXT-004
+
+- Se creo el servicio transaccional `extintores/services/stock.py`.
+- Se bloqueo el stock negativo y se agrego el error de dominio `StockInsuficiente`.
+- Se retiro la modificacion implicita de stock desde `ItemIntervencion` y `DetalleIngreso`.
+- Ingresos nuevos, ediciones y eliminaciones aplican movimientos dentro de `transaction.atomic()`.
+- Verificacion: `python manage.py test extintores` paso con 11 tests.
+- Verificacion: `python manage.py check` paso sin problemas.
+- `makemigrations --check` aun reporta una migracion pendiente de `django_summernote`, dependencia externa.
