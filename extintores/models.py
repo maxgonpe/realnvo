@@ -259,7 +259,13 @@ class DetalleIntervencion(models.Model):
 
 
 class Odt(models.Model):
-    intervencion = models.OneToOneField(Intervencion, on_delete=models.CASCADE, related_name='odt_rel')
+    intervencion = models.OneToOneField(
+        Intervencion,
+        on_delete=models.SET_NULL,
+        related_name='odt_rel',
+        blank=True,
+        null=True,
+    )
     fecha = models.DateField(auto_now_add=True)
     estatus = models.BooleanField(default=False)  # Cerrada o no
     alias = models.CharField(max_length=50, unique=True, blank=True, null=True)

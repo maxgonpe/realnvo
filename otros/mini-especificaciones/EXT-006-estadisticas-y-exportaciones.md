@@ -31,4 +31,4 @@ Ofrecer una vista confiable y flexible del servicio de extintores, evitando calc
 
 ## Estado de implementacion
 
-Los botones de descarga que no tenian destino fueron retirados en `EXT-002`. Las exportaciones especificas de estadisticas se implementaran en esta fase, con enlaces reales y pruebas de contenido, antes de volver a exponer esos botones.
+Los botones de descarga que no tenian destino fueron retirados en `EXT-002`. Las exportaciones especificas de estadisticas se implementaran en `EXT-006`, con enlaces reales y pruebas de contenido, antes de volver a exponer esos botones.

@@ -45,4 +45,4 @@ La entrega queda funcionalmente cerrada: el entorno permite ejecutar la aplicaci
 
 ## Siguiente accion
 
-Resolver o documentar la migracion pendiente de `django_summernote` y comenzar `EXT-002` con la primera suite de integridad de URLs, botones y enlaces.
+Resolver o documentar la migracion pendiente de `django_summernote` y continuar con `EXT-002`, que contiene la suite inicial de integridad de URLs, botones y enlaces.

@@ -21,3 +21,12 @@ Una ODT es una entidad independiente. La asociacion con una intervencion es opci
 - Editar ambos tipos sin duplicacion.
 - Reintentar una misma operacion y comprobar idempotencia.
 - Fallar un formset y comprobar que no queda ODT parcial.
+
+## Implementacion EXT-003
+
+- `Odt.intervencion` ahora es opcional y usa `SET_NULL`, permitiendo ODT independientes.
+- Se elimino el signal que creaba ODT automaticamente antes de guardar los detalles.
+- La creacion explicita permanece en los flujos que solicitan `con_odt`.
+- Se agrego la migracion `0028_alter_odt_intervencion.py`.
+- Se agregaron pruebas para ODT independiente, intervencion sin ODT e intervencion con ODT explicita.
+- Se corrigio el historial para intervenciones sin alias, usando un identificador de respaldo estable.

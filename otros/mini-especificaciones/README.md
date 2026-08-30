@@ -15,17 +15,18 @@ Cada cambio debe tener una especificacion, pruebas, criterio de aceptacion y reg
 
 ## Documentos
 
-1. `00-estado-y-alcance.md`
-2. `01-integridad-urls-botones-enlaces.md`
-3. `02-intervenciones-y-odt.md`
-4. `03-stock-transaccional.md`
-5. `04-perfiles-y-permisos.md`
-6. `05-estadisticas-y-exportaciones.md`
-7. `06-imagenes-del-servicio.md`
-8. `07-arquitectura-y-frontend.md`
-9. `08-plan-de-pruebas.md`
-10. `SEGUIMIENTO.md`
+1. `EXT-000-estado-y-alcance.md`
+2. `EXT-001-linea-base.md`
+3. `EXT-002-integridad-urls-botones-enlaces.md`
+4. `EXT-003-intervenciones-y-odt.md`
+5. `EXT-004-stock-transaccional.md`
+6. `EXT-005-perfiles-y-permisos.md`
+7. `EXT-006-estadisticas-y-exportaciones.md`
+8. `EXT-007-imagenes-del-servicio.md`
+9. `EXT-008-arquitectura-y-frontend.md`
+10. `EXT-009-plan-de-pruebas.md`
+11. `SEGUIMIENTO.md`
 
 ## Estado actual
 
-`EXT-001` tiene registrada la linea base en `EXT-001-linea-base.md`. La compilacion sintactica paso; las comprobaciones Django estan bloqueadas por dependencias no instaladas.
+`EXT-001` tiene registrada la linea base en `EXT-001-linea-base.md`. `EXT-002` y `EXT-003` tambien tienen una especificacion con el mismo identificador que su registro de avance.
