@@ -1,3 +1,5 @@
+# directorios ignorados
+/intervenciones/
 
 # Entornos virtuales locales
 env/
