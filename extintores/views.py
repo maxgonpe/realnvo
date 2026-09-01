@@ -164,17 +164,13 @@ def editar_odt(request, pk):
             form.save()
             formset.save()
 
-            original_items = {item.pk: item for item in odt.items.all()}
-
             items = itemset.save(commit=False)
             for item in items:
                 item.odt = odt
                 item.save()
-                item_original = original_items.get(item.pk)
-                actualizar_stock_item_odt(item, item_original)
+                # ODT products are records only; they do not move inventory.
 
             for obj in itemset.deleted_objects:
-                revertir_stock(obj.producto, obj.cantidad)
                 obj.delete()
 
             return redirect('odt_lista')
@@ -334,11 +330,8 @@ def odt_agregar_productos(request, pk):
                                 odt=odt, producto=producto,
                                 defaults={'cantidad': cantidad}
                             )
-                            if created:
-                                ajustar_stock(producto.pk, -cantidad)
-                            else:
+                            if not created:
                                 # Each selected need adds to the existing ODT item.
-                                ajustar_stock(producto.pk, -cantidad)
                                 item.cantidad += cantidad
                                 item.save()
                             procesados += 1
@@ -400,17 +393,12 @@ def odt_editar_items(request, pk):
         if formset.is_valid():
             try:
                 with transaction.atomic():
-                    original_items = {item.pk: item for item in queryset}
-
                     instances = formset.save(commit=False)
                     for instance in instances:
                         instance.odt = odt
-                        item_original = original_items.get(instance.pk)
-                        actualizar_stock_item_odt(instance, item_original)
                         instance.save()
 
                     for obj in formset.deleted_objects:
-                        revertir_stock(obj.producto, obj.cantidad)
                         obj.delete()
 
                 return redirect('odt_editar_items', pk=odt.pk)

@@ -46,6 +46,10 @@ Se comprobo que la vista capturaba correctamente `StockInsuficiente`, pero el te
 
 Como refuerzo, el error capturado tambien se envia directamente como `error_stock` a `odt/agregar_productos.html`, que lo muestra dentro de la pagina y explica que la seleccion no fue agregada. Este mensaje no depende de JavaScript ni de una redireccion.
 
+## Regla ODT sin restriccion de stock
+
+Por requerimiento operativo, los flujos de agregar y modificar productos en ODT ya no llaman al servicio de ajuste de inventario. Las cantidades, asociaciones, precios y subtotales se procesan sin bloquearse por stock. Esta excepcion aplica solo a ODT; los consumos de intervenciones y movimientos de inventario mantienen sus controles.
+
 ## Incidente: varias necesidades seleccionadas
 
 Cuando varias filas seleccionadas usaban el mismo producto, `get_or_create()` encontraba el mismo `ItemOdt` y la vista reemplazaba la cantidad acumulada por la cantidad de la ultima fila. Se corrigio para sumar cada cantidad seleccionada al `ItemOdt` existente y descontar solo la cantidad nueva del stock. Esto aplica tanto a servicios ilimitados como a productos con stock finito, dentro de la misma transaccion.
