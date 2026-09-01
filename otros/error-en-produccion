@@ -1,0 +1,69 @@
+TypeError at /odt/111/agregar-productos/
+unsupported operand type(s) for *: 'int' and 'NoneType'
+Request Method:	POST
+Request URL:	http://84.247.130.6/odt/111/agregar-productos/
+Django Version:	5.2.1
+Exception Type:	TypeError
+Exception Value:	
+unsupported operand type(s) for *: 'int' and 'NoneType'
+Exception Location:	/home/max/realnvo_git/extintores/models.py, line 422, in save
+Raised during:	extintores.views.odt_agregar_productos
+Python Executable:	/home/max/realnvo_git/env/bin/python
+Python Version:	3.11.2
+Python Path:	
+['/home/max/realnvo_git',
+ '/home/max/realnvo_git/env/bin',
+ '/usr/lib/python311.zip',
+ '/usr/lib/python3.11',
+ '/usr/lib/python3.11/lib-dynload',
+ '/home/max/realnvo_git/env/lib/python3.11/site-packages']
+Server time:	Tue, 01 Sep 2026 10:30:45 -0400
+Traceback Switch to copy-and-paste view
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/db/models/query.py, line 946, in get_or_create
+            return self.get(**kwargs), False
+                        ^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/db/models/query.py, line 633, in get
+            raise self.model.DoesNotExist(
+                 ^ …
+Local vars
+During handling of the above exception (ItemOdt matching query does not exist.), another exception occurred:
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/core/handlers/base.py, line 197, in _get_response
+                response = wrapped_callback(request, *callback_args, **callback_kwargs)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/contrib/auth/decorators.py, line 59, in _view_wrapper
+                    return view_func(request, *args, **kwargs)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/extintores/permissions.py, line 75, in wrapped
+            return view_func(request, *args, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/contrib/auth/decorators.py, line 59, in _view_wrapper
+                    return view_func(request, *args, **kwargs)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/extintores/views.py, line 331, in odt_agregar_productos
+                            item, created = ItemOdt.objects.get_or_create(
+                                                  …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/db/models/manager.py, line 87, in manager_method
+                return getattr(self.get_queryset(), name)(*args, **kwargs)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/db/models/query.py, line 953, in get_or_create
+                    return self.create(**params), True
+                                ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/db/models/query.py, line 663, in create
+        obj.save(force_insert=True, using=self.db)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/extintores/models.py, line 422, in save
+            self.subtotal = self.cantidad * self.precio_unitario
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 

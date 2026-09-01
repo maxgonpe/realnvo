@@ -4,6 +4,12 @@
 {% block content %}
 <h3>ODT #{{ odt.pk }} – {{ odt.alias }}</h3>
 
+{% if error_stock %}
+    <div class="alert alert-danger" role="alert" aria-live="assertive">
+        {{ error_stock }} La selección no fue agregada porque no hay existencias suficientes.
+    </div>
+{% endif %}
+
 {% if resumen_agrupado %}
     <h4>Resumen de necesidades detectadas</h4>
     <table class="table table-sm table-bordered">

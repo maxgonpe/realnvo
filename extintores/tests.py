@@ -204,6 +204,14 @@ class StockServiceTests(TestCase):
         with self.assertRaises(StockInsuficiente):
             ajustar_stock(producto.pk, -1)
 
+    def test_item_odt_without_price_uses_zero_subtotal(self):
+        from .models import ItemOdt
+        odt = Odt.objects.create()
+        producto = Producto.objects.create(nombre='Servicio sin precio', stock=None)
+        item = ItemOdt.objects.create(odt=odt, producto=producto, cantidad=2)
+        self.assertEqual(item.precio_unitario, 0)
+        self.assertEqual(item.subtotal, 0)
+
 
 class PermissionTests(TestCase):
     def test_permission_can_be_granted_through_a_group(self):
@@ -463,6 +471,8 @@ class FrontendStructureTests(TestCase):
         self.assertIn("{% static 'extintores/js/theme.js' %}?v=3", template)
         self.assertIn(' defer', template)
         self.assertNotIn('document.querySelectorAll(".theme-btn")', template)
+        self.assertIn('{% for message in messages %}', template)
+        self.assertIn('role="alert"', template)
 
     def test_theme_script_limits_theme_values(self):
         script = (Path(__file__).parent / 'static' / 'extintores' / 'js' / 'theme.js').read_text(

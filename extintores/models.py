@@ -413,9 +413,9 @@ class ItemOdt(models.Model):
         else:
             factor = Decimal('1.0')  # fallback
 
-        self.precio_unitario = self.producto.precio_unitario
+        self.precio_unitario = self.producto.precio_unitario or Decimal('0')
         if factor != 1:
-            self.precio_con_factor = self.producto.precio_unitario * factor
+            self.precio_con_factor = self.precio_unitario * factor
             self.subtotal = self.cantidad * self.precio_con_factor
         else:
             self.precio_con_factor = None

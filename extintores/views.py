@@ -313,11 +313,13 @@ def odt_agregar_productos(request, pk):
             })
 
     sugerencias_agrupadas = dict(temp_agrupado)
+    error_stock = None
 
     # --- Procesar formulario POST ---
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                procesados = 0
                 for sug in sugerencias:
                     detalle = sug['extintor']
                     for problema in sug['problemas']:
@@ -335,12 +337,17 @@ def odt_agregar_productos(request, pk):
                             if created:
                                 ajustar_stock(producto.pk, -cantidad)
                             else:
-                                ajustar_stock(producto.pk, item.cantidad - cantidad)
-                                item.cantidad = cantidad
-                                item.save(update_fields=['cantidad'])
+                                # Each selected need adds to the existing ODT item.
+                                ajustar_stock(producto.pk, -cantidad)
+                                item.cantidad += cantidad
+                                item.save()
+                            procesados += 1
+            if not procesados:
+                messages.warning(request, 'No se seleccionó ningún producto válido para agregar.')
             return redirect('odt_agregar_productos', pk=odt.pk)
         except StockInsuficiente as exc:
-            messages.error(request, str(exc))
+            error_stock = str(exc)
+            messages.error(request, error_stock)
 
     # --- Calcular total ---
     total = sum(item.subtotal for item in odt.items.all())
@@ -371,6 +378,7 @@ def odt_agregar_productos(request, pk):
         'sugerencias_agrupadas': sugerencias_agrupadas,
         'total': total,
         'resumen_agrupado': resumen_agrupado,
+        'error_stock': error_stock,
     })
 
 
