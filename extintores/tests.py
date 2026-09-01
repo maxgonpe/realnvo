@@ -14,6 +14,7 @@ from .models import (
 from .views import generar_estadisticas_mensuales
 from .services.stock import StockInsuficiente, ajustar_stock, guardar_consumo_item, eliminar_consumo_item
 from .models import TechnicianProfile
+from .forms import ItemOdtFormSet
 from .permissions import (
     PERM_GESTIONAR_USUARIOS,
     PERM_FIRMAR_DOCUMENTOS,
@@ -132,6 +133,22 @@ class IntervencionOdtTests(TestCase):
 
         self.assertEqual(intervencion.odt_rel, odt)
         self.assertEqual(Odt.objects.filter(intervencion=intervencion).count(), 1)
+
+    def test_odt_edit_formset_loads_existing_items_from_instance(self):
+        odt = Odt.objects.create()
+        producto = Producto.objects.create(nombre='Producto ODT', stock=5, precio_unitario=10)
+        from .models import ItemOdt
+        ItemOdt.objects.create(odt=odt, producto=producto, cantidad=2)
+
+        formset = ItemOdtFormSet(instance=odt, prefix='itemodt_set')
+
+        self.assertEqual(len(formset.forms), 1)
+        self.assertEqual(formset.forms[0].instance.producto, producto)
+
+    def test_odt_edit_template_iterates_existing_items_context(self):
+        template = (Path(__file__).parent / 'templates' / 'odt' / 'editar.html').read_text(encoding='utf-8')
+        self.assertIn('itemset_con_subtotales', template)
+        self.assertIn('imagenes_intervencion', template)
 
 
 class StockServiceTests(TestCase):

@@ -186,7 +186,7 @@ def editar_odt(request, pk):
     else:
         form = OdtForm(instance=odt)
         formset = DetalleOdtFormSet(instance=odt, prefix='detalleodt')
-        itemset = ItemOdtFormSet(queryset=odt.items.all(), prefix='itemodt_set')
+        itemset = ItemOdtFormSet(instance=odt, prefix='itemodt_set')
 
     componentes = {
         'exterior': 'exterior',
@@ -215,6 +215,11 @@ def editar_odt(request, pk):
         if problemas:
             sugerencias.append({'extintor': detalle, 'problemas': problemas})
 
+    itemset_con_subtotales = [
+        (form, form.instance.subtotal, form.instance.precio_con_factor)
+        for form in itemset.forms
+    ]
+
     registrar_bitacora(
         usuario=request.user,
         accion='Editar',
@@ -229,7 +234,9 @@ def editar_odt(request, pk):
         'itemset': itemset,
         'odt': odt,
         'sugerencias': sugerencias,
-        'productos_disponibles': productos_disponibles
+        'productos_disponibles': productos_disponibles,
+        'itemset_con_subtotales': itemset_con_subtotales,
+        'imagenes_intervencion': odt.intervencion.imagenes.all() if odt.intervencion_id else [],
     })
 
 

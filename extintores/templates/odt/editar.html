@@ -48,6 +48,9 @@
         {% endfor %}
     </div>
     <button type="button" class="btn btn-sm btn-secondary mt-3" id="add-itemset">+ Agregar Producto</button>
+    {% if imagenes_intervencion %}
+        <p class="text-muted small mt-2">La intervención asociada tiene {{ imagenes_intervencion|length }} registro(s) de imágenes.</p>
+    {% endif %}
 
     <div class="d-flex justify-content-end gap-2 mt-4">
         <button type="submit" class="btn btn-sm btn-success">Guardar</button>
