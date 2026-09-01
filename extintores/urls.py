@@ -23,7 +23,7 @@ from .views import IntervencionListView, crear_intervencion,\
                      exportar_estadisticas_excel, exportar_estadisticas_pdf,\
                      editar_imagen_servicio, eliminar_imagen_servicio,\
                    alertas_view, editar_consumos_intervencion, buscar_clientes_ajax, buscar_productos_ajax,\
-                   usuarios_simple
+                    usuarios_simple, bitacora_lista, bitacora_eliminar
 from .permissions import (
     PERM_GESTIONAR_CATALOGO, PERM_GESTIONAR_INVENTARIO,
     PERM_GESTIONAR_OPERACIONES, PERM_VER_OPERACIONES, PERM_VER_REPORTES,
@@ -84,6 +84,8 @@ urlpatterns = [
     path('ajax/buscar-clientes/', buscar_clientes_ajax, name='buscar_clientes_ajax'),
     path('ajax/buscar-productos/', buscar_productos_ajax, name='buscar_productos_ajax'),
     path('usuarios/', usuarios_simple, name='usuarios_simple'),
+    path('bitacora/', bitacora_lista, name='bitacora_lista'),
+    path('bitacora/eliminar/', bitacora_eliminar, name='bitacora_eliminar'),
 
 
 

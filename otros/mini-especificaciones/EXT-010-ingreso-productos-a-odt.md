@@ -1,5 +1,7 @@
 # Ingreso de productos a ODT
 
+> **Decision funcional vigente:** los productos asociados a una ODT se registran sin restriccion de stock. Esta decision fue validada por el cliente y debe preservarse hasta una futura revision explicita.
+
 ## Incidente
 
 La pantalla `ODT-EDITAR` no mostraba productos ya asociados en desarrollo ni en produccion.
@@ -49,6 +51,22 @@ Como refuerzo, el error capturado tambien se envia directamente como `error_stoc
 ## Regla ODT sin restriccion de stock
 
 Por requerimiento operativo, los flujos de agregar y modificar productos en ODT ya no llaman al servicio de ajuste de inventario. Las cantidades, asociaciones, precios y subtotales se procesan sin bloquearse por stock. Esta excepcion aplica solo a ODT; los consumos de intervenciones y movimientos de inventario mantienen sus controles.
+
+### Alcance y advertencia futura
+
+- Aplica a `odt_agregar_productos`, `editar_odt` y `odt_editar_items`.
+- No modifica `ItemIntervencion`, ingresos de inventario ni consumos de intervenciones.
+- `stock=None` conserva su significado de servicio ilimitado para Recarga/Mantencion en los flujos que controlan stock.
+- En ODT, incluso productos con stock numerico insuficiente pueden registrarse, porque la ODT representa la necesidad o servicio asociado y no un movimiento de bodega.
+- Si en el futuro se requiere descontar inventario desde ODT, debe definirse primero el momento exacto del descuento, la reversa, la edicion, la eliminacion y el tratamiento de servicios ilimitados.
+
+### Historial del incidente
+
+1. `agregar-productos` lanzaba `StockInsuficiente` sin mostrar el motivo al usuario; se agrego manejo transaccional y mensajes visibles.
+2. Productos sin precio provocaban `TypeError` al calcular el subtotal; se establecio precio y subtotal `0` como fallback.
+3. Varias necesidades con el mismo producto sobrescribian la cantidad; ahora se acumulan.
+4. `ODT-EDITAR` no mostraba productos existentes porque el inline formset no recibia `instance=odt`; se corrigio la carga.
+5. Se comprobo que la pantalla de ODT no debia restringir por stock. Se retiro el ajuste de inventario exclusivamente de los flujos ODT.
 
 ## Incidente: varias necesidades seleccionadas
 

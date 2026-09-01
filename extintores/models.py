@@ -475,11 +475,18 @@ class ImagenServicio(models.Model):
 
 class Bitacora(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    accion = models.CharField(max_length=255)
-    modelo = models.CharField(max_length=100, blank=True)
+    accion = models.CharField(max_length=50, db_index=True)
+    modelo = models.CharField(max_length=100, blank=True, db_index=True)
     objeto_id = models.PositiveIntegerField(null=True, blank=True)
     descripcion = models.TextField(blank=True)
-    fecha = models.DateTimeField(auto_now_add=True)
+    fecha = models.DateTimeField(auto_now_add=True, db_index=True)
+    resultado = models.CharField(max_length=20, default='exito', db_index=True)
+    url = models.CharField(max_length=500, blank=True)
+    metodo = models.CharField(max_length=10, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    datos_anteriores = models.JSONField(null=True, blank=True)
+    datos_nuevos = models.JSONField(null=True, blank=True)
+    metadatos = models.JSONField(null=True, blank=True)
 
 
 class FactorAjusteCliente(models.Model):

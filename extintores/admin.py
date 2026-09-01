@@ -38,7 +38,22 @@ class CompatibilidadProductoAdmin(admin.ModelAdmin):
     search_fields = ('producto__nombre', 'detalle_odt__pk')
 
 class BitacoraAdmin(admin.ModelAdmin):
-    list_display = ['id', 'usuario','accion','modelo','objeto_id','descripcion','fecha']
+    list_display = ['id', 'usuario', 'accion', 'modelo', 'objeto_id', 'resultado', 'ip', 'fecha']
+    list_filter = ['accion', 'modelo', 'resultado', 'fecha']
+    search_fields = ['descripcion', 'usuario__username', 'ip']
+    readonly_fields = [field.name for field in Bitacora._meta.fields]
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 class DetalleIntervencionAdmin(admin.ModelAdmin):
     list_display = ['id','estado', 'intervencion','agente','peso','extintor_abollado','habilitado_un_ano']

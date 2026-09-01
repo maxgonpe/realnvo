@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Bitacora{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1>Bitacora del sistema</h1>
+  <form method="get" class="row g-2 mb-3">
+    <div class="col"><input class="form-control" name="accion" placeholder="Accion"></div>
+    <div class="col"><input class="form-control" name="modelo" placeholder="Modelo"></div>
+    <div class="col"><input class="form-control" name="usuario" placeholder="Usuario"></div>
+    <div class="col"><select class="form-select" name="resultado"><option value="">Resultado</option><option value="exito">Exito</option><option value="rechazado">Rechazado</option><option value="error">Error</option></select></div>
+    <div class="col-auto"><button class="btn btn-primary">Filtrar</button></div>
+  </form>
+  <form method="post" action="{% url 'bitacora_eliminar' %}" onsubmit="return confirm('¿Eliminar los registros seleccionados?');">
+    {% csrf_token %}
+    <button class="btn btn-danger mb-3">Eliminar seleccionados</button>
+    <div class="table-responsive"><table class="table table-sm table-striped">
+      <thead><tr><th></th><th>ID</th><th>Fecha</th><th>Usuario</th><th>Accion</th><th>Modelo</th><th>Resultado</th><th>IP</th><th>Descripcion</th></tr></thead>
+      <tbody>{% for registro in registros %}<tr>
+        <td><input type="checkbox" name="ids" value="{{ registro.pk }}"></td><td>{{ registro.pk }}</td><td>{{ registro.fecha }}</td><td>{{ registro.usuario|default:'Sistema' }}</td><td>{{ registro.accion }}</td><td>{{ registro.modelo }} #{{ registro.objeto_id }}</td><td>{{ registro.resultado }}</td><td>{{ registro.ip|default:'-' }}</td><td>{{ registro.descripcion }}</td>
+      </tr>{% empty %}<tr><td colspan="9">No hay registros.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </form>
+</div>
+{% endblock %}

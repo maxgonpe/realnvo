@@ -71,6 +71,7 @@ from .services.stock import (
     guardar_consumo_item,
     eliminar_consumo_item,
 )
+from .services.auditoria import registrar_evento
 from .permissions import (
     ROLE_ADMINISTRADOR, ROLE_SUPERVISOR, ROLE_TECNICO, ROLE_INVENTARIO,
     ROLE_SOLO_LECTURA, PERM_GESTIONAR_USUARIOS, PERM_GESTIONAR_PERMISOS,
@@ -102,13 +103,38 @@ ESTADO_CHOICES = [
 # === FUNCIONES AUXILIARES ===
 def registrar_bitacora(usuario, accion, modelo, objeto_id=None, descripcion=""):
     """Registra una acción en la bitácora."""
-    Bitacora.objects.create(
-        usuario=usuario,
-        accion=accion,
-        modelo=modelo,
-        objeto_id=objeto_id,
-        descripcion=descripcion
+    return registrar_evento(
+        usuario=usuario, accion=accion, modelo=modelo,
+        objeto_id=objeto_id, descripcion=descripcion,
     )
+
+
+@login_required
+def bitacora_lista(request):
+    if not request.user.is_superuser:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    registros = Bitacora.objects.select_related('usuario').order_by('-fecha')
+    for field in ('accion', 'modelo', 'resultado'):
+        value = request.GET.get(field)
+        if value:
+            registros = registros.filter(**{field: value})
+    usuario = request.GET.get('usuario')
+    if usuario:
+        registros = registros.filter(usuario__username__icontains=usuario)
+    return render(request, 'bitacora/lista.html', {'registros': registros[:500]})
+
+
+@login_required
+@require_POST
+def bitacora_eliminar(request):
+    if not request.user.is_superuser:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    ids = request.POST.getlist('ids')
+    if ids:
+        Bitacora.objects.filter(id__in=ids).delete()
+    return redirect('bitacora_lista')
 
 # === VISTAS ODT ===
 
@@ -139,13 +165,7 @@ def eliminar_odt(request, pk):
     odt = get_object_or_404(Odt, pk=pk)
     if request.method == 'POST':
         odt.delete()
-        registrar_bitacora(
-            usuario=request.user,
-            accion='Eliminar',
-            modelo='Odt',
-            objeto_id=pk,
-            descripcion=f"El usuario {request.user.username} eliminó la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-        )
+        registrar_evento(request=request, accion='Eliminar', modelo='Odt', objeto_id=pk, descripcion=f'Se eliminó la ODT #{pk}.')
         return redirect('odt_lista')
     return render(request, 'odt/eliminar.html', {'odt': odt})
 
@@ -172,6 +192,14 @@ def editar_odt(request, pk):
 
             for obj in itemset.deleted_objects:
                 obj.delete()
+
+            registrar_evento(
+                request=request,
+                accion='Actualizar',
+                modelo='Odt',
+                objeto=odt,
+                descripcion=f"Se actualizó la ODT #{odt.pk}.",
+            )
 
             return redirect('odt_lista')
         else:
@@ -215,14 +243,6 @@ def editar_odt(request, pk):
         (form, form.instance.subtotal, form.instance.precio_con_factor)
         for form in itemset.forms
     ]
-
-    registrar_bitacora(
-        usuario=request.user,
-        accion='Editar',
-        modelo='Odt',
-        objeto_id=pk,
-        descripcion=f"El usuario {request.user.username} editó la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-    )
 
     return render(request, 'odt/editar.html', {
         'form': form,
@@ -337,9 +357,21 @@ def odt_agregar_productos(request, pk):
                             procesados += 1
             if not procesados:
                 messages.warning(request, 'No se seleccionó ningún producto válido para agregar.')
+            else:
+                registrar_evento(
+                    request=request, accion='Actualizar', modelo='ItemOdt',
+                    objeto_id=odt.pk,
+                    descripcion=f'Se agregaron {procesados} necesidades a la ODT #{odt.pk}.',
+                    metadatos={'cantidad_operaciones': procesados, 'sin_movimiento_stock': True},
+                )
             return redirect('odt_agregar_productos', pk=odt.pk)
         except StockInsuficiente as exc:
             error_stock = str(exc)
+            registrar_evento(
+                request=request, accion='Actualizar', modelo='Odt',
+                objeto=odt, descripcion=error_stock, resultado='rechazado',
+                metadatos={'sin_movimiento_stock': True},
+            )
             messages.error(request, error_stock)
 
     # --- Calcular total ---
@@ -400,6 +432,13 @@ def odt_editar_items(request, pk):
 
                     for obj in formset.deleted_objects:
                         obj.delete()
+
+                registrar_evento(
+                    request=request, accion='Actualizar', modelo='ItemOdt',
+                    objeto_id=odt.pk,
+                    descripcion=f'Se actualizaron los productos de la ODT #{odt.pk}.',
+                    metadatos={'sin_movimiento_stock': True},
+                )
 
                 return redirect('odt_editar_items', pk=odt.pk)
             except StockInsuficiente as exc:
@@ -557,13 +596,7 @@ def odt_pdf(request, pk):
     response['Content-Disposition'] = f'inline; filename="ODT-{odt.pk}.pdf"'
 
     # 🔹 Registrar en bitácora
-    registrar_bitacora(
-        usuario=request.user,
-        accion='Crear',
-        modelo='Odt',
-        objeto_id=pk,
-        descripcion=f"El usuario {request.user.username} creó el PDF para la ODT #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-    )
+    registrar_evento(request=request, accion='Exportar', modelo='Odt', objeto=odt, descripcion=f'Se exportó la ODT #{odt.pk} a PDF.')
 
     return response
 
@@ -611,14 +644,7 @@ def odt_excel(request, pk):
     response['Content-Disposition'] = f'attachment; filename={filename}'
     wb.save(response)
 
-    registrar_bitacora(
-                        usuario=request.user,
-                        accion='Crear',
-                        modelo='Odt',
-                        objeto_id=pk,
-                        descripcion = f"El usuario {request.user.username} creo el documento Excel para la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-                        
-                    )
+    registrar_evento(request=request, accion='Exportar', modelo='Odt', objeto=odt, descripcion=f'Se exportó la ODT #{odt.pk} a Excel.')
 
     return response
 
@@ -863,13 +889,16 @@ def crear_intervencion(request):
                             #baja_por_fuera_norma=d.baja_por_fuera_norma,
                         )
 
-                    registrar_bitacora(
-                        usuario=request.user,
-                        accion='Crear',
-                        modelo='Odt',
-                        objeto_id=odt.pk,
-                        descripcion=f"El usuario {request.user.username} creó la ODT #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
-                    )
+                    registrar_evento(request=request, accion='Crear', modelo='Odt', objeto=odt, descripcion=f'Se creó la ODT #{odt.pk}.')
+
+                registrar_evento(
+                    request=request,
+                    accion='Crear',
+                    modelo='Intervencion',
+                    objeto=intervencion,
+                    descripcion=f"Se creó la intervención #{intervencion.pk}.",
+                    metadatos={'tipo': intervencion.tipo, 'con_odt': intervencion.con_odt},
+                )
                 
                 return redirect('intervencion_lista')
         else:
@@ -1014,13 +1043,15 @@ def editar_intervencion(request, pk):
                         #baja_por_fuera_norma=d.baja_por_fuera_norma,
                     )
 
-                registrar_bitacora(
-                    usuario=request.user,
-                    accion='Crear',
-                    modelo='Odt',
-                    objeto_id=intervencion.pk,
-                    descripcion=f"El usuario {request.user.username} generó una ODT para la intervención #{intervencion.pk}."
-                )
+                registrar_evento(request=request, accion='Crear', modelo='Odt', objeto=odt, descripcion=f'Se generó la ODT para la intervención #{intervencion.pk}.')
+
+            registrar_evento(
+                request=request,
+                accion='Actualizar',
+                modelo='Intervencion',
+                objeto=intervencion,
+                descripcion=f"Se actualizó la intervención #{intervencion.pk}.",
+            )
 
             return redirect('intervencion_detalle', pk=intervencion.pk)
         else:
@@ -1046,17 +1077,16 @@ def editar_intervencion(request, pk):
 def eliminar_intervencion(request, pk):
     intervencion = get_object_or_404(Intervencion, pk=pk)
     if request.method == 'POST':
+        descripcion = f"Se eliminó la intervención #{intervencion.pk}."
         intervencion.delete()
+        registrar_evento(
+            request=request,
+            accion='Eliminar',
+            modelo='Intervencion',
+            objeto_id=pk,
+            descripcion=descripcion,
+        )
         return redirect('intervencion_lista')  # Cambia por la URL de tu lista de productos
-
-    registrar_bitacora(
-                usuario=request.user,
-                accion='Eliminar una Intervención',
-                modelo='Intervencion',
-                objeto_id=pk,
-                descripcion = f"El usuario {request.user.username} eliminó la intervención #{intervencion.pk} con fecha {intervencion.fecha.strftime('%Y-%m-%d')}."
-                
-            )
 
     return render(request, 'intervenciones/eliminar.html', {'intervencion': intervencion})
 
@@ -1321,14 +1351,7 @@ class IntervencionExcel(View):
         response['Content-Disposition'] = f'attachment; filename={nombre_archivo}'
         wb.save(response)
 
-        registrar_bitacora(
-                        usuario=self.request.user,
-                        accion='Crear',
-                        modelo='Intervencion',
-                        objeto_id=pk,
-                        descripcion = f"El usuario {request.user.username} creo el documento Excel para el Servicio #{intervencion.pk} con fecha {intervencion.fecha.strftime('%Y-%m-%d')}."
-                        
-                    )
+        registrar_evento(request=request, accion='Exportar', modelo='Intervencion', objeto=intervencion, descripcion=f'Se exportó la intervención #{intervencion.pk} a Excel.')
 
         return response
 
@@ -1523,13 +1546,7 @@ class IntervencionPDF(View):
         response = HttpResponse(pdf_file, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="Intervencion-{pk}.pdf"'
 
-        registrar_bitacora(
-            usuario=request.user,
-            accion='Crear',
-            modelo='Intervencion',
-            objeto_id=pk,
-            descripcion=f"El usuario {request.user.username} creó el PDF para el Servicio #{intervencion.pk} del {intervencion.fecha.strftime('%Y-%m-%d')}."
-        )
+        registrar_evento(request=request, accion='Exportar', modelo='Intervencion', objeto=intervencion, descripcion=f'Se exportó la intervención #{intervencion.pk} a PDF.')
 
         return response
 
@@ -1585,17 +1602,8 @@ def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST)
         if form.is_valid():
-            form.save()
-
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Agregar',
-                        modelo='Productos',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Agrego el producto: ({form.cleaned_data['nombre']}) de la categoria, ({form.cleaned_data['categoria']}) con precio de ({form.cleaned_data['precio_unitario']})  en el catalogo, con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
-
+            producto = form.save()
+            registrar_evento(request=request, accion='Crear', modelo='Producto', objeto=producto, descripcion=f'Se creó el producto {producto.nombre}.')
 
             return redirect('lista_productos')
     else:
@@ -1608,16 +1616,8 @@ def modificar_producto(request, pk):
     if request.method == 'POST':
         form = ProductoForm(request.POST, instance=producto)
         if form.is_valid():
-            form.save()
-
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Modificar',
-                        modelo='Productos',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Modifico el producto: ({form.cleaned_data['nombre']}) de la categoria, ({form.cleaned_data['categoria']}) con precio de ({form.cleaned_data['precio_unitario']})  en el catalogo, con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                        
-                    )
+            producto = form.save()
+            registrar_evento(request=request, accion='Actualizar', modelo='Producto', objeto=producto, descripcion=f'Se actualizó el producto {producto.nombre}.')
 
             return redirect('lista_productos')
     else:
@@ -1629,18 +1629,7 @@ def eliminar_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
     if request.method == 'POST':
 
-        registrar_bitacora(
-            usuario=request.user,
-            accion='Eliminar',
-            modelo='Producto',
-            objeto_id=pk,
-            descripcion=(
-                f"El usuario {request.user.username} eliminó el producto '{producto.nombre}' "
-                f"(ID: {pk}), categoría: '{producto.categoria}', precio: ${producto.precio_unitario}, "
-                f"en fecha {timezone.now().strftime('%Y-%m-%d')}."
-            )
-        )
-
+        registrar_evento(request=request, accion='Eliminar', modelo='Producto', objeto=producto, descripcion=f'Se eliminó el producto {producto.nombre}.')
         producto.delete()
         
         return redirect('lista_productos')
@@ -1658,16 +1647,8 @@ def agregar_cliente(request):
         form = ClienteForm(request.POST)
         if form.is_valid():
 
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Agregar',
-                        modelo='Cliente',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Agrego un Nuevo cliente: ({form.cleaned_data['nombre']}) con rut, ({form.cleaned_data['rut']}) y contacto ({form.cleaned_data['contacto']}), con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
-
-            form.save()
+            cliente = form.save()
+            registrar_evento(request=request, accion='Crear', modelo='Cliente', objeto=cliente, descripcion=f'Se creó el cliente {cliente.nombre}.')
             return redirect('lista_clientes')
     else:
         form = ClienteForm()
@@ -1680,16 +1661,6 @@ def modificar_cliente(request, pk):
         if form.is_valid():
             form.save()
 
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Modificar',
-                        modelo='Cliente',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Modifico el registro del Cliente: ({form.cleaned_data['nombre']}) con el rut, ({form.cleaned_data['rut']}) con el contacto ({form.cleaned_data['contacto']}), con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                        
-                    )
-
-
             return redirect('lista_clientes')
     else:
         form = ClienteForm(instance=cliente)
@@ -1698,15 +1669,6 @@ def modificar_cliente(request, pk):
 def eliminar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     if request.method == 'POST':
-
-        registrar_bitacora(
-                        usuario=request.user,
-                        accion='Eliminar',
-                        modelo='Cliente',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Elimino el cliente: ({cliente.nombre}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
 
         cliente.delete()
         return redirect('lista_clientes')
@@ -1724,16 +1686,8 @@ def agregar_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
         if form.is_valid():
-            form.save()
-
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Crear',
-                        modelo='Categoria',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Creo la categoria: ({form.cleaned_data['nombre']}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
+            categoria = form.save()
+            registrar_evento(request=request, accion='Crear', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se creó la categoría {categoria.nombre}.')
 
             return redirect('lista_categorias')
     else:
@@ -1745,16 +1699,8 @@ def modificar_categoria(request, pk):
     if request.method == 'POST':
         form = CategoriaForm(request.POST, instance=categoria)
         if form.is_valid():
-            form.save()
-
-            registrar_bitacora(
-                        usuario=request.user,
-                        accion='Crear',
-                        modelo='Categoria',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Modifico la categoria: ({form.cleaned_data['nombre']}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
+            categoria = form.save()
+            registrar_evento(request=request, accion='Actualizar', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se actualizó la categoría {categoria.nombre}.')
 
             return redirect('lista_categorias')
     else:
@@ -1765,16 +1711,7 @@ def eliminar_categoria(request, pk):
     categoria = get_object_or_404(CategoriaProducto, pk=pk)
     if request.method == 'POST':
 
-        registrar_bitacora(
-                        usuario=request.user,
-                        accion='Eliminar',
-                        modelo='Categoria',
-                        objeto_id=None,
-                        descripcion = f"El usuario {request.user.username} Elimino la categoria: ({pk}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
-                                                
-                    )
-
-
+        registrar_evento(request=request, accion='Eliminar', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se eliminó la categoría {categoria.nombre}.')
         categoria.delete()
         return redirect('lista_categorias')
     return render(request, 'categoria/eliminar.html', {'categoria': categoria})
@@ -1791,7 +1728,8 @@ def factorajustecliente_crear(request):
     if request.method == 'POST':
         form = FactorAjusteClienteForm(request.POST)
         if form.is_valid():
-            form.save()
+            factor = form.save()
+            registrar_evento(request=request, accion='Crear', modelo='FactorAjusteCliente', objeto=factor, descripcion='Se creó un factor de ajuste.')
             return redirect('factorajustecliente_lista')
     else:
         form = FactorAjusteClienteForm()
@@ -1802,7 +1740,8 @@ def factorajustecliente_editar(request, pk):
     if request.method == 'POST':
         form = FactorAjusteClienteForm(request.POST, instance=factor)
         if form.is_valid():
-            form.save()
+            factor = form.save()
+            registrar_evento(request=request, accion='Actualizar', modelo='FactorAjusteCliente', objeto=factor, descripcion='Se actualizó un factor de ajuste.')
             return redirect('factorajustecliente_lista')
     else:
         form = FactorAjusteClienteForm(instance=factor)
@@ -1811,7 +1750,9 @@ def factorajustecliente_editar(request, pk):
 def factorajustecliente_eliminar(request, pk):
     factor = get_object_or_404(FactorAjusteCliente, pk=pk)
     if request.method == 'POST':
+        factor_id = factor.pk
         factor.delete()
+        registrar_evento(request=request, accion='Eliminar', modelo='FactorAjusteCliente', objeto_id=factor_id, descripcion='Se eliminó un factor de ajuste.')
         return redirect('factorajustecliente_lista')
     return render(request, 'factor/factorajustecliente_eliminar.html', {'factor': factor})
 
@@ -1823,7 +1764,7 @@ def agregar_item_odt(request, odt_pk):
     cantidad = int(request.POST.get('cantidad', 1))
 
     # Crear item asociado a la ODT
-    ItemOdt.objects.create(
+    item = ItemOdt.objects.create(
         odt=detalle.odt,
         producto=producto,
         cantidad=cantidad
@@ -1834,6 +1775,12 @@ def agregar_item_odt(request, odt_pk):
         producto=producto,
         detalle_odt=detalle,
         defaults={'motivo': 'Sugerencia automática desde componente defectuoso'}
+    )
+
+    registrar_evento(
+        request=request, accion='Crear', modelo='ItemOdt', objeto=item,
+        descripcion=f'Se agregó un producto a la ODT #{odt_pk}.',
+        metadatos={'sin_movimiento_stock': True},
     )
 
     return redirect('odt_editar', pk=odt_pk)
@@ -1871,6 +1818,10 @@ def ingreso_stock_nuevo(request):
                     d.ingreso = ingreso
                     d.save()
                     ajustar_stock(d.producto_id, d.cantidad)
+            registrar_evento(
+                request=request, accion='Crear', modelo='IngresoStock', objeto=ingreso,
+                descripcion=f'Se registró el ingreso de stock #{ingreso.pk}.',
+            )
             return redirect('lista_productos')  # o redirige donde prefieras
 
     return render(request, 'producto/ingreso_form.html', {
@@ -1928,6 +1879,7 @@ def comprado_editar(request, pk):
                     ajustar_stock(d.producto_id, d.cantidad)
                 for d in formset.deleted_objects:
                     d.delete()
+            registrar_evento(request=request, accion='Actualizar', modelo='IngresoStock', objeto=ingreso, descripcion=f'Se actualizó el ingreso de stock #{ingreso.pk}.')
             return redirect('comprado_lista')
     return render(request, 'producto/comprado_editar.html', {
         'form': form,
@@ -1944,6 +1896,7 @@ def comprado_eliminar(request, pk):
             for d in ingreso.detalles.select_related('producto'):
                 ajustar_stock(d.producto_id, -d.cantidad)
             ingreso.delete()
+        registrar_evento(request=request, accion='Eliminar', modelo='IngresoStock', objeto_id=pk, descripcion=f'Se eliminó el ingreso de stock #{pk}.')
         return redirect('comprado_lista')
     return render(request, 'producto/comprado_eliminar.html', {'ingreso': ingreso})
 
@@ -1981,6 +1934,7 @@ def exportar_inventario_excel(request):
     )
     response['Content-Disposition'] = 'attachment; filename=Inventario_Accesorios.xlsx'
     wb.save(response)
+    registrar_evento(request=request, accion='Exportar', modelo='Producto', descripcion='Se exportó el inventario a Excel.')
     return response
 
 
@@ -2005,6 +1959,7 @@ def exportar_inventario_pdf(request):
         output.seek(0)
         response.write(output.read())
 
+    registrar_evento(request=request, accion='Exportar', modelo='Producto', descripcion='Se exportó el inventario a PDF.')
     return response
 
 
@@ -2153,6 +2108,7 @@ def generar_estadisticas_view(request):
         mes = request.POST.get('mes')
         if mes:
             generar_estadisticas_mensuales(mes)
+            registrar_evento(request=request, accion='Generar', modelo='EstadisticaMensual', descripcion=f'Se generaron estadísticas para {mes}.')
             messages.success(request, f'Estadísticas generadas para el mes {mes}.')
             return redirect('ver_estadisticas', mes=mes)
 
@@ -2497,6 +2453,7 @@ def editar_imagen_servicio(request, pk):
             messages.error(request, 'El orden debe ser un numero positivo.')
         else:
             imagen.save(update_fields=['descripcion', 'orden'])
+            registrar_evento(request=request, accion='Actualizar', modelo='ImagenServicio', objeto=imagen, descripcion=f'Se actualizó la imagen de la intervención #{imagen.intervencion_id}.')
             messages.success(request, 'Imagen actualizada.')
     return redirect('intervencion_detalle', pk=imagen.intervencion_id)
 
@@ -2508,6 +2465,7 @@ def eliminar_imagen_servicio(request, pk):
     if request.method == 'POST':
         imagen.archivo.delete(save=False)
         imagen.delete()
+        registrar_evento(request=request, accion='Eliminar', modelo='ImagenServicio', objeto_id=pk, descripcion=f'Se eliminó una imagen de la intervención #{intervencion_id}.')
         messages.success(request, 'Imagen eliminada.')
     return redirect('intervencion_detalle', pk=intervencion_id)
 
@@ -2686,11 +2644,22 @@ def editar_consumos_intervencion(request, pk):
                             eliminar_consumo_item(form.instance)
             except StockInsuficiente as exc:
                 formset._non_form_errors = forms.utils.ErrorList([str(exc)])
+                registrar_evento(
+                    request=request, accion='ConsumirStock', modelo='Intervencion',
+                    objeto=intervencion, descripcion=str(exc), resultado='rechazado',
+                )
                 return render(request, 'intervenciones/editar_consumos.html', {
                     'formset': formset,
                     'intervencion': intervencion,
                 })
 
+            registrar_evento(
+                request=request,
+                accion='ConsumirStock',
+                modelo='Intervencion',
+                objeto=intervencion,
+                descripcion=f'Se actualizaron los consumos de la intervención #{intervencion.pk}.',
+            )
             return redirect('intervencion_detalle', pk=intervencion.pk)
 
     else:
@@ -2797,7 +2766,8 @@ def usuarios_simple(request):
             elif len(password) < 4:
                 messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
             else:
-                User.objects.create_user(username=username, password=password)
+                user = User.objects.create_user(username=username, password=password)
+                registrar_evento(request=request, accion='Crear', modelo='User', objeto=user, descripcion=f"Se creó el usuario '{username}'.")
                 messages.success(request, f"Usuario '{username}' creado. Puedes compartir usuario y contraseña.")
 
         elif action == 'editar':
@@ -2837,6 +2807,7 @@ def usuarios_simple(request):
                     TechnicianProfile.objects.get_or_create(user=user)
                 else:
                     TechnicianProfile.objects.filter(user=user).delete()
+                registrar_evento(request=request, accion='Actualizar', modelo='User', objeto=user, descripcion=f"Se actualizaron los datos, roles y permisos de '{user.username}'.")
                 messages.success(request, f"Datos de '{user.username}' actualizados.")
             except User.DoesNotExist:
                 messages.error(request, "Usuario no encontrado.")
@@ -2854,7 +2825,8 @@ def usuarios_simple(request):
                     user = User.objects.get(id=user_id)
                     user.set_password(new_password)
                     user.save()
-                    messages.success(request, f"Contraseña de '{user.username}' actualizada. Nueva contraseña: {new_password}")
+                    registrar_evento(request=request, accion='Actualizar', modelo='User', objeto=user, descripcion=f"Se actualizó la contraseña de '{user.username}'.")
+                    messages.success(request, f"Contraseña de '{user.username}' actualizada.")
                 except User.DoesNotExist:
                     messages.error(request, "Usuario no encontrado.")
 
@@ -2867,6 +2839,7 @@ def usuarios_simple(request):
                 else:
                     username = user.username
                     user.delete()
+                    registrar_evento(request=request, accion='Eliminar', modelo='User', objeto_id=user_id, descripcion=f"Se eliminó el usuario '{username}'.")
                     messages.success(request, f"Usuario '{username}' eliminado.")
             except User.DoesNotExist:
                 messages.error(request, "Usuario no encontrado.")

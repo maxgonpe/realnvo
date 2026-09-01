@@ -31,4 +31,7 @@ El stock disponible nunca puede ser negativo. Antes de consumir, el sistema debe
 - Los ingresos, ediciones y eliminaciones de compras usan el servicio y se revierten dentro de transacciones.
 - `ItemIntervencion.save/delete` y `DetalleIngreso.save` ya no modifican stock implicitamente.
 - Se cubrieron saldo insuficiente, consumo, eliminacion y ausencia de efectos secundarios del modelo.
-- La gestion de `ItemOdt` se mantiene pendiente de integrar completamente al mismo flujo y de agregar feedback de error en sus vistas.
+- La gestion de `ItemOdt` queda fuera del descuento de stock por decision funcional documentada en `EXT-010`.
+# Nota de alcance ODT
+
+Las operaciones de productos dentro de una ODT son una excepcion funcional: no descuentan ni validan stock. El control transaccional de esta especificacion continua vigente para consumos de intervenciones, compras, eliminaciones y otros movimientos de inventario. Consultar el detalle y el historial en `EXT-010-ingreso-productos-a-odt.md` antes de modificar esta regla.

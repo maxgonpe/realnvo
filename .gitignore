@@ -28,3 +28,6 @@ myproject/local_settings.py
 
 # Archivos static generados por collectstatic
 /staticfiles/
+
+# Agente y notas locales de trabajo de bitacora
+/otros/bitacora/

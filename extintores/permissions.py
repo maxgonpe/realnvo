@@ -8,6 +8,8 @@ from functools import wraps
 
 from django.shortcuts import redirect, render
 
+from .services.auditoria import registrar_evento
+
 ROLE_ADMINISTRADOR = 'Administrador'
 ROLE_SUPERVISOR = 'Supervisor'
 ROLE_TECNICO = 'Tecnico'
@@ -69,6 +71,14 @@ def requiere_permiso(permiso):
             if not request.user.is_authenticated:
                 return redirect('login')
             if not usuario_tiene_permiso(request.user, permiso):
+                registrar_evento(
+                    request=request,
+                    accion='PermisoDenegado',
+                    modelo='Ruta',
+                    descripcion=f'Permiso requerido: {permiso}.',
+                    resultado='rechazado',
+                    metadatos={'permiso_requerido': permiso},
+                )
                 return render(request, '403.html', {
                     'permiso_requerido': permiso,
                 }, status=403)

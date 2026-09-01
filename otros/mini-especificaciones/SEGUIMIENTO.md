@@ -17,6 +17,8 @@ Estado actual: **EXT-003 completada; nomenclatura normalizada**.
 
 | EXT-009 | Plan de pruebas y regresion | Completada localmente | Componentes legacy retirados; suite global: 43 tests OK; `check`, `migrate --plan`, `collectstatic --clear` y `diff --check` correctos | `push` y despliegue de produccion pendientes por el usuario |
 
+| EXT-010 | Ingreso de productos a ODT | Completada funcionalmente | Asociaciones, acumulacion, precios, errores visibles y carga de productos existentes corregidos; cliente valida ODT sin restriccion de stock; 46 tests correctos | Revisar en el futuro solo mediante nueva decision funcional |
+
 ## Formato de actualizacion
 
 Para cada entrega registrar:

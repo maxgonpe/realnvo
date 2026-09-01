@@ -9,10 +9,11 @@ from openpyxl import load_workbook
 
 from .models import (
     Cliente, CategoriaProducto, Intervencion, Odt, Producto, ItemIntervencion,
-    EstadisticaDetalleExtintor, ImagenServicio,
+    EstadisticaDetalleExtintor, ImagenServicio, Bitacora,
 )
 from .views import generar_estadisticas_mensuales
 from .services.stock import StockInsuficiente, ajustar_stock, guardar_consumo_item, eliminar_consumo_item
+from .services.auditoria import registrar_evento
 from .models import TechnicianProfile
 from .forms import ItemOdtFormSet
 from .permissions import (
@@ -231,6 +232,50 @@ class PermissionTests(TestCase):
 
         self.assertTrue(puede_firmar_documentos(user))
 
+
+class BitacoraAuditTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='audit-admin', password='password123', email='audit@example.com'
+        )
+        self.user = User.objects.create_user(username='audit-user', password='password123')
+
+    def test_event_records_request_context_and_does_not_store_secrets(self):
+        self.client.force_login(self.user)
+        response = self.client.get('/bitacora/', REMOTE_ADDR='192.0.2.10')
+        self.assertEqual(response.status_code, 403)
+
+        registro = registrar_evento(
+            request=response.wsgi_request,
+            accion='Actualizar',
+            modelo='User',
+            objeto=self.user,
+            descripcion='Cambio de datos',
+            datos_nuevos={'email': 'nuevo@example.com'},
+        )
+        self.assertEqual(registro.ip, '192.0.2.10')
+        self.assertEqual(registro.url, '/bitacora/')
+        self.assertEqual(registro.metodo, 'GET')
+        self.assertNotIn('password', registro.datos_nuevos or {})
+
+    def test_only_superuser_can_list_and_delete_audit_records(self):
+        registro = Bitacora.objects.create(accion='Crear', modelo='Producto')
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get('/bitacora/').status_code, 403)
+        self.assertEqual(
+            self.client.post('/bitacora/eliminar/', {'ids': [registro.pk]}).status_code,
+            403,
+        )
+
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get('/bitacora/').status_code, 200)
+        self.assertEqual(
+            self.client.post('/bitacora/eliminar/', {'ids': [registro.pk]}).status_code,
+            302,
+        )
+        self.assertFalse(Bitacora.objects.filter(pk=registro.pk).exists())
+
+class PermissionManagementTests(TestCase):
     def test_user_manager_can_assign_role_permission_and_technician_profile(self):
         manager = User.objects.create_superuser(
             username='manager', password='password123', email='manager@example.com'
