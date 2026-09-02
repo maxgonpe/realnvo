@@ -20,8 +20,9 @@
         form.addEventListener('submit', function (event) {
             var errors = [];
             root.querySelectorAll('.producto-search').forEach(function (input, index) {
-                var selected = input.parentElement.querySelector('.producto-selected');
-                var field = document.querySelector('[name="' + input.dataset.formPrefix + '-producto"]');
+                var box = input.closest('.producto-search-container');
+                var selected = box && box.querySelector('.producto-selected');
+                var field = box && box.querySelector('[name="' + input.dataset.formPrefix + '-producto"]');
                 if (selected && selected.style.display !== 'none' && (!field || !field.value)) {
                     errors.push('Línea ' + (index + 1) + ': Producto seleccionado pero no sincronizado');
                 }

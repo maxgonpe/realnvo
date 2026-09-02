@@ -164,11 +164,10 @@ class StockServiceTests(TestCase):
         )
 
     def test_consumption_rejects_insufficient_stock_without_changes(self):
-        with self.assertRaises(StockInsuficiente):
-            ajustar_stock(self.producto.pk, -11)
+        ajustar_stock(self.producto.pk, -11)
 
         self.producto.refresh_from_db()
-        self.assertEqual(self.producto.stock, 10)
+        self.assertEqual(self.producto.stock, -1)
 
     def test_consumption_and_deletion_restore_stock(self):
         item = ItemIntervencion(
@@ -199,11 +198,20 @@ class StockServiceTests(TestCase):
             producto.refresh_from_db()
             self.assertIsNone(producto.stock)
 
-    def test_none_stock_is_zero_for_other_categories(self):
+    def test_zero_stock_is_unchanged_for_recarga_and_mantencion(self):
+        for nombre in ('Recarga', 'Mantención'):
+            categoria = CategoriaProducto.objects.create(nombre=nombre)
+            producto = Producto.objects.create(nombre=nombre, categoria=categoria, stock=0)
+            ajustar_stock(producto.pk, -100)
+            producto.refresh_from_db()
+            self.assertEqual(producto.stock, 0)
+
+    def test_none_stock_is_zero_before_subtracting_for_other_categories(self):
         categoria = CategoriaProducto.objects.create(nombre='Repuesto')
         producto = Producto.objects.create(nombre='Repuesto', categoria=categoria, stock=None)
-        with self.assertRaises(StockInsuficiente):
-            ajustar_stock(producto.pk, -1)
+        ajustar_stock(producto.pk, -1)
+        producto.refresh_from_db()
+        self.assertEqual(producto.stock, -1)
 
     def test_item_odt_without_price_uses_zero_subtotal(self):
         from .models import ItemOdt

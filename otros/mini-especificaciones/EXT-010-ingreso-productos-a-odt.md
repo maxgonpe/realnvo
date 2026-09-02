@@ -1,6 +1,6 @@
 # Ingreso de productos a ODT
 
-> **Decision funcional vigente:** los productos asociados a una ODT se registran sin restriccion de stock. Esta decision fue validada por el cliente y debe preservarse hasta una futura revision explicita.
+> **Decision funcional vigente:** Recarga y Mantencion no consumen stock. Las demas categorias consumen la cantidad indicada y pueden dejar saldos negativos para ajuste posterior de inventario.
 
 ## Incidente
 
@@ -38,7 +38,7 @@ En `odt/111/agregar-productos/` la seleccion de un producto sin `precio_unitario
 
 Se corrigio `ItemOdt.save()` para usar precio `0` cuando el precio del producto esta vacio. Tambien se corrigio el guardado de cantidades existentes para recalcular precio y subtotal, y la vista informa cuando no se selecciona ningun producto valido.
 
-El stock insuficiente sigue bloqueando la operacion completa y muestra el mensaje al usuario. Se agrego prueba de producto sin precio.
+El stock insuficiente ya no bloquea las operaciones: las categorias finitas pueden quedar con saldo negativo y se registra la cantidad completa solicitada.
 
 Verificacion actual: 46 tests de `extintores`, `check` y `diff --check` correctos.
 
@@ -48,16 +48,16 @@ Se comprobo que la vista capturaba correctamente `StockInsuficiente`, pero el te
 
 Como refuerzo, el error capturado tambien se envia directamente como `error_stock` a `odt/agregar_productos.html`, que lo muestra dentro de la pagina y explica que la seleccion no fue agregada. Este mensaje no depende de JavaScript ni de una redireccion.
 
-## Regla ODT sin restriccion de stock
+## Regla de stock por categoria
 
-Por requerimiento operativo, los flujos de agregar y modificar productos en ODT ya no llaman al servicio de ajuste de inventario. Las cantidades, asociaciones, precios y subtotales se procesan sin bloquearse por stock. Esta excepcion aplica solo a ODT; los consumos de intervenciones y movimientos de inventario mantienen sus controles.
+Por requerimiento operativo, ODT e intervenciones usan el servicio de stock. Recarga y Mantencion no modifican stock; las categorias finitas descuentan cantidades y permiten saldos negativos sin bloquear la operacion.
 
 ### Alcance y advertencia futura
 
-- Aplica a `odt_agregar_productos`, `editar_odt` y `odt_editar_items`.
-- No modifica `ItemIntervencion`, ingresos de inventario ni consumos de intervenciones.
-- `stock=None` conserva su significado de servicio ilimitado para Recarga/Mantencion en los flujos que controlan stock.
-- En ODT, incluso productos con stock numerico insuficiente pueden registrarse, porque la ODT representa la necesidad o servicio asociado y no un movimiento de bodega.
+- Aplica a ODT y consumos de intervenciones.
+- Recarga y Mantencion no modifican stock, aunque tengan `None` o `0`.
+- Las categorias finitas modifican stock y pueden dejar saldos negativos.
+- La cantidad completa queda registrada, aunque el saldo resultante sea negativo.
 - Si en el futuro se requiere descontar inventario desde ODT, debe definirse primero el momento exacto del descuento, la reversa, la edicion, la eliminacion y el tratamiento de servicios ilimitados.
 
 ### Historial del incidente
@@ -66,8 +66,8 @@ Por requerimiento operativo, los flujos de agregar y modificar productos en ODT 
 2. Productos sin precio provocaban `TypeError` al calcular el subtotal; se establecio precio y subtotal `0` como fallback.
 3. Varias necesidades con el mismo producto sobrescribian la cantidad; ahora se acumulan.
 4. `ODT-EDITAR` no mostraba productos existentes porque el inline formset no recibia `instance=odt`; se corrigio la carga.
-5. Se comprobo que la pantalla de ODT no debia restringir por stock. Se retiro el ajuste de inventario exclusivamente de los flujos ODT.
+5. Se comprobo que ODT e intervenciones deben usar el mismo criterio: servicios ilimitados sin movimiento de stock y categorias finitas con saldos negativos permitidos.
 
 ## Incidente: varias necesidades seleccionadas
 
-Cuando varias filas seleccionadas usaban el mismo producto, `get_or_create()` encontraba el mismo `ItemOdt` y la vista reemplazaba la cantidad acumulada por la cantidad de la ultima fila. Se corrigio para sumar cada cantidad seleccionada al `ItemOdt` existente y descontar solo la cantidad nueva del stock. Esto aplica tanto a servicios ilimitados como a productos con stock finito, dentro de la misma transaccion.
+Cuando varias filas seleccionadas usan el mismo producto, `get_or_create()` encuentra el mismo `ItemOdt` y la vista suma cada cantidad nueva. El stock se ajusta solo por la cantidad agregada y las operaciones se mantienen dentro de la misma transaccion.

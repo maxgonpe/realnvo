@@ -11,17 +11,17 @@ class StockInsuficiente(Exception):
 
 
 def stock_es_ilimitado(producto):
-    """None means unlimited only for Recarga and Mantencion services."""
+    """Recarga and Mantencion never consume stock, regardless of stored value."""
     nombre = producto.categoria.nombre if producto.categoria else ''
     nombre = ''.join(c for c in unicodedata.normalize('NFD', nombre.lower())
                      if unicodedata.category(c) != 'Mn')
-    return producto.stock is None and (
+    return (
         nombre.startswith('recarga') or nombre.startswith('mantencion')
     )
 
 
 def ajustar_stock(producto_id, delta):
-    """Aplica un delta atomico y rechaza saldos negativos."""
+    """Aplica un delta atomico; los productos finitos pueden quedar negativos."""
     delta = Decimal(str(delta))
     with transaction.atomic():
         producto = Producto.objects.select_for_update().get(pk=producto_id)
@@ -29,11 +29,6 @@ def ajustar_stock(producto_id, delta):
             return None
         actual = producto.stock or Decimal('0')
         nuevo = actual + delta
-        if nuevo < 0:
-            raise StockInsuficiente(
-                f'Stock insuficiente para {producto.nombre}: '
-                f'disponible {actual}, solicitado {abs(delta)}.'
-            )
         Producto.objects.filter(pk=producto.pk).update(stock=nuevo)
         return nuevo
 
@@ -56,11 +51,6 @@ def ajustar_cambio_item(producto_anterior_id, cantidad_anterior, producto_nuevo_
             if stock_es_ilimitado(producto):
                 continue
             nuevo = (producto.stock or Decimal('0')) + delta
-            if nuevo < 0:
-                raise StockInsuficiente(
-                    f'Stock insuficiente para {producto.nombre}: '
-                    f'disponible {producto.stock or 0}, solicitado {abs(delta)}.'
-                )
             producto.stock = nuevo
         Producto.objects.bulk_update(productos.values(), ['stock'])
 

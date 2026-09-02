@@ -7,7 +7,7 @@
 
     function fieldFor(prefix) {
         return document.querySelector('[name="' + prefix + '-producto"]') ||
-            document.querySelector('#id_' + prefix.replace(/-/g, '_') + '_producto');
+            document.querySelector('#id_' + prefix + '-producto');
     }
 
     function init() {
@@ -53,7 +53,7 @@
                 var box = item.closest('.producto-search-container');
                 var input = box.querySelector('.producto-search');
                 var prefix = input.dataset.formPrefix;
-                var field = fieldFor(prefix);
+                var field = box.querySelector('[name="' + prefix + '-producto"]') || fieldFor(prefix);
                 if (field) field.value = item.dataset.productoId;
                 box.querySelector('.producto-nombre').textContent = item.dataset.productoNombre;
                 box.querySelector('.producto-details').textContent = item.dataset.productoCategoria +

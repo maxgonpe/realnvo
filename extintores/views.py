@@ -68,6 +68,7 @@ from .decorators import solo_gestor_usuarios
 from .services.stock import (
     StockInsuficiente,
     ajustar_stock,
+    ajustar_cambio_item,
     guardar_consumo_item,
     eliminar_consumo_item,
 )
@@ -181,6 +182,10 @@ def editar_odt(request, pk):
         itemset = ItemOdtFormSet(request.POST or None, instance=odt, prefix='itemodt_set')
 
         if form.is_valid() and formset.is_valid() and itemset.is_valid():
+            items_anteriores = {
+                item.pk: (item.producto_id, item.cantidad)
+                for item in odt.items.all()
+            }
             form.save()
             formset.save()
 
@@ -188,9 +193,14 @@ def editar_odt(request, pk):
             for item in items:
                 item.odt = odt
                 item.save()
-                # ODT products are records only; they do not move inventory.
+                anterior = items_anteriores.get(item.pk)
+                if anterior:
+                    ajustar_cambio_item(anterior[0], anterior[1], item.producto_id, item.cantidad)
+                else:
+                    ajustar_stock(item.producto_id, -item.cantidad)
 
             for obj in itemset.deleted_objects:
+                ajustar_stock(obj.producto_id, obj.cantidad)
                 obj.delete()
 
             registrar_evento(
@@ -354,6 +364,7 @@ def odt_agregar_productos(request, pk):
                                 # Each selected need adds to the existing ODT item.
                                 item.cantidad += cantidad
                                 item.save()
+                            ajustar_stock(producto.pk, -cantidad)
                             procesados += 1
             if not procesados:
                 messages.warning(request, 'No se seleccionó ningún producto válido para agregar.')
@@ -425,12 +436,25 @@ def odt_editar_items(request, pk):
         if formset.is_valid():
             try:
                 with transaction.atomic():
+                    anteriores = {
+                        item.pk: (item.producto_id, item.cantidad)
+                        for item in queryset.select_related('producto')
+                    }
                     instances = formset.save(commit=False)
                     for instance in instances:
                         instance.odt = odt
+                        anterior = anteriores.get(instance.pk)
+                        if anterior:
+                            ajustar_cambio_item(
+                                anterior[0], anterior[1],
+                                instance.producto_id, instance.cantidad,
+                            )
+                        else:
+                            ajustar_stock(instance.producto_id, -instance.cantidad)
                         instance.save()
 
                     for obj in formset.deleted_objects:
+                        ajustar_stock(obj.producto_id, obj.cantidad)
                         obj.delete()
 
                 registrar_evento(
@@ -1769,6 +1793,7 @@ def agregar_item_odt(request, odt_pk):
         producto=producto,
         cantidad=cantidad
     )
+    ajustar_stock(producto.pk, -cantidad)
 
     # Crear compatibilidad genérica
     CompatibilidadProducto.objects.get_or_create(
