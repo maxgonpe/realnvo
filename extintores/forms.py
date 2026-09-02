@@ -170,6 +170,7 @@ class FactorAjusteClienteForm(forms.ModelForm):
         fields = ['cliente', 'categoria', 'factor']
 
 class ItemIntervencionForm(forms.ModelForm):
+    # El producto se sincroniza desde el buscador JS con este campo del formset.
     class Meta:
         model = ItemIntervencion
         fields = ['producto', 'cantidad']

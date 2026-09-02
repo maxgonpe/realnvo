@@ -4,6 +4,7 @@
 {% load static %}
 
 {% block content %}
+{# Flujo de consumos: productos finitos pueden dejar stock negativo; Recarga/Mantencion no descuentan. #}
 <h2 class="mb-4">Consumos en Intervención #{{ intervencion.pk }}</h2>
 
 <style>
@@ -202,7 +203,7 @@
   </div>
 </form>
 
-<script src="{% static 'extintores/js/producto-formset.js' %}?v=6"></script>
-<script src="{% static 'extintores/js/consumo-formset.js' %}?v=6"></script>
+<script src="{% static 'extintores/js/producto-formset.js' %}?v=7"></script>
+<script src="{% static 'extintores/js/consumo-formset.js' %}?v=7"></script>
 
 {% endblock %}

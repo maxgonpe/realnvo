@@ -57,6 +57,7 @@ def ajustar_cambio_item(producto_anterior_id, cantidad_anterior, producto_nuevo_
 
 def guardar_consumo_item(item):
     """Ajusta stock y persiste un consumo, todo dentro de una transaccion."""
+    # Regla unificada: Recarga/Mantencion no consumen stock; otros productos si.
     from ..models import ItemIntervencion
 
     with transaction.atomic():

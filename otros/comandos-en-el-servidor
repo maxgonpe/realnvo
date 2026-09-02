@@ -1,0 +1,23 @@
+root@vmi2813479:/home/max# ps aux | grep gunicorn
+max      1273999  0.0  0.2  29356 23704 ?        Ss   05:24   0:01 /home/max/realnvo_git/env/bin/python /home/max/realnvo_git/env/bin/gunicorn --workers 3 -u max -g max --bind unix:/home/max/realnvo_git/myproject.sock myproject.wsgi:application
+max      1274001  0.2  1.5 302644 124692 ?       Sl   05:24   0:07 /home/max/realnvo_git/env/bin/python /home/max/realnvo_git/env/bin/gunicorn --workers 3 -u max -g max --bind unix:/home/max/realnvo_git/myproject.sock myproject.wsgi:application
+max      1274002  0.1  1.5 300624 122632 ?       Sl   05:24   0:04 /home/max/realnvo_git/env/bin/python /home/max/realnvo_git/env/bin/gunicorn --workers 3 -u max -g max --bind unix:/home/max/realnvo_git/myproject.sock myproject.wsgi:application
+max      1274003  0.1  1.5 302328 124184 ?       Sl   05:24   0:05 /home/max/realnvo_git/env/bin/python /home/max/realnvo_git/env/bin/gunicorn --workers 3 -u max -g max --bind unix:/home/max/realnvo_git/myproject.sock myproject.wsgi:application
+root     1275083  0.0  0.0   3884  1896 pts/0    S+   06:26   0:00 grep gunicorn
+root@vmi2813479:/home/max# readlink -f /proc/$(pgrep -o gunicorn)/cwd
+/home/max/realnvo_git
+root@vmi2813479:/home/max# cd realnvo_git
+root@vmi2813479:/home/max/realnvo_git# source env/bin/activate
+(env) root@vmi2813479:/home/max/realnvo_git# python3 manage.py shell -c "from django.conf import settings; print(settings.BASE_DIR); print(settings.STATIC_ROOT)"
+76 objects imported automatically (use -v 2 for details).
+
+/home/max/realnvo_git
+/home/max/realnvo_git/staticfiles
+(env) root@vmi2813479:/home/max/realnvo_git# sudo nginx -T | grep -E "alias|rrot|static|realnvo"
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+    location /static/ {
+        alias /home/max/realnvo_git/staticfiles/;
+        proxy_pass http://unix:/home/max/realnvo_git/myproject.sock;
+(env) root@vmi2813479:/home/max/realnvo_git# 
+

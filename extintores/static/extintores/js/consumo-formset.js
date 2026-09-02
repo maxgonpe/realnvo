@@ -1,4 +1,5 @@
 (function () {
+    // El envio de consumos no se bloquea por stock; Django recibe el producto sincronizado.
     function init() {
         var root = document.querySelector('[data-consumo-formset]');
         if (!root) return;

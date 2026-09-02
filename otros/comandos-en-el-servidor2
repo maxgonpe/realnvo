@@ -1,0 +1,9 @@
+root@vmi2813479:/home/max/realnvo_git# grep "closest('.card')" /home/max/realnvo_git/staticfiles/extintores/js/producto-formset.js
+            (box.closest('.card') && box.closest('.card').querySelector('select[name*="producto"], input[name*="producto"]')) ||
+root@vmi2813479:/home/max/realnvo_git# grep "closest('.card')" /home/max/realnvo_git/staticfiles/extintores/js/consumo-formset.js
+                if (!field && box && box.closest('.card')) {
+                    field = box.closest('.card').querySelector('select[name*="producto"], input[name*="producto"]');
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/static/extintores/js/producto-formset.js? v=6" | grep "closest"
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/static/extintores/js/consumo-formset.js? v=6" | grep "closest"
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/intervenciones/ID/consumos/" | grep -E "producto-formset|consumo-formset"
+root@vmi2813479:/home/max/realnvo_git# 

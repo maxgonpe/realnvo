@@ -1,0 +1,6 @@
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/static/extintores/js/producto-formset.js?v=6" | grep "closest"
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/static/extintores/js/consumo-formset.js?v=6" | grep "closest"
+root@vmi2813479:/home/max/realnvo_git# curl -s "http://127.0.0.1/intervenciones/290/consumos/" | grep -E "producto-formset|consumo-formset"
+root@vmi2813479:/home/max/realnvo_git# 
+
+

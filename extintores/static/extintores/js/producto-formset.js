@@ -1,4 +1,5 @@
 (function () {
+    // Sincronizacion del producto seleccionado con el campo Django del formset.
     function escapeAttr(value) {
         return String(value == null ? '' : value)
             .replace(/&/g, '&amp;').replace(/"/g, '&quot;')

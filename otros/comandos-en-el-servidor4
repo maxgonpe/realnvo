@@ -1,0 +1,13 @@
+root@vmi2813479:/home/max/realnvo_git# curl -sS -o /dev/null -w "HTTP=%{http_code} URL=%{url_effective} REDIRECT=%{REDIRECT_URL}\n" "http:127.0.0.1/static/extintores/js/consumo-formset.js?v=6"
+curl: (3) URL using bad/illegal format or missing URL
+HTTP=000 URL=http:127.0.0.1/static/extintores/js/consumo-formset.js?v=6 REDIRECT=
+root@vmi2813479:/home/max/realnvo_git# curl -sS -o /dev/null -w "HTTP=%{http_code} URL=%{url_effective} REDIRECT=%{REDIRECT_URL}\n" "http:127.0.0.1/intervenciones/290/consumos/"
+curl: (3) URL using bad/illegal format or missing URL
+HTTP=000 URL=http:127.0.0.1/intervenciones/290/consumos/ REDIRECT=
+root@vmi2813479:/home/max/realnvo_git# curl -sS -o /dev/null -w "HTTP=%{http_code} URL=%{url_effective} REDIRECT=%{redirect_url}\n" "http:127.0.0.1/intervenciones/290/consumos/"
+curl: (3) URL using bad/illegal format or missing URL
+HTTP=000 URL=http:127.0.0.1/intervenciones/290/consumos/ REDIRECT=
+root@vmi2813479:/home/max/realnvo_git# curl -sS -o /dev/null -w "HTTP=%{http_code} URL=%{url_effective}REDIRECT=%{redirect_url}\n" "http:127.0.0.1/intervenciones/290/consumos/"
+curl: (3) URL using bad/illegal format or missing URL
+HTTP=000 URL=http:127.0.0.1/intervenciones/290/consumos/REDIRECT=
+root@vmi2813479:/home/max/realnvo_git# 

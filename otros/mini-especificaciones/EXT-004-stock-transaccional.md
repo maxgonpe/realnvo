@@ -1,5 +1,7 @@
 # Stock transaccional
 
+<!-- Regla vigente aplicada tambien al template INT-EDITAR_CONSUMOS. -->
+
 ## Regla de negocio
 
 Las categorias finitas pueden quedar con stock negativo. Recarga y Mantencion no modifican stock, aunque tengan `None` o `0`; su precio se multiplica directamente por la cantidad. La cantidad ingresada siempre es positiva.

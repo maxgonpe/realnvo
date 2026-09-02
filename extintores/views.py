@@ -2642,6 +2642,7 @@ def alertas_view(request):
 
 
 def editar_consumos_intervencion(request, pk):
+    # Auditoria y stock de consumos: productos finitos admiten saldo negativo.
     intervencion = get_object_or_404(Intervencion, pk=pk)
 
     ItemFormSet = modelformset_factory(
