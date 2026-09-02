@@ -1,0 +1,498 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2 class="mb-4">Consumos en Intervención #{{ intervencion.pk }}</h2>
+
+<style>
+    /* Estilos para búsqueda de productos */
+    .producto-search-container {
+        position: relative;
+    }
+    
+    .producto-results {
+        top: 100%;
+        left: 0;
+        right: 0;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .producto-result-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .producto-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .producto-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .producto-result-name {
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 4px;
+    }
+    
+    .producto-result-details {
+        font-size: 0.875rem;
+        color: #6c757d;
+        line-height: 1.3;
+    }
+    
+    .producto-search-container .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .producto-selected {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 0.375rem;
+        padding: 8px 12px;
+        margin-top: 8px;
+    }
+</style>
+
+<form method="post">
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div id="form-container">
+    {% for form in formset %}
+
+      <input type="hidden" name="{{ form.prefix }}-id" value="{{ form.instance.id }}">
+
+      <div class="card mb-2 shadow-sm p-3">
+        <div class="row align-items-end">
+          <div class="col-md-6">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Producto</label>
+              
+              <!-- Campo de búsqueda AJAX para producto -->
+              <div class="producto-search-container position-relative">
+                <input type="text" 
+                       class="form-control producto-search" 
+                       placeholder="Buscar producto por nombre, categoría, código..."
+                       autocomplete="off"
+                       data-form-prefix="{{ form.prefix }}">
+                <div class="producto-results position-absolute w-100 bg-white border rounded shadow-lg" style="display: none;">
+                  <!-- Los resultados se cargarán aquí -->
+                </div>
+                
+                <!-- Campo oculto del formulario -->
+                <div style="display: none;">
+                  {{ form.producto }}
+                </div>
+                
+                <!-- Producto seleccionado -->
+                <div class="producto-selected" style="display: none;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="producto-nombre"></strong>
+                      <br><small class="text-muted producto-details"></small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger producto-clear">
+                      <i class="bi bi-x"></i> Cambiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Cantidad</label>
+              {{ form.cantidad }}
+            </div>
+          </div>
+          <div class="col-md-3 text-center">
+            <div class="form-check mt-4">
+              {{ form.DELETE }} 
+              <label class="form-check-label text-danger">Eliminar</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">No hay consumos aún. Usa el botón para agregar uno.</p>
+    {% endfor %}
+  </div>
+
+  <!-- formulario vacío oculto -->
+  <template id="empty-form">
+    <div class="card mb-2 shadow-sm p-3">
+      <div class="row align-items-end">
+        <div class="col-md-6">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Producto</label>
+            
+            <!-- Campo de búsqueda AJAX para producto -->
+            <div class="producto-search-container position-relative">
+              <input type="text" 
+                     class="form-control producto-search" 
+                     placeholder="Buscar producto por nombre, categoría, código..."
+                     autocomplete="off"
+                     data-form-prefix="__prefix__">
+              <div class="producto-results position-absolute w-100 bg-white border rounded shadow-lg" style="display: none;">
+                <!-- Los resultados se cargarán aquí -->
+              </div>
+              
+              <!-- Campo oculto del formulario -->
+              <div style="display: none;">
+                {{ formset.empty_form.producto }}
+              </div>
+              
+              <!-- Producto seleccionado -->
+              <div class="producto-selected" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong class="producto-nombre"></strong>
+                    <br><small class="text-muted producto-details"></small>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-danger producto-clear">
+                    <i class="bi bi-x"></i> Cambiar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="mb-2">
+            <label class="form-label small fw-bold">Cantidad</label>
+            {{ formset.empty_form.cantidad }}
+          </div>
+        </div>
+        <div class="col-md-3 text-center">
+          <div class="form-check mt-4">
+            {{ formset.empty_form.DELETE }} 
+            <label class="form-check-label text-danger">Eliminar</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+
+
+  <button type="button" class="btn btn-sm btn-primary mt-2" id="add-form">+ Agregar Producto</button>
+
+  <hr>
+  <div class="d-flex justify-content-end gap-2">
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{% url 'intervencion_detalle' intervencion.pk %}" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // === BÚSQUEDA AJAX DE PRODUCTOS ===
+    let searchTimeouts = {};
+    
+    // Función para buscar productos
+    function buscarProductos(query, searchInput) {
+        if (query.length < 2) {
+            const results = searchInput.parentElement.querySelector('.producto-results');
+            if (results) {
+                results.style.display = 'none';
+            }
+            return;
+        }
+        
+        fetch(`/ajax/buscar-productos/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                mostrarResultadosProductos(data.productos, searchInput);
+            })
+            .catch(error => {
+                console.error('Error en búsqueda de productos:', error);
+                const results = searchInput.parentElement.querySelector('.producto-results');
+                if (results) {
+                    results.style.display = 'none';
+                }
+            });
+    }
+    
+    // Función para mostrar resultados de productos
+    function mostrarResultadosProductos(productos, searchInput) {
+        const results = searchInput.parentElement.querySelector('.producto-results');
+        
+        if (!results) {
+            console.error('No se encontró el elemento .producto-results');
+            return;
+        }
+        
+        if (productos.length === 0) {
+            results.innerHTML = '<div class="producto-result-item text-muted">No se encontraron productos</div>';
+        } else {
+            results.innerHTML = productos.map(producto => `
+                <div class="producto-result-item" data-producto-id="${producto.id}">
+                    <div class="producto-result-name">${producto.nombre}</div>
+                    <div class="producto-result-details">
+                        ${producto.categoria} | Código: ${producto.codigo || 'N/A'} | 
+                        Precio: $${producto.precio.toLocaleString()} | Stock: ${producto.stock}
+                    </div>
+                </div>
+            `).join('');
+        }
+        results.style.display = 'block';
+    }
+    
+    // Función para seleccionar producto
+    function seleccionarProducto(producto, searchInput) {
+        const formPrefix = searchInput.dataset.formPrefix;
+        const productoSelected = searchInput.parentElement.querySelector('.producto-selected');
+        const productoNombre = productoSelected.querySelector('.producto-nombre');
+        const productoDetails = productoSelected.querySelector('.producto-details');
+        
+        console.log('Seleccionando producto:', producto); // Debug
+        console.log('Form prefix:', formPrefix); // Debug
+        
+        // Buscar el campo del formulario de múltiples maneras
+        let formProductoField = document.querySelector(`select[name="${formPrefix}-producto"]`);
+        if (!formProductoField) {
+            formProductoField = document.querySelector(`input[name="${formPrefix}-producto"]`);
+        }
+        if (!formProductoField) {
+            // Buscar por ID
+            formProductoField = document.querySelector(`#id_${formPrefix}-producto`);
+        }
+        if (!formProductoField) {
+            // Buscar en el contenedor del formulario
+            const formContainer = searchInput.closest('.card');
+            formProductoField = formContainer.querySelector('select[name*="producto"]');
+        }
+        
+        console.log('Campo del formulario encontrado:', formProductoField); // Debug
+        
+        // Debug: Listar todos los campos disponibles
+        const allInputs = document.querySelectorAll('input, select');
+        console.log('Todos los campos en la página:');
+        allInputs.forEach((field, index) => {
+            if (field.name && field.name.includes('producto')) {
+                console.log(`Campo ${index}: name="${field.name}", id="${field.id}", type="${field.type}"`);
+            }
+        });
+        
+        if (formProductoField) {
+            formProductoField.value = producto.id;
+            console.log('Valor asignado al campo:', formProductoField.value); // Debug
+        } else {
+            console.error('No se encontró el campo del formulario para:', formPrefix);
+        }
+        
+        productoNombre.textContent = producto.nombre;
+        productoDetails.textContent = `${producto.categoria} | $${producto.precio.toLocaleString()} | Stock: ${producto.stock}`;
+        
+        searchInput.style.display = 'none';
+        searchInput.parentElement.querySelector('.producto-results').style.display = 'none';
+        productoSelected.style.display = 'block';
+    }
+    
+    // Event listeners para búsqueda de productos
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('producto-search')) {
+            const searchInput = e.target;
+            const query = searchInput.value;
+            
+            clearTimeout(searchTimeouts[searchInput.dataset.formPrefix]);
+            searchTimeouts[searchInput.dataset.formPrefix] = setTimeout(() => {
+                buscarProductos(query, searchInput);
+            }, 300);
+        }
+    });
+    
+    // Event listener para seleccionar producto
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.producto-result-item')) {
+            const item = e.target.closest('.producto-result-item');
+            const searchInput = item.closest('.producto-search-container').querySelector('.producto-search');
+            const productoId = item.dataset.productoId;
+            
+            // Obtener datos del producto desde el HTML
+            const productoNombre = item.querySelector('.producto-result-name').textContent;
+            const productoDetails = item.querySelector('.producto-result-details').textContent;
+            
+            const producto = {
+                id: productoId,
+                nombre: productoNombre,
+                categoria: productoDetails.split(' | ')[0],
+                codigo: productoDetails.split('Código: ')[1]?.split(' | ')[0] || 'N/A',
+                precio: parseFloat(productoDetails.split('Precio: $')[1]?.split(' | ')[0]?.replace(/,/g, '') || 0),
+                stock: parseInt(productoDetails.split('Stock: ')[1] || 0)
+            };
+            
+            seleccionarProducto(producto, searchInput);
+        }
+    });
+    
+    // Event listener para limpiar selección
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('producto-clear')) {
+            const productoSelected = e.target.closest('.producto-selected');
+            const searchContainer = productoSelected.closest('.producto-search-container');
+            const searchInput = searchContainer.querySelector('.producto-search');
+            const formPrefix = searchInput.dataset.formPrefix;
+            
+            console.log('Limpiando selección para form prefix:', formPrefix); // Debug
+            
+            // Buscar el campo del formulario de múltiples maneras
+            let formProductoField = document.querySelector(`select[name="${formPrefix}-producto"]`);
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`input[name="${formPrefix}-producto"]`);
+            }
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`#id_${formPrefix}-producto`);
+            }
+            if (!formProductoField) {
+                const formContainer = searchInput.closest('.card');
+                formProductoField = formContainer.querySelector('select[name*="producto"]');
+            }
+            
+            console.log('Campo del formulario encontrado:', formProductoField); // Debug
+            
+            if (formProductoField) {
+                formProductoField.value = '';
+                console.log('Campo limpiado'); // Debug
+            }
+            
+            searchInput.value = '';
+            searchInput.style.display = 'block';
+            productoSelected.style.display = 'none';
+            searchContainer.querySelector('.producto-results').style.display = 'none';
+        }
+    });
+    
+    // Ocultar resultados al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.producto-search-container')) {
+            document.querySelectorAll('.producto-results').forEach(results => {
+                results.style.display = 'none';
+            });
+        }
+    });
+    
+    // === VALIDACIÓN ANTES DE ENVIAR ===
+    document.querySelector('form').addEventListener('submit', function(e) {
+        console.log('Validando formulario antes de enviar...'); // Debug
+        
+        // Verificar que todos los productos seleccionados tengan su campo sincronizado
+        const productoSearchInputs = document.querySelectorAll('.producto-search');
+        let errores = [];
+        
+        productoSearchInputs.forEach((searchInput, index) => {
+            const formPrefix = searchInput.dataset.formPrefix;
+            const productoSelected = searchInput.parentElement.querySelector('.producto-selected');
+            
+            // Buscar el campo del formulario de múltiples maneras
+            let formProductoField = document.querySelector(`select[name="${formPrefix}-producto"]`);
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`input[name="${formPrefix}-producto"]`);
+            }
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`#id_${formPrefix}-producto`);
+            }
+            if (!formProductoField) {
+                const formContainer = searchInput.closest('.card');
+                formProductoField = formContainer.querySelector('select[name*="producto"]');
+            }
+            
+            // Si hay un producto seleccionado visualmente pero no en el campo del formulario
+            if (productoSelected && productoSelected.style.display !== 'none') {
+                if (!formProductoField || !formProductoField.value) {
+                    errores.push(`Línea ${index + 1}: Producto seleccionado pero no sincronizado`);
+                }
+            }
+        });
+        
+        if (errores.length > 0) {
+            e.preventDefault();
+            alert('Errores de sincronización:\n' + errores.join('\n'));
+            return false;
+        }
+        
+        console.log('Formulario validado correctamente'); // Debug
+    });
+
+    // === INICIALIZAR ESTADO DE PRODUCTOS EXISTENTES ===
+    function inicializarProductosExistentes() {
+        const productoSearchInputs = document.querySelectorAll('.producto-search');
+        
+        productoSearchInputs.forEach((searchInput) => {
+            const formPrefix = searchInput.dataset.formPrefix;
+            
+            // Buscar el campo del formulario
+            let formProductoField = document.querySelector(`select[name="${formPrefix}-producto"]`);
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`input[name="${formPrefix}-producto"]`);
+            }
+            if (!formProductoField) {
+                formProductoField = document.querySelector(`#id_${formPrefix}-producto`);
+            }
+            if (!formProductoField) {
+                const formContainer = searchInput.closest('.card');
+                formProductoField = formContainer.querySelector('select[name*="producto"]');
+            }
+            
+            // Si ya hay un producto seleccionado, mostrar el estado seleccionado
+            if (formProductoField && formProductoField.value) {
+                const productoSelected = searchInput.parentElement.querySelector('.producto-selected');
+                const productoNombre = productoSelected.querySelector('.producto-nombre');
+                const productoDetails = productoSelected.querySelector('.producto-details');
+                
+                // Obtener el nombre del producto desde el select
+                const selectedOption = formProductoField.querySelector(`option[value="${formProductoField.value}"]`);
+                if (selectedOption) {
+                    productoNombre.textContent = selectedOption.textContent;
+                    productoDetails.textContent = 'Producto seleccionado';
+                    
+                    // Mostrar el estado seleccionado y ocultar el campo de búsqueda
+                    searchInput.style.display = 'none';
+                    searchInput.parentElement.querySelector('.producto-results').style.display = 'none';
+                    productoSelected.style.display = 'block';
+                }
+            }
+        });
+    }
+    
+    // Inicializar al cargar la página
+    inicializarProductosExistentes();
+
+    // === FUNCIONALIDAD ORIGINAL DE AGREGAR FORMULARIOS ===
+    const addButton = document.getElementById("add-form");
+    const container = document.getElementById("form-container");
+    const totalForms = document.getElementById("id_form-TOTAL_FORMS");
+    const emptyTemplate = document.getElementById("empty-form").innerHTML;
+
+    addButton.addEventListener("click", function () {
+        const newIndex = parseInt(totalForms.value);
+        const newFormHtml = emptyTemplate.replace(/__prefix__/g, newIndex);
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = newFormHtml;
+        container.appendChild(wrapper);
+
+        totalForms.value = newIndex + 1;
+        
+        // Inicializar el nuevo formulario agregado
+        setTimeout(() => {
+            inicializarProductosExistentes();
+        }, 100);
+    });
+});
+</script>
+
+{% endblock %}
+

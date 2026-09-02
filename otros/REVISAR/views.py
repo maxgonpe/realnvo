@@ -1,6 +1,4 @@
 # === IMPORTS GENERALES ===
-import re
-import logging
 from datetime import timedelta
 from decimal import Decimal
 from collections import Counter
@@ -10,13 +8,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group, Permission, User
+from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Q, F, Sum, Count, OuterRef, Subquery
+from django.db.models import Q, F, Sum, Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import inlineformset_factory, modelformset_factory
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string, get_template
 from django.templatetags.static import static
@@ -24,8 +22,6 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.timezone import now
 from collections import Counter
-
-logger = logging.getLogger(__name__)
 from django.db.models import Sum
 from datetime import datetime
 from django.views import View
@@ -49,8 +45,7 @@ from .models import (
     Odt, DetalleOdt, Producto, Cliente, CompatibilidadProducto,
     ItemOdt, CategoriaProducto, Bitacora, FactorAjusteCliente,
     IngresoStock, DetalleIngreso, EstadisticaMensual,
-    EstadisticaDetalleExtintor, EstadisticaDetalleProducto, ItemIntervencion,
-    TechnicianProfile, ImagenServicio,
+    EstadisticaDetalleExtintor, EstadisticaDetalleProducto,ItemIntervencion
 )
 
 # === FORMULARIOS ===
@@ -64,22 +59,6 @@ from .forms import (
 from .utils import obtener_factor, descontar_stock,\
                    revertir_stock, actualizar_stock_item_odt,\
                    generar_estadisticas_mensuales
-from .decorators import solo_gestor_usuarios
-from .services.stock import (
-    StockInsuficiente,
-    ajustar_stock,
-    ajustar_cambio_item,
-    stock_es_ilimitado,
-    guardar_consumo_item,
-    eliminar_consumo_item,
-)
-from .services.auditoria import registrar_evento
-from .permissions import (
-    ROLE_ADMINISTRADOR, ROLE_SUPERVISOR, ROLE_TECNICO, ROLE_INVENTARIO,
-    ROLE_SOLO_LECTURA, PERM_GESTIONAR_USUARIOS, PERM_GESTIONAR_PERMISOS,
-    PERM_FIRMAR_DOCUMENTOS, PERM_VER_FINANZAS,
-    ROLE_DEFAULT_PERMISSIONS,
-)
 
 from django.template.loader import render_to_string
 from weasyprint import HTML
@@ -105,38 +84,13 @@ ESTADO_CHOICES = [
 # === FUNCIONES AUXILIARES ===
 def registrar_bitacora(usuario, accion, modelo, objeto_id=None, descripcion=""):
     """Registra una acción en la bitácora."""
-    return registrar_evento(
-        usuario=usuario, accion=accion, modelo=modelo,
-        objeto_id=objeto_id, descripcion=descripcion,
+    Bitacora.objects.create(
+        usuario=usuario,
+        accion=accion,
+        modelo=modelo,
+        objeto_id=objeto_id,
+        descripcion=descripcion
     )
-
-
-@login_required
-def bitacora_lista(request):
-    if not request.user.is_superuser:
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied
-    registros = Bitacora.objects.select_related('usuario').order_by('-fecha')
-    for field in ('accion', 'modelo', 'resultado'):
-        value = request.GET.get(field)
-        if value:
-            registros = registros.filter(**{field: value})
-    usuario = request.GET.get('usuario')
-    if usuario:
-        registros = registros.filter(usuario__username__icontains=usuario)
-    return render(request, 'bitacora/lista.html', {'registros': registros[:500]})
-
-
-@login_required
-@require_POST
-def bitacora_eliminar(request):
-    if not request.user.is_superuser:
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied
-    ids = request.POST.getlist('ids')
-    if ids:
-        Bitacora.objects.filter(id__in=ids).delete()
-    return redirect('bitacora_lista')
 
 # === VISTAS ODT ===
 
@@ -167,7 +121,13 @@ def eliminar_odt(request, pk):
     odt = get_object_or_404(Odt, pk=pk)
     if request.method == 'POST':
         odt.delete()
-        registrar_evento(request=request, accion='Eliminar', modelo='Odt', objeto_id=pk, descripcion=f'Se eliminó la ODT #{pk}.')
+        registrar_bitacora(
+            usuario=request.user,
+            accion='Eliminar',
+            modelo='Odt',
+            objeto_id=pk,
+            descripcion=f"El usuario {request.user.username} eliminó la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+        )
         return redirect('odt_lista')
     return render(request, 'odt/eliminar.html', {'odt': odt})
 
@@ -183,45 +143,32 @@ def editar_odt(request, pk):
         itemset = ItemOdtFormSet(request.POST or None, instance=odt, prefix='itemodt_set')
 
         if form.is_valid() and formset.is_valid() and itemset.is_valid():
-            items_anteriores = {
-                item.pk: (item.producto_id, item.cantidad)
-                for item in odt.items.all()
-            }
             form.save()
             formset.save()
+
+            original_items = {item.pk: item for item in odt.items.all()}
 
             items = itemset.save(commit=False)
             for item in items:
                 item.odt = odt
                 item.save()
-                anterior = items_anteriores.get(item.pk)
-                if anterior:
-                    ajustar_cambio_item(anterior[0], anterior[1], item.producto_id, item.cantidad)
-                else:
-                    ajustar_stock(item.producto_id, -item.cantidad)
+                item_original = original_items.get(item.pk)
+                actualizar_stock_item_odt(item, item_original)
 
             for obj in itemset.deleted_objects:
-                ajustar_stock(obj.producto_id, obj.cantidad)
+                revertir_stock(obj.producto, obj.cantidad)
                 obj.delete()
-
-            registrar_evento(
-                request=request,
-                accion='Actualizar',
-                modelo='Odt',
-                objeto=odt,
-                descripcion=f"Se actualizó la ODT #{odt.pk}.",
-            )
 
             return redirect('odt_lista')
         else:
-            logger.warning("Errores form: %s", form.errors)
-            logger.warning("Errores detalle formset: %s", formset.errors)
-            logger.warning("Errores itemset: %s", itemset.errors)
+            print("Errores form:", form.errors)
+            print("Errores detalle formset:", formset.errors)
+            print("Errores itemset:", itemset.errors)
 
     else:
         form = OdtForm(instance=odt)
         formset = DetalleOdtFormSet(instance=odt, prefix='detalleodt')
-        itemset = ItemOdtFormSet(instance=odt, prefix='itemodt_set')
+        itemset = ItemOdtFormSet(queryset=odt.items.all(), prefix='itemodt_set')
 
     componentes = {
         'exterior': 'exterior',
@@ -250,10 +197,13 @@ def editar_odt(request, pk):
         if problemas:
             sugerencias.append({'extintor': detalle, 'problemas': problemas})
 
-    itemset_con_subtotales = [
-        (form, form.instance.subtotal, form.instance.precio_con_factor)
-        for form in itemset.forms
-    ]
+    registrar_bitacora(
+        usuario=request.user,
+        accion='Editar',
+        modelo='Odt',
+        objeto_id=pk,
+        descripcion=f"El usuario {request.user.username} editó la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+    )
 
     return render(request, 'odt/editar.html', {
         'form': form,
@@ -261,9 +211,7 @@ def editar_odt(request, pk):
         'itemset': itemset,
         'odt': odt,
         'sugerencias': sugerencias,
-        'productos_disponibles': productos_disponibles,
-        'itemset_con_subtotales': itemset_con_subtotales,
-        'imagenes_intervencion': odt.intervencion.imagenes.all() if odt.intervencion_id else [],
+        'productos_disponibles': productos_disponibles
     })
 
 
@@ -340,51 +288,36 @@ def odt_agregar_productos(request, pk):
             })
 
     sugerencias_agrupadas = dict(temp_agrupado)
-    error_stock = None
 
     # --- Procesar formulario POST ---
     if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                procesados = 0
-                for sug in sugerencias:
-                    detalle = sug['extintor']
-                    for problema in sug['problemas']:
-                        campo = problema['campo']
-                        key_sel = f'seleccionado_{detalle.pk}_{campo}'
-                        key_prod = f'producto_id_{detalle.pk}_{campo}'
-                        key_cant = f'cantidad_{detalle.pk}_{campo}'
-                        if request.POST.get(key_sel) and request.POST.get(key_prod):
-                            producto = Producto.objects.get(pk=request.POST[key_prod])
-                            cantidad = int(request.POST.get(key_cant, 1))
-                            item, created = ItemOdt.objects.get_or_create(
-                                odt=odt, producto=producto,
-                                defaults={'cantidad': cantidad}
-                            )
-                            if not created:
-                                # Each selected need adds to the existing ODT item.
-                                item.cantidad += cantidad
-                                item.save()
-                            ajustar_stock(producto.pk, -cantidad)
-                            procesados += 1
-            if not procesados:
-                messages.warning(request, 'No se seleccionó ningún producto válido para agregar.')
-            else:
-                registrar_evento(
-                    request=request, accion='Actualizar', modelo='ItemOdt',
-                    objeto_id=odt.pk,
-                    descripcion=f'Se agregaron {procesados} necesidades a la ODT #{odt.pk}.',
-                    metadatos={'cantidad_operaciones': procesados, 'sin_movimiento_stock': True},
-                )
-            return redirect('odt_agregar_productos', pk=odt.pk)
-        except StockInsuficiente as exc:
-            error_stock = str(exc)
-            registrar_evento(
-                request=request, accion='Actualizar', modelo='Odt',
-                objeto=odt, descripcion=error_stock, resultado='rechazado',
-                metadatos={'sin_movimiento_stock': True},
-            )
-            messages.error(request, error_stock)
+        for sug in sugerencias:
+            detalle = sug['extintor']
+            for problema in sug['problemas']:
+                campo = problema['campo']
+                key_sel = f'seleccionado_{detalle.pk}_{campo}'
+                key_prod = f'producto_id_{detalle.pk}_{campo}'
+                key_cant = f'cantidad_{detalle.pk}_{campo}'
+                if request.POST.get(key_sel) and request.POST.get(key_prod):
+                    producto_id = request.POST.get(key_prod)
+                    cantidad = int(request.POST.get(key_cant, 1))
+                    producto = Producto.objects.get(pk=producto_id)
+
+                    item, created = ItemOdt.objects.get_or_create(
+                        odt=odt,
+                        producto=producto,
+                        defaults={'cantidad': cantidad}
+                    )
+                    if not created:
+                        diferencia = cantidad - item.cantidad
+                        item.cantidad = cantidad
+                        item.save()
+                        if diferencia > 0:
+                            descontar_stock(producto, diferencia)
+                    else:
+                        descontar_stock(producto, cantidad)
+
+        return redirect('odt_agregar_productos', pk=odt.pk)
 
     # --- Calcular total ---
     total = sum(item.subtotal for item in odt.items.all())
@@ -405,8 +338,8 @@ def odt_agregar_productos(request, pk):
     resumen_agrupado.sort(key=lambda x: (x['problema'], x['agente'], x['peso']))
 
     # --- Render final ---
-    logger.debug("sugerencias count: %s", len(sugerencias))
-    logger.debug("sugerencias_agrupadas keys: %s", list(sugerencias_agrupadas.keys()))
+    print("DEBUG - sugerencias count:", len(sugerencias))
+    print("DEBUG - sugerencias_agrupadas keys:", list(sugerencias_agrupadas.keys()))
 
     return render(request, 'odt/agregar_productos.html', {
         'odt': odt,
@@ -415,7 +348,6 @@ def odt_agregar_productos(request, pk):
         'sugerencias_agrupadas': sugerencias_agrupadas,
         'total': total,
         'resumen_agrupado': resumen_agrupado,
-        'error_stock': error_stock,
     })
 
 
@@ -435,41 +367,23 @@ def odt_editar_items(request, pk):
 
     if request.method == 'POST':
         if formset.is_valid():
-            try:
-                with transaction.atomic():
-                    anteriores = {
-                        item.pk: (item.producto_id, item.cantidad)
-                        for item in queryset.select_related('producto')
-                    }
-                    instances = formset.save(commit=False)
-                    for instance in instances:
-                        instance.odt = odt
-                        anterior = anteriores.get(instance.pk)
-                        if anterior:
-                            ajustar_cambio_item(
-                                anterior[0], anterior[1],
-                                instance.producto_id, instance.cantidad,
-                            )
-                        else:
-                            ajustar_stock(instance.producto_id, -instance.cantidad)
-                        instance.save()
+            original_items = {item.pk: item for item in queryset}
 
-                    for obj in formset.deleted_objects:
-                        ajustar_stock(obj.producto_id, obj.cantidad)
-                        obj.delete()
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.odt = odt
+                instance.save()
 
-                registrar_evento(
-                    request=request, accion='Actualizar', modelo='ItemOdt',
-                    objeto_id=odt.pk,
-                    descripcion=f'Se actualizaron los productos de la ODT #{odt.pk}.',
-                    metadatos={'sin_movimiento_stock': True},
-                )
+                item_original = original_items.get(instance.pk)
+                actualizar_stock_item_odt(instance, item_original)
 
-                return redirect('odt_editar_items', pk=odt.pk)
-            except StockInsuficiente as exc:
-                formset._non_form_errors = forms.utils.ErrorList([str(exc)])
+            for obj in formset.deleted_objects:
+                revertir_stock(obj.producto, obj.cantidad)
+                obj.delete()
+
+            return redirect('odt_editar_items', pk=odt.pk)
         else:
-            logger.warning("Errores formset: %s", formset.errors)
+            print("Errores:", formset.errors)
 
     total = sum(item.subtotal for item in queryset)
 
@@ -621,7 +535,13 @@ def odt_pdf(request, pk):
     response['Content-Disposition'] = f'inline; filename="ODT-{odt.pk}.pdf"'
 
     # 🔹 Registrar en bitácora
-    registrar_evento(request=request, accion='Exportar', modelo='Odt', objeto=odt, descripcion=f'Se exportó la ODT #{odt.pk} a PDF.')
+    registrar_bitacora(
+        usuario=request.user,
+        accion='Crear',
+        modelo='Odt',
+        objeto_id=pk,
+        descripcion=f"El usuario {request.user.username} creó el PDF para la ODT #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+    )
 
     return response
 
@@ -669,123 +589,18 @@ def odt_excel(request, pk):
     response['Content-Disposition'] = f'attachment; filename={filename}'
     wb.save(response)
 
-    registrar_evento(request=request, accion='Exportar', modelo='Odt', objeto=odt, descripcion=f'Se exportó la ODT #{odt.pk} a Excel.')
+    registrar_bitacora(
+                        usuario=request.user,
+                        accion='Crear',
+                        modelo='Odt',
+                        objeto_id=pk,
+                        descripcion = f"El usuario {request.user.username} creo el documento Excel para la Odt #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+                        
+                    )
 
     return response
 
 # === VISTAS INTERVENCIÓN ===
-
-def _intervencion_fecha_busqueda_q(query):
-    """
-    Filtro por fecha en formato dd/mm/aaaa (o mm/aaaa, dd/mm).
-    Usa ? como comodín: ??/05/??? (mayo), ??/??/2026 (año), 16/03/2026 (día exacto).
-    Retorna 'incomplete' si el usuario aún está escribiendo (no vaciar la lista).
-    """
-    query = query.strip()
-    if '/' not in query:
-        return None
-
-    parts = [p.strip() for p in query.split('/')]
-
-    if any(part == '' for part in parts):
-        return 'incomplete'
-
-    segment_re = re.compile(r'^[\d?]+$')
-
-    def parse_segment(segment):
-        if not segment_re.fullmatch(segment):
-            return 'invalid'
-        if all(ch == '?' for ch in segment):
-            return None
-        if '?' in segment:
-            return 'invalid'
-        return int(segment)
-
-    def build_q(day=None, month=None, year=None):
-        if day is None and month is None and year is None:
-            return None
-        if year is not None and year < 100:
-            year += 2000
-        fecha_q = Q()
-        if day is not None:
-            fecha_q &= Q(fecha__day=day)
-        if month is not None:
-            fecha_q &= Q(fecha__month=month)
-        if year is not None:
-            fecha_q &= Q(fecha__year=year)
-        return fecha_q
-
-    if len(parts) == 2:
-        if parts[1].isdigit() and len(parts[1]) < 2:
-            return 'incomplete'
-
-        left = parse_segment(parts[0])
-        right = parse_segment(parts[1])
-        if 'invalid' in (left, right):
-            return None
-
-        right_raw = parts[1]
-        left_raw = parts[0]
-
-        if right_raw.isdigit() and len(right_raw) == 3:
-            return 'incomplete'
-
-        is_year_part = False
-        if all(ch == '?' for ch in right_raw) and len(right_raw) >= 2:
-            is_year_part = True
-        elif right_raw.isdigit():
-            right_num = int(right_raw)
-            if len(right_raw) >= 4 or right_num > 31:
-                is_year_part = True
-            elif (
-                len(right_raw) == 2
-                and left_raw.isdigit()
-                and int(left_raw) <= 12
-            ):
-                is_year_part = True
-
-        if is_year_part:
-            return build_q(month=left, year=right)
-        return build_q(day=left, month=right)
-
-    if len(parts) != 3:
-        return None
-
-    if not all(segment_re.fullmatch(part) for part in parts):
-        return None
-
-    day = parse_segment(parts[0])
-    month = parse_segment(parts[1])
-    year = parse_segment(parts[2])
-
-    if 'invalid' in (day, month, year):
-        return None
-
-    if parts[2].isdigit() and len(parts[2]) == 3:
-        return 'incomplete'
-
-    return build_q(day=day, month=month, year=year)
-
-
-def _intervencion_busqueda_q(query):
-    query = query.strip()
-    if not query:
-        return None
-
-    fecha_q = _intervencion_fecha_busqueda_q(query)
-    if fecha_q == 'incomplete':
-        return None
-    if fecha_q is not None:
-        return fecha_q
-
-    return (
-        Q(cliente__nombre__icontains=query) |
-        Q(alias__icontains=query) |
-        Q(tecnico__first_name__icontains=query) |
-        Q(tecnico__last_name__icontains=query) |
-        Q(tipo__icontains=query)
-    )
-
 
 class IntervencionListView(LoginRequiredMixin, ListView):
     model = Intervencion
@@ -793,9 +608,15 @@ class IntervencionListView(LoginRequiredMixin, ListView):
     context_object_name = 'intervenciones'
     def get_queryset(self):
         queryset = Intervencion.objects.all().order_by('-id')
-        busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
-        if busqueda is not None:
-            queryset = queryset.filter(busqueda)
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            queryset = queryset.filter(
+                Q(cliente__nombre__icontains=query) |
+                Q(alias__icontains=query) |
+                Q(tecnico__first_name__icontains=query) |
+                Q(tecnico__last_name__icontains=query) |
+                Q(tipo__icontains=query)
+            )
         return queryset
 
 
@@ -804,10 +625,17 @@ class IntervencionAjaxListView(LoginRequiredMixin, ListView):
     context_object_name = 'intervenciones'
 
     def get_queryset(self):
+        query = self.request.GET.get("q", "").strip()
         queryset = Intervencion.objects.all().order_by('-id')
-        busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
-        if busqueda is not None:
-            queryset = queryset.filter(busqueda)
+        if query:
+            queryset = queryset.filter(
+                Q(cliente__nombre__icontains=query) |
+                Q(alias__icontains=query) |
+                Q(tecnico__first_name__icontains=query) |
+                Q(tecnico__last_name__icontains=query) |
+                Q(tipo__icontains=query)
+                # No se puede buscar por fecha con icontains si es un campo Date
+            )
         return queryset
 
     def get(self, request, *args, **kwargs):
@@ -860,13 +688,6 @@ def crear_intervencion(request):
                 imagen_instance = imagenes_form.save(commit=False)
                 imagen_instance.intervencion = intervencion
                 imagen_instance.save()
-                for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=1):
-                    ImagenServicio.objects.create(
-                        intervencion=intervencion,
-                        archivo=archivo,
-                        orden=orden,
-                        usuario_carga=request.user,
-                    )
                 
                 # Crear ODT si aplica
                 if intervencion.con_odt:
@@ -914,24 +735,21 @@ def crear_intervencion(request):
                             #baja_por_fuera_norma=d.baja_por_fuera_norma,
                         )
 
-                    registrar_evento(request=request, accion='Crear', modelo='Odt', objeto=odt, descripcion=f'Se creó la ODT #{odt.pk}.')
-
-                registrar_evento(
-                    request=request,
-                    accion='Crear',
-                    modelo='Intervencion',
-                    objeto=intervencion,
-                    descripcion=f"Se creó la intervención #{intervencion.pk}.",
-                    metadatos={'tipo': intervencion.tipo, 'con_odt': intervencion.con_odt},
-                )
+                    registrar_bitacora(
+                        usuario=request.user,
+                        accion='Crear',
+                        modelo='Odt',
+                        objeto_id=odt.pk,
+                        descripcion=f"El usuario {request.user.username} creó la ODT #{odt.pk} con fecha {odt.fecha.strftime('%Y-%m-%d')}."
+                    )
                 
                 return redirect('intervencion_lista')
         else:
             # Manejo de errores detallado
-            logger.warning("Formulario no válido")
-            logger.warning("Errores en IntervencionForm: %s", form.errors)
-            logger.warning("Errores en Formset: %s", formset.errors)
-            logger.warning("Errores en ImagenIntervencionForm: %s", imagenes_form.errors)
+            print("Formulario no válido")
+            print("Errores en IntervencionForm:", form.errors)
+            print("Errores en Formset:", formset.errors)
+            print("Errores en ImagenIntervencionForm:", imagenes_form.errors)
             
             # Renderizar nuevamente con errores
             return render(request, 'intervenciones/crear.html', {
@@ -1019,14 +837,6 @@ def editar_intervencion(request, pk):
             imagen_instance = imagenes_form.save(commit=False)
             imagen_instance.intervencion = intervencion
             imagen_instance.save()
-            siguiente_orden = intervencion.imagenes_nuevas.order_by('-orden').values_list('orden', flat=True).first() or 0
-            for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=siguiente_orden + 1):
-                ImagenServicio.objects.create(
-                    intervencion=intervencion,
-                    archivo=archivo,
-                    orden=orden,
-                    usuario_carga=request.user,
-                )
 
             # ✅ Ahora sí, detalles guardados — podemos crear la ODT
             if intervencion.con_odt and not hasattr(intervencion, 'odt_rel'):
@@ -1068,22 +878,20 @@ def editar_intervencion(request, pk):
                         #baja_por_fuera_norma=d.baja_por_fuera_norma,
                     )
 
-                registrar_evento(request=request, accion='Crear', modelo='Odt', objeto=odt, descripcion=f'Se generó la ODT para la intervención #{intervencion.pk}.')
-
-            registrar_evento(
-                request=request,
-                accion='Actualizar',
-                modelo='Intervencion',
-                objeto=intervencion,
-                descripcion=f"Se actualizó la intervención #{intervencion.pk}.",
-            )
+                registrar_bitacora(
+                    usuario=request.user,
+                    accion='Crear',
+                    modelo='Odt',
+                    objeto_id=intervencion.pk,
+                    descripcion=f"El usuario {request.user.username} generó una ODT para la intervención #{intervencion.pk}."
+                )
 
             return redirect('intervencion_detalle', pk=intervencion.pk)
         else:
-            logger.warning("Formulario no válido")
-            logger.warning("Errores en IntervencionForm: %s", form.errors)
-            logger.warning("Errores en Formset: %s", formset.errors)
-            logger.warning("Errores en ImagenIntervencionForm: %s", imagenes_form.errors)
+            print("Formulario no válido")
+            print("Errores en IntervencionForm:", form.errors)
+            print("Errores en Formset:", formset.errors)
+            print("Errores en ImagenIntervencionForm:", imagenes_form.errors)
     else:
         form = IntervencionForm(instance=intervencion)
         formset = DetalleIntervencionFormSet(instance=intervencion, prefix='detalles')
@@ -1102,16 +910,17 @@ def editar_intervencion(request, pk):
 def eliminar_intervencion(request, pk):
     intervencion = get_object_or_404(Intervencion, pk=pk)
     if request.method == 'POST':
-        descripcion = f"Se eliminó la intervención #{intervencion.pk}."
         intervencion.delete()
-        registrar_evento(
-            request=request,
-            accion='Eliminar',
-            modelo='Intervencion',
-            objeto_id=pk,
-            descripcion=descripcion,
-        )
         return redirect('intervencion_lista')  # Cambia por la URL de tu lista de productos
+
+    registrar_bitacora(
+                usuario=request.user,
+                accion='Eliminar una Intervención',
+                modelo='Intervencion',
+                objeto_id=pk,
+                descripcion = f"El usuario {request.user.username} eliminó la intervención #{intervencion.pk} con fecha {intervencion.fecha.strftime('%Y-%m-%d')}."
+                
+            )
 
     return render(request, 'intervenciones/eliminar.html', {'intervencion': intervencion})
 
@@ -1376,7 +1185,14 @@ class IntervencionExcel(View):
         response['Content-Disposition'] = f'attachment; filename={nombre_archivo}'
         wb.save(response)
 
-        registrar_evento(request=request, accion='Exportar', modelo='Intervencion', objeto=intervencion, descripcion=f'Se exportó la intervención #{intervencion.pk} a Excel.')
+        registrar_bitacora(
+                        usuario=self.request.user,
+                        accion='Crear',
+                        modelo='Intervencion',
+                        objeto_id=pk,
+                        descripcion = f"El usuario {request.user.username} creo el documento Excel para el Servicio #{intervencion.pk} con fecha {intervencion.fecha.strftime('%Y-%m-%d')}."
+                        
+                    )
 
         return response
 
@@ -1544,7 +1360,6 @@ class IntervencionPDF(View):
             'intervencion': intervencion,
             'detalles': detalles,
             'imagenes': imagenes,
-            'imagenes_nuevas': intervencion.imagenes_nuevas.all(),
             'estadistica': estadistica,
             'total_extintores': total,
             'conteo_agente': dict(conteo_agente),
@@ -1571,7 +1386,13 @@ class IntervencionPDF(View):
         response = HttpResponse(pdf_file, content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="Intervencion-{pk}.pdf"'
 
-        registrar_evento(request=request, accion='Exportar', modelo='Intervencion', objeto=intervencion, descripcion=f'Se exportó la intervención #{intervencion.pk} a PDF.')
+        registrar_bitacora(
+            usuario=request.user,
+            accion='Crear',
+            modelo='Intervencion',
+            objeto_id=pk,
+            descripcion=f"El usuario {request.user.username} creó el PDF para el Servicio #{intervencion.pk} del {intervencion.fecha.strftime('%Y-%m-%d')}."
+        )
 
         return response
 
@@ -1579,56 +1400,44 @@ class IntervencionPDF(View):
 # === VISTAS PRODUCTO ===
 
 
+@login_required
+def usuarios_simple(request):
+    """
+    Listado simple de usuarios (solo superuser o usuario 'andres').
+    Misma condición que el botón en intervenciones/lista.html para que el reverse no falle.
+    """
+    if not (request.user.is_superuser or request.user.username == 'andres'):
+        return redirect('intervencion_lista')
+    usuarios = User.objects.all().order_by('username')
+    return render(request, 'usuarios_simple.html', {'usuarios': usuarios})
+
+
 def lista_productos(request):
     productos = Producto.objects.all().order_by('nombre').order_by('categoria')
     return render(request, 'producto/lista.html', {'productos': productos})
 
 
-def consulta_stock_productos(request):
-    """Listado de productos con filtros por stock (<= cantidad) y búsqueda por nombre/categoría."""
-    import math
-    qs = Producto.objects.select_related('categoria').order_by('categoria__nombre', 'nombre')
-    stock_max = request.GET.get('stock_max', '').strip()
-    buscar = request.GET.get('buscar', '').strip()
-    stock_max_num = None
-    threshold = None  # primera mitad = amarillo (>= threshold), segunda mitad = rojo (< threshold)
-
-    if stock_max != '':
-        try:
-            valor = Decimal(stock_max.replace(',', '.'))
-            stock_max_num = float(valor)
-            qs = qs.filter(stock__lte=valor)
-            threshold = math.ceil(stock_max_num / 2)
-        except Exception:
-            pass
-    if buscar:
-        qs = qs.filter(
-            Q(nombre__icontains=buscar) |
-            Q(categoria__nombre__icontains=buscar)
-        )
-    # Anotar valor total (stock * precio) para la tabla
-    productos = [
-        {
-            'producto': p,
-            'valor_total': (p.stock or 0) * (p.precio_unitario or 0),
-        }
-        for p in qs
-    ]
-    return render(request, 'producto/consulta_stock.html', {
-        'productos': productos,
-        'stock_max': stock_max,
-        'stock_max_num': stock_max_num,
-        'threshold': threshold,
-        'buscar': buscar,
-    })
+def listado_compras(request):
+    """Listado de compras (ingresos) con sus detalles: producto y cantidad, de más reciente a más antigua."""
+    compras = IngresoStock.objects.prefetch_related('detalles__producto').order_by('-fecha')
+    return render(request, 'producto/listado_compras.html', {'compras': compras})
 
 
 def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST)
         if form.is_valid():
-            producto = form.save()
-            registrar_evento(request=request, accion='Crear', modelo='Producto', objeto=producto, descripcion=f'Se creó el producto {producto.nombre}.')
+            form.save()
+
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Agregar',
+                        modelo='Productos',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Agrego el producto: ({form.cleaned_data['nombre']}) de la categoria, ({form.cleaned_data['categoria']}) con precio de ({form.cleaned_data['precio_unitario']})  en el catalogo, con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
+
 
             return redirect('lista_productos')
     else:
@@ -1641,8 +1450,16 @@ def modificar_producto(request, pk):
     if request.method == 'POST':
         form = ProductoForm(request.POST, instance=producto)
         if form.is_valid():
-            producto = form.save()
-            registrar_evento(request=request, accion='Actualizar', modelo='Producto', objeto=producto, descripcion=f'Se actualizó el producto {producto.nombre}.')
+            form.save()
+
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Modificar',
+                        modelo='Productos',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Modifico el producto: ({form.cleaned_data['nombre']}) de la categoria, ({form.cleaned_data['categoria']}) con precio de ({form.cleaned_data['precio_unitario']})  en el catalogo, con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                        
+                    )
 
             return redirect('lista_productos')
     else:
@@ -1654,7 +1471,18 @@ def eliminar_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
     if request.method == 'POST':
 
-        registrar_evento(request=request, accion='Eliminar', modelo='Producto', objeto=producto, descripcion=f'Se eliminó el producto {producto.nombre}.')
+        registrar_bitacora(
+            usuario=request.user,
+            accion='Eliminar',
+            modelo='Producto',
+            objeto_id=pk,
+            descripcion=(
+                f"El usuario {request.user.username} eliminó el producto '{producto.nombre}' "
+                f"(ID: {pk}), categoría: '{producto.categoria}', precio: ${producto.precio_unitario}, "
+                f"en fecha {timezone.now().strftime('%Y-%m-%d')}."
+            )
+        )
+
         producto.delete()
         
         return redirect('lista_productos')
@@ -1672,8 +1500,16 @@ def agregar_cliente(request):
         form = ClienteForm(request.POST)
         if form.is_valid():
 
-            cliente = form.save()
-            registrar_evento(request=request, accion='Crear', modelo='Cliente', objeto=cliente, descripcion=f'Se creó el cliente {cliente.nombre}.')
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Agregar',
+                        modelo='Cliente',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Agrego un Nuevo cliente: ({form.cleaned_data['nombre']}) con rut, ({form.cleaned_data['rut']}) y contacto ({form.cleaned_data['contacto']}), con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
+
+            form.save()
             return redirect('lista_clientes')
     else:
         form = ClienteForm()
@@ -1686,6 +1522,16 @@ def modificar_cliente(request, pk):
         if form.is_valid():
             form.save()
 
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Modificar',
+                        modelo='Cliente',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Modifico el registro del Cliente: ({form.cleaned_data['nombre']}) con el rut, ({form.cleaned_data['rut']}) con el contacto ({form.cleaned_data['contacto']}), con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                        
+                    )
+
+
             return redirect('lista_clientes')
     else:
         form = ClienteForm(instance=cliente)
@@ -1694,6 +1540,15 @@ def modificar_cliente(request, pk):
 def eliminar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     if request.method == 'POST':
+
+        registrar_bitacora(
+                        usuario=request.user,
+                        accion='Eliminar',
+                        modelo='Cliente',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Elimino el cliente: ({cliente.nombre}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
 
         cliente.delete()
         return redirect('lista_clientes')
@@ -1711,8 +1566,16 @@ def agregar_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
         if form.is_valid():
-            categoria = form.save()
-            registrar_evento(request=request, accion='Crear', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se creó la categoría {categoria.nombre}.')
+            form.save()
+
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Crear',
+                        modelo='Categoria',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Creo la categoria: ({form.cleaned_data['nombre']}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
 
             return redirect('lista_categorias')
     else:
@@ -1724,8 +1587,16 @@ def modificar_categoria(request, pk):
     if request.method == 'POST':
         form = CategoriaForm(request.POST, instance=categoria)
         if form.is_valid():
-            categoria = form.save()
-            registrar_evento(request=request, accion='Actualizar', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se actualizó la categoría {categoria.nombre}.')
+            form.save()
+
+            registrar_bitacora(
+                        usuario=request.user,
+                        accion='Crear',
+                        modelo='Categoria',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Modifico la categoria: ({form.cleaned_data['nombre']}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
 
             return redirect('lista_categorias')
     else:
@@ -1736,7 +1607,16 @@ def eliminar_categoria(request, pk):
     categoria = get_object_or_404(CategoriaProducto, pk=pk)
     if request.method == 'POST':
 
-        registrar_evento(request=request, accion='Eliminar', modelo='CategoriaProducto', objeto=categoria, descripcion=f'Se eliminó la categoría {categoria.nombre}.')
+        registrar_bitacora(
+                        usuario=request.user,
+                        accion='Eliminar',
+                        modelo='Categoria',
+                        objeto_id=None,
+                        descripcion = f"El usuario {request.user.username} Elimino la categoria: ({pk}) con fecha {timezone.now().strftime('%Y-%m-%d')}."
+                                                
+                    )
+
+
         categoria.delete()
         return redirect('lista_categorias')
     return render(request, 'categoria/eliminar.html', {'categoria': categoria})
@@ -1753,8 +1633,7 @@ def factorajustecliente_crear(request):
     if request.method == 'POST':
         form = FactorAjusteClienteForm(request.POST)
         if form.is_valid():
-            factor = form.save()
-            registrar_evento(request=request, accion='Crear', modelo='FactorAjusteCliente', objeto=factor, descripcion='Se creó un factor de ajuste.')
+            form.save()
             return redirect('factorajustecliente_lista')
     else:
         form = FactorAjusteClienteForm()
@@ -1765,8 +1644,7 @@ def factorajustecliente_editar(request, pk):
     if request.method == 'POST':
         form = FactorAjusteClienteForm(request.POST, instance=factor)
         if form.is_valid():
-            factor = form.save()
-            registrar_evento(request=request, accion='Actualizar', modelo='FactorAjusteCliente', objeto=factor, descripcion='Se actualizó un factor de ajuste.')
+            form.save()
             return redirect('factorajustecliente_lista')
     else:
         form = FactorAjusteClienteForm(instance=factor)
@@ -1775,9 +1653,7 @@ def factorajustecliente_editar(request, pk):
 def factorajustecliente_eliminar(request, pk):
     factor = get_object_or_404(FactorAjusteCliente, pk=pk)
     if request.method == 'POST':
-        factor_id = factor.pk
         factor.delete()
-        registrar_evento(request=request, accion='Eliminar', modelo='FactorAjusteCliente', objeto_id=factor_id, descripcion='Se eliminó un factor de ajuste.')
         return redirect('factorajustecliente_lista')
     return render(request, 'factor/factorajustecliente_eliminar.html', {'factor': factor})
 
@@ -1789,12 +1665,11 @@ def agregar_item_odt(request, odt_pk):
     cantidad = int(request.POST.get('cantidad', 1))
 
     # Crear item asociado a la ODT
-    item = ItemOdt.objects.create(
+    ItemOdt.objects.create(
         odt=detalle.odt,
         producto=producto,
         cantidad=cantidad
     )
-    ajustar_stock(producto.pk, -cantidad)
 
     # Crear compatibilidad genérica
     CompatibilidadProducto.objects.get_or_create(
@@ -1803,29 +1678,13 @@ def agregar_item_odt(request, odt_pk):
         defaults={'motivo': 'Sugerencia automática desde componente defectuoso'}
     )
 
-    registrar_evento(
-        request=request, accion='Crear', modelo='ItemOdt', objeto=item,
-        descripcion=f'Se agregó un producto a la ODT #{odt_pk}.',
-        metadatos={'sin_movimiento_stock': True},
-    )
-
     return redirect('odt_editar', pk=odt_pk)
 
 IngresoStockForm = modelform_factory(IngresoStock, fields=['observaciones'])
 
-
-class DetalleIngresoForm(forms.ModelForm):
-    """Form para detalle de ingreso: producto como hidden para búsqueda AJAX."""
-    class Meta:
-        model = DetalleIngreso
-        fields = ('producto', 'cantidad')
-        widgets = {'producto': forms.HiddenInput()}
-
-
 DetalleIngresoFormSet = inlineformset_factory(
     IngresoStock,
     DetalleIngreso,
-    form=DetalleIngresoForm,
     fields=('producto', 'cantidad'),
     extra=1,
     can_delete=True
@@ -1837,94 +1696,17 @@ def ingreso_stock_nuevo(request):
 
     if request.method == 'POST':
         if form.is_valid() and formset.is_valid():
-            with transaction.atomic():
-                ingreso = form.save()
-                detalles = formset.save(commit=False)
-                for d in detalles:
-                    d.ingreso = ingreso
-                    d.save()
-                    ajustar_stock(d.producto_id, d.cantidad)
-            registrar_evento(
-                request=request, accion='Crear', modelo='IngresoStock', objeto=ingreso,
-                descripcion=f'Se registró el ingreso de stock #{ingreso.pk}.',
-            )
+            ingreso = form.save()
+            detalles = formset.save(commit=False)
+            for d in detalles:
+                d.ingreso = ingreso
+                d.save()
             return redirect('lista_productos')  # o redirige donde prefieras
 
     return render(request, 'producto/ingreso_form.html', {
         'form': form,
         'formset': formset
     })
-
-
-def lista_comprado(request):
-    """Listado de compras (IngresoStock) con filtros y detalle expandible."""
-    qs = IngresoStock.objects.prefetch_related('detalles__producto').order_by('-fecha', '-pk')
-    fecha_desde = request.GET.get('fecha_desde', '').strip()
-    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
-    buscar = request.GET.get('buscar', '').strip()
-    if fecha_desde:
-        try:
-            qs = qs.filter(fecha__gte=fecha_desde)
-        except Exception:
-            pass
-    if fecha_hasta:
-        try:
-            qs = qs.filter(fecha__lte=fecha_hasta)
-        except Exception:
-            pass
-    if buscar:
-        qs = qs.filter(observaciones__icontains=buscar)
-    ingresos = list(qs)
-    for ing in ingresos:
-        ing.total_items = sum(d.cantidad for d in ing.detalles.all())
-    return render(request, 'producto/comprado_lista.html', {
-        'ingresos': ingresos,
-        'fecha_desde': fecha_desde,
-        'fecha_hasta': fecha_hasta,
-        'buscar': buscar,
-    })
-
-
-def comprado_editar(request, pk):
-    """Editar una compra (IngresoStock) y sus detalles; ajusta stock al guardar."""
-    ingreso = get_object_or_404(IngresoStock.objects.prefetch_related('detalles__producto'), pk=pk)
-    form = IngresoStockForm(request.POST or None, instance=ingreso)
-    formset = DetalleIngresoFormSet(request.POST or None, instance=ingreso, prefix='detalleingreso_set')
-
-    if request.method == 'POST':
-        if form.is_valid() and formset.is_valid():
-            with transaction.atomic():
-                # Revertir el ingreso anterior y aplicar el nuevo estado.
-                for d in ingreso.detalles.select_related('producto'):
-                    ajustar_stock(d.producto_id, -d.cantidad)
-                form.save()
-                detalles = formset.save(commit=False)
-                for d in detalles:
-                    d.ingreso = ingreso
-                    d.save()
-                    ajustar_stock(d.producto_id, d.cantidad)
-                for d in formset.deleted_objects:
-                    d.delete()
-            registrar_evento(request=request, accion='Actualizar', modelo='IngresoStock', objeto=ingreso, descripcion=f'Se actualizó el ingreso de stock #{ingreso.pk}.')
-            return redirect('comprado_lista')
-    return render(request, 'producto/comprado_editar.html', {
-        'form': form,
-        'formset': formset,
-        'ingreso': ingreso,
-    })
-
-
-def comprado_eliminar(request, pk):
-    """Eliminar una compra y restar del stock las cantidades de sus detalles."""
-    ingreso = get_object_or_404(IngresoStock.objects.prefetch_related('detalles__producto'), pk=pk)
-    if request.method == 'POST':
-        with transaction.atomic():
-            for d in ingreso.detalles.select_related('producto'):
-                ajustar_stock(d.producto_id, -d.cantidad)
-            ingreso.delete()
-        registrar_evento(request=request, accion='Eliminar', modelo='IngresoStock', objeto_id=pk, descripcion=f'Se eliminó el ingreso de stock #{pk}.')
-        return redirect('comprado_lista')
-    return render(request, 'producto/comprado_eliminar.html', {'ingreso': ingreso})
 
 
 def exportar_inventario_excel(request):
@@ -1960,7 +1742,6 @@ def exportar_inventario_excel(request):
     )
     response['Content-Disposition'] = 'attachment; filename=Inventario_Accesorios.xlsx'
     wb.save(response)
-    registrar_evento(request=request, accion='Exportar', modelo='Producto', descripcion='Se exportó el inventario a Excel.')
     return response
 
 
@@ -1985,24 +1766,19 @@ def exportar_inventario_pdf(request):
         output.seek(0)
         response.write(output.read())
 
-    registrar_evento(request=request, accion='Exportar', modelo='Producto', descripcion='Se exportó el inventario a PDF.')
     return response
 
 
 
 
 def generar_estadisticas_mensuales(mes=None):
+    print("Entrando en la función de los extintores")
     if mes is None:
         mes = now().strftime('%Y-%m')
 
     fecha_inicio = datetime.strptime(mes, "%Y-%m")
     fecha_fin = datetime(fecha_inicio.year + int(fecha_inicio.month == 12), 
                          fecha_inicio.month % 12 + 1, 1)
-
-    # La regeneracion debe reemplazar el corte anterior, no acumularlo.
-    EstadisticaMensual.objects.filter(mes=mes).delete()
-    EstadisticaDetalleExtintor.objects.filter(mes=mes).delete()
-    EstadisticaDetalleProducto.objects.filter(mes=mes).delete()
 
     # Inicializar contadores para productos
     total_productos_utilizados = 0
@@ -2032,8 +1808,7 @@ def generar_estadisticas_mensuales(mes=None):
     # Recopilar estadísticas de ODTs
     odts_queryset = Odt.objects.filter(
         fecha__gte=fecha_inicio,
-        fecha__lt=fecha_fin,
-        intervencion__isnull=False,
+        fecha__lt=fecha_fin
     ).select_related('intervencion__cliente')
 
     for odt in odts_queryset:
@@ -2128,13 +1903,21 @@ def generar_estadisticas_mensuales(mes=None):
         )
 
 
+    # Actualizar la estadística mensual con los totales
+    for cliente_id in productos_dict.keys():
+        estadistica = EstadisticaMensual.objects.filter(mes=mes, tipo='productos', cliente=cliente_id).first()
+        if estadistica:
+            estadistica.total_productos_utilizados += total_productos_utilizados
+            estadistica.categoria_producto = productos_dict[cliente_id]['categoria']  # Asignar la categoría
+            estadistica.save()
+
+
 @login_required
 def generar_estadisticas_view(request):
     if request.method == 'POST':
         mes = request.POST.get('mes')
         if mes:
             generar_estadisticas_mensuales(mes)
-            registrar_evento(request=request, accion='Generar', modelo='EstadisticaMensual', descripcion=f'Se generaron estadísticas para {mes}.')
             messages.success(request, f'Estadísticas generadas para el mes {mes}.')
             return redirect('ver_estadisticas', mes=mes)
 
@@ -2162,7 +1945,7 @@ def generar_estadisticas_view(request):
         EstadisticaDetalleExtintor.objects
         .filter(mes=mes_actual, estado__in=estados_interes)
         .values('estado')
-        .annotate(total=Sum('cantidad'))
+        .annotate(total=Count('cantidad'))
         .order_by('estado')
     )
 
@@ -2199,91 +1982,15 @@ def generar_estadisticas_view(request):
 def ver_estadisticas_view(request, mes=None):
     if mes is None:
         mes = now().strftime("%Y-%m")
-    try:
-        datetime.strptime(mes, '%Y-%m')
-    except (TypeError, ValueError):
-        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
-
-    tipo_filtro = request.GET.get('tipo', '').strip()
-    estado_filtro = request.GET.get('estado', '').strip()
-    cliente_filtro = request.GET.get('cliente', '').strip()
-    agente_filtro = request.GET.get('agente', '').strip()
-    peso_filtro = request.GET.get('peso', '').strip()
-    comparar_mes = request.GET.get('comparar', '').strip()
-    agrupar_por = request.GET.get('agrupar', 'estado').strip()
-    campos_agrupacion = {
-        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
-        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
-    }
-    if agrupar_por not in campos_agrupacion:
-        agrupar_por = 'estado'
-    detalle_extintores = EstadisticaDetalleExtintor.objects.filter(mes=mes)
-    if tipo_filtro:
-        detalle_extintores = detalle_extintores.filter(tipo_intervencion=tipo_filtro)
-    if estado_filtro:
-        detalle_extintores = detalle_extintores.filter(estado=estado_filtro)
-    if cliente_filtro.isdigit():
-        detalle_extintores = detalle_extintores.filter(cliente_id=cliente_filtro)
-    if agente_filtro:
-        detalle_extintores = detalle_extintores.filter(agente=agente_filtro)
-    if peso_filtro:
-        detalle_extintores = detalle_extintores.filter(peso=peso_filtro)
-
-    total_actual = detalle_extintores.aggregate(total=Sum('cantidad'))['total'] or 0
-    campo_agrupacion = campos_agrupacion[agrupar_por]
-    agrupacion = list(
-        detalle_extintores.values(campo_agrupacion)
-        .annotate(total=Sum('cantidad'))
-        .order_by('-total', campo_agrupacion)
-    )
-    maximo_agrupacion = max((item['total'] for item in agrupacion), default=0)
-    for item in agrupacion:
-        item['etiqueta'] = item.get(campo_agrupacion) or 'Sin dato'
-        item['porcentaje'] = (item['total'] / maximo_agrupacion * 100) if maximo_agrupacion else 0
-    tendencia = list(
-        EstadisticaDetalleExtintor.objects.values('mes')
-        .annotate(total=Sum('cantidad')).order_by('-mes')[:12]
-    )
-    tendencia.reverse()
-    comparacion = None
-    if comparar_mes:
-        try:
-            datetime.strptime(comparar_mes, '%Y-%m')
-        except ValueError:
-            return HttpResponseBadRequest('El mes de comparacion debe tener formato YYYY-MM.')
-        detalle_comparacion = EstadisticaDetalleExtintor.objects.filter(mes=comparar_mes)
-        if tipo_filtro:
-            detalle_comparacion = detalle_comparacion.filter(tipo_intervencion=tipo_filtro)
-        if estado_filtro:
-            detalle_comparacion = detalle_comparacion.filter(estado=estado_filtro)
-        if cliente_filtro.isdigit():
-            detalle_comparacion = detalle_comparacion.filter(cliente_id=cliente_filtro)
-        if agente_filtro:
-            detalle_comparacion = detalle_comparacion.filter(agente=agente_filtro)
-        if peso_filtro:
-            detalle_comparacion = detalle_comparacion.filter(peso=peso_filtro)
-        total_comparacion = detalle_comparacion.aggregate(total=Sum('cantidad'))['total'] or 0
-        variacion = total_actual - total_comparacion
-        comparacion = {
-            'mes': comparar_mes,
-            'total': total_comparacion,
-            'variacion': variacion,
-            'porcentaje': (variacion / total_comparacion * 100) if total_comparacion else None,
-        }
 
     # 1) Totales generales
-    resumen_query = EstadisticaMensual.objects.filter(mes=mes, tipo='intervencion')
-    if tipo_filtro:
-        resumen_query = resumen_query.filter(tipo_intervencion=tipo_filtro)
-    if cliente_filtro.isdigit():
-        resumen_query = resumen_query.filter(cliente_id=cliente_filtro)
-    cantidad_intervenciones = resumen_query.aggregate(
-        total=Sum('cantidad_intervenciones')
-    )['total'] or 0
+    cantidad_intervenciones = EstadisticaMensual.objects.filter(
+        mes=mes, tipo='intervencion'
+    ).aggregate(total=Sum('cantidad_intervenciones'))['total'] or 0
 
-    cantidad_extintores = resumen_query.aggregate(
-        total=Sum('cantidad_extintores')
-    )['total'] or 0
+    cantidad_extintores = EstadisticaMensual.objects.filter(
+        mes=mes, tipo='intervencion'
+    ).aggregate(total=Sum('cantidad_extintores'))['total'] or 0
 
     cantidad_odt = EstadisticaMensual.objects.filter(
         mes=mes, tipo='odt'
@@ -2311,7 +2018,8 @@ def ver_estadisticas_view(request, mes=None):
         'baja/oxido', 'extin./abo.', 'habili.+1', 'nuevo'
     ]
 
-    conteo_por_estado = detalle_extintores.filter(
+    conteo_por_estado = EstadisticaDetalleExtintor.objects.filter(
+        mes=mes,
         estado__in=estados_a_contar
     ).values('estado').annotate(total=Sum('cantidad'))
 
@@ -2320,12 +2028,16 @@ def ver_estadisticas_view(request, mes=None):
         estadisticas_estado[fila['estado']] = fila['total']
 
     # 3) Detalle de extintores por estado + agente + peso
-    extintores = detalle_extintores.values('estado', 'agente', 'peso').annotate(
+    extintores = EstadisticaDetalleExtintor.objects.filter(
+        mes=mes
+    ).values('estado', 'agente', 'peso').annotate(
         cantidad=Sum('cantidad')
     ).order_by('estado', 'agente', 'peso')
 
     # 4) Totales por estado
-    totales_por_estado = detalle_extintores.values('estado').annotate(
+    totales_por_estado = EstadisticaDetalleExtintor.objects.filter(
+        mes=mes
+    ).values('estado').annotate(
         total=Sum('cantidad')
     )
     total_dict = {item['estado']: item['total'] for item in totales_por_estado}
@@ -2348,297 +2060,17 @@ def ver_estadisticas_view(request, mes=None):
             "recarga": cantidad_recarga,
         },
         "estadisticas_estado": estadisticas_estado,
-        "tipo_filtro": tipo_filtro,
-        "estado_filtro": estado_filtro,
-        "cliente_filtro": cliente_filtro,
-        "agente_filtro": agente_filtro,
-        "peso_filtro": peso_filtro,
-        "comparar_mes": comparar_mes,
-        "total_actual": total_actual,
-        "comparacion": comparacion,
-        "agrupar_por": agrupar_por,
-        "agrupacion": agrupacion,
-        "opciones_agrupacion": campos_agrupacion.keys(),
-        "tendencia": tendencia,
-        "clientes_filtro": Cliente.objects.order_by('nombre'),
-        "agentes_filtro": EstadisticaDetalleExtintor.objects.filter(mes=mes).values_list('agente', flat=True).distinct().order_by('agente'),
-        "pesos_filtro": EstadisticaDetalleExtintor.objects.filter(mes=mes).values_list('peso', flat=True).distinct().order_by('peso'),
     })
-
-
-@login_required
-def exportar_estadisticas_excel(request, mes):
-    try:
-        datetime.strptime(mes, '%Y-%m')
-    except (TypeError, ValueError):
-        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
-    detalle = EstadisticaDetalleExtintor.objects.filter(mes=mes)
-    tipo = request.GET.get('tipo', '').strip()
-    estado = request.GET.get('estado', '').strip()
-    cliente = request.GET.get('cliente', '').strip()
-    agente = request.GET.get('agente', '').strip()
-    peso = request.GET.get('peso', '').strip()
-    agrupar = request.GET.get('agrupar', '').strip()
-    if tipo:
-        detalle = detalle.filter(tipo_intervencion=tipo)
-    if estado:
-        detalle = detalle.filter(estado=estado)
-    if cliente.isdigit():
-        detalle = detalle.filter(cliente_id=cliente)
-    if agente:
-        detalle = detalle.filter(agente=agente)
-    if peso:
-        detalle = detalle.filter(peso=peso)
-
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = 'Estadisticas'
-    agrupaciones = {
-        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
-        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
-    }
-    if agrupar in agrupaciones:
-        campo = agrupaciones[agrupar]
-        sheet.append(['Agrupacion', 'Cantidad'])
-        for row in detalle.values(campo).annotate(total=Sum('cantidad')).order_by('-total', campo):
-            sheet.append([row.get(campo) or 'Sin dato', row['total']])
-    else:
-        sheet.append(['Mes', 'Tipo', 'Estado', 'Agente', 'Peso', 'Cantidad', 'Cliente'])
-        for row in detalle.select_related('cliente').order_by('estado', 'agente', 'peso'):
-            sheet.append([
-                row.mes, row.tipo_intervencion, row.estado or '', row.agente,
-                row.peso, row.cantidad, row.cliente.nombre if row.cliente else '',
-            ])
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename=Estadisticas_{mes}.xlsx'
-    workbook.save(response)
-    return response
-
-
-@login_required
-def exportar_estadisticas_pdf(request, mes):
-    try:
-        datetime.strptime(mes, '%Y-%m')
-    except (TypeError, ValueError):
-        return HttpResponseBadRequest('El mes debe tener formato YYYY-MM.')
-    detalle = EstadisticaDetalleExtintor.objects.filter(mes=mes)
-    tipo = request.GET.get('tipo', '').strip()
-    estado = request.GET.get('estado', '').strip()
-    cliente = request.GET.get('cliente', '').strip()
-    agente = request.GET.get('agente', '').strip()
-    peso = request.GET.get('peso', '').strip()
-    agrupar = request.GET.get('agrupar', '').strip()
-    if tipo:
-        detalle = detalle.filter(tipo_intervencion=tipo)
-    if estado:
-        detalle = detalle.filter(estado=estado)
-    if cliente.isdigit():
-        detalle = detalle.filter(cliente_id=cliente)
-    if agente:
-        detalle = detalle.filter(agente=agente)
-    if peso:
-        detalle = detalle.filter(peso=peso)
-    total = detalle.aggregate(total=Sum('cantidad'))['total'] or 0
-    agrupaciones = {
-        'estado': 'estado', 'agente': 'agente', 'peso': 'peso',
-        'tipo': 'tipo_intervencion', 'cliente': 'cliente__nombre',
-    }
-    agrupado = None
-    if agrupar in agrupaciones:
-        campo = agrupaciones[agrupar]
-        agrupado = list(detalle.values(campo).annotate(total=Sum('cantidad')).order_by('-total', campo))
-        for row in agrupado:
-            row['etiqueta'] = row.get(campo) or 'Sin dato'
-    html_string = render_to_string('estadisticas/pdf.html', {
-        'mes': mes, 'detalle': detalle.select_related('cliente'),
-        'agrupado': agrupado, 'agrupar': agrupar,
-        'total': total, 'tipo_filtro': tipo, 'estado_filtro': estado,
-    })
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename=Estadisticas_{mes}.pdf'
-    with tempfile.NamedTemporaryFile(delete=True) as output:
-        HTML(string=html_string).write_pdf(output.name)
-        output.seek(0)
-        response.write(output.read())
-    return response
-
-
-@login_required
-def editar_imagen_servicio(request, pk):
-    imagen = get_object_or_404(ImagenServicio, pk=pk)
-    if request.method == 'POST':
-        imagen.descripcion = request.POST.get('descripcion', '').strip()
-        try:
-            orden = int(request.POST.get('orden', imagen.orden))
-            if orden < 1:
-                raise ValueError
-            imagen.orden = orden
-        except (TypeError, ValueError):
-            messages.error(request, 'El orden debe ser un numero positivo.')
-        else:
-            imagen.save(update_fields=['descripcion', 'orden'])
-            registrar_evento(request=request, accion='Actualizar', modelo='ImagenServicio', objeto=imagen, descripcion=f'Se actualizó la imagen de la intervención #{imagen.intervencion_id}.')
-            messages.success(request, 'Imagen actualizada.')
-    return redirect('intervencion_detalle', pk=imagen.intervencion_id)
-
-
-@login_required
-def eliminar_imagen_servicio(request, pk):
-    imagen = get_object_or_404(ImagenServicio, pk=pk)
-    intervencion_id = imagen.intervencion_id
-    if request.method == 'POST':
-        imagen.archivo.delete(save=False)
-        imagen.delete()
-        registrar_evento(request=request, accion='Eliminar', modelo='ImagenServicio', objeto_id=pk, descripcion=f'Se eliminó una imagen de la intervención #{intervencion_id}.')
-        messages.success(request, 'Imagen eliminada.')
-    return redirect('intervencion_detalle', pk=intervencion_id)
-
-
-def _queryset_clientes_ultimo_servicio():
-    """Último servicio real por cliente desde Intervencion (no solo el campo cacheado)."""
-    ultima_intervencion = Intervencion.objects.filter(
-        cliente_id=OuterRef('pk')
-    ).order_by('-fecha', '-id')
-    return Cliente.objects.annotate(
-        ultima_fecha_real=Subquery(ultima_intervencion.values('fecha')[:1]),
-        ultima_intervencion_id_real=Subquery(ultima_intervencion.values('id')[:1]),
-    ).exclude(ultima_fecha_real__isnull=True)
-
-
-def _alerta_servicio_item(cliente, ultima_intervencion, hoy, ciclo_dias=365):
-    fecha_ultima = cliente.ultima_fecha_real
-    proximo_servicio = fecha_ultima + timedelta(days=ciclo_dias)
-    dias_restantes = (proximo_servicio - hoy).days
-    return {
-        'cliente': cliente,
-        'fecha_ultima': fecha_ultima,
-        'proximo_servicio': proximo_servicio,
-        'dias_restantes': dias_restantes,
-        'dias_atraso': abs(dias_restantes) if dias_restantes < 0 else 0,
-        'ultima_intervencion': ultima_intervencion,
-        'vencido': dias_restantes < 0,
-        'hoy': dias_restantes == 0,
-        'alerta_30': dias_restantes <= 30,
-        'alerta_45': dias_restantes <= 45,
-        'alerta_60': dias_restantes <= 60,
-    }
-
-
-MESES_ES = (
-    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-)
-
-
-def _build_timeline_ciclo_2025(items):
-    """Agrupa por mes del último servicio en 2025 → repetición estimada en 2026."""
-    from collections import defaultdict
-
-    por_mes = defaultdict(list)
-    for item in items:
-        if item['fecha_ultima'].year != 2025:
-            continue
-        clave = item['fecha_ultima'].strftime('%Y-%m')
-        por_mes[clave].append(item)
-
-    timeline = []
-    for clave in sorted(por_mes.keys()):
-        grupo = sorted(por_mes[clave], key=lambda registro: registro['fecha_ultima'])
-        fecha_ref = grupo[0]['fecha_ultima']
-        prox_ref = grupo[0]['proximo_servicio']
-        en_ventana = sum(1 for registro in grupo if registro['dias_restantes'] <= 60)
-        timeline.append({
-            'clave': clave,
-            'mes_servicio': f"{MESES_ES[fecha_ref.month]} {fecha_ref.year}",
-            'mes_repeticion': f"{MESES_ES[prox_ref.month]} {prox_ref.year}",
-            'items': grupo,
-            'total': len(grupo),
-            'en_ventana_60': en_ventana,
-        })
-    return timeline
 
 
 def alertas_view(request):
-    """
-    Ciclo anual (365 días). Usa la última intervención real de cada cliente.
-    Muestra vencidos, tramos 0-30 / 31-45 / 46-60 y línea de tiempo 2025→2026.
-    """
-    CICLO_SERVICIO_DIAS = 365
-    VENTANAS_PRUEBA = (30, 45, 60)
     hoy = timezone.now().date()
-
-    clientes_qs = _queryset_clientes_ultimo_servicio().order_by('nombre')
-    intervencion_ids = [
-        c.ultima_intervencion_id_real for c in clientes_qs
-        if c.ultima_intervencion_id_real
+    # Aquí calculamos "fecha + 365 días" al vuelo
+    proximas = [
+        intervencion for intervencion in Intervencion.objects.all()
+        if intervencion.fecha + timedelta(days=365) <= hoy - timedelta(days=30)
     ]
-    intervenciones_map = {
-        i.pk: i for i in Intervencion.objects.filter(pk__in=intervencion_ids)
-    }
-
-    todos_los_ciclos = []
-    for cliente in clientes_qs:
-        ultima_int = intervenciones_map.get(cliente.ultima_intervencion_id_real)
-        todos_los_ciclos.append(
-            _alerta_servicio_item(cliente, ultima_int, hoy, CICLO_SERVICIO_DIAS)
-        )
-
-    todos_los_ciclos.sort(key=lambda registro: registro['dias_restantes'])
-
-    todos = []
-    vencidos = []
-    tramo_30 = []
-    tramo_45 = []
-    tramo_60 = []
-
-    for item in todos_los_ciclos:
-        if item['dias_restantes'] > 60:
-            continue
-        todos.append(item)
-        if item['vencido']:
-            vencidos.append(item)
-        elif item['dias_restantes'] <= 30:
-            tramo_30.append(item)
-        elif item['dias_restantes'] <= 45:
-            tramo_45.append(item)
-        else:
-            tramo_60.append(item)
-
-    timeline_2025 = _build_timeline_ciclo_2025(todos_los_ciclos)
-    total_ciclo_2025 = sum(bloque['total'] for bloque in timeline_2025)
-    clientes_sin_cache = Cliente.objects.filter(
-        fecha_ultima_intervencion__isnull=True
-    ).filter(intervencion__isnull=False).distinct().count()
-
-    resumen_ventanas = {
-        30: sum(1 for item in todos if item['alerta_30']),
-        45: sum(1 for item in todos if item['alerta_45']),
-        60: len(todos),
-    }
-
-    return render(request, 'cliente/alertas.html', {
-        'hoy': hoy,
-        'todos': todos,
-        'vencidos': vencidos,
-        'tramo_30': tramo_30,
-        'tramo_45': tramo_45,
-        'tramo_60': tramo_60,
-        'timeline_2025': timeline_2025,
-        'total_ciclo_2025': total_ciclo_2025,
-        'clientes_sin_cache': clientes_sin_cache,
-        'ciclo_dias': CICLO_SERVICIO_DIAS,
-        'ventanas_prueba': VENTANAS_PRUEBA,
-        'resumen_30': resumen_ventanas[30],
-        'resumen_45': resumen_ventanas[45],
-        'resumen_60': resumen_ventanas[60],
-        'total_vencidos': len(vencidos),
-        'total_tramo_30': len(tramo_30),
-        'total_tramo_45': len(tramo_45),
-        'total_tramo_60': len(tramo_60),
-        'total_todos': len(todos),
-    })
+    return render(request, 'cliente/alertas.html', {'proximas': proximas})    
 
 
 def editar_consumos_intervencion(request, pk):
@@ -2654,52 +2086,40 @@ def editar_consumos_intervencion(request, pk):
     queryset = ItemIntervencion.objects.filter(intervencion=intervencion)
 
     if request.method == 'POST':
-        formset = ItemFormSet(request.POST, queryset=queryset, prefix='form')
+        formset = ItemFormSet(request.POST, queryset=queryset)
 
         if formset.is_valid():
-            try:
-                with transaction.atomic():
-                    for form in formset.forms:
-                        if form not in formset.deleted_forms and form.cleaned_data.get('producto'):
-                            item = form.save(commit=False)
-                            item.intervencion = intervencion
-                            guardar_consumo_item(item)
+            print("TOTAL FORMS:", formset.total_form_count())
+            print("DELETED FORMS:", len(formset.deleted_forms))
 
-                    for form in formset.deleted_forms:
-                        if form.instance.pk:
-                            eliminar_consumo_item(form.instance)
-            except StockInsuficiente as exc:
-                formset._non_form_errors = forms.utils.ErrorList([str(exc)])
-                registrar_evento(
-                    request=request, accion='ConsumirStock', modelo='Intervencion',
-                    objeto=intervencion, descripcion=str(exc), resultado='rechazado',
-                )
-                return render(request, 'intervenciones/editar_consumos.html', {
-                    'formset': formset,
-                    'intervencion': intervencion,
-                })
+            # Guardar los que no están marcados para eliminar Y tienen producto
+            for idx, form in enumerate(formset.forms):
+                print(f"[{idx}] cleaned_data:", form.cleaned_data)
+                print(f"[{idx}] DELETE marked:", form.cleaned_data.get('DELETE'))
+                print(f"[{idx}] instance pk:", form.instance.pk)
 
-            registrar_evento(
-                request=request,
-                accion='ConsumirStock',
-                modelo='Intervencion',
-                objeto=intervencion,
-                descripcion=f'Se actualizaron los consumos de la intervención #{intervencion.pk}.',
-            )
+                if form not in formset.deleted_forms:
+                    # Verificar que el formulario tiene producto antes de guardar
+                    if form.cleaned_data.get('producto'):
+                        item = form.save(commit=False)
+                        item.intervencion = intervencion
+                        item.save()
+                        print(f"[{idx}] Guardado ItemIntervencion con producto: {item.producto}")
+                    else:
+                        print(f"[{idx}] Formulario sin producto, ignorado")
+
+            # Eliminar los marcados si tienen pk (existen en DB)
+            for form in formset.deleted_forms:
+                if form.instance.pk:
+                    print(f"Deleting ItemIntervencion pk={form.instance.pk}")
+                    form.instance.delete()
+                else:
+                    print("Intento de eliminar objeto sin PK, ignorado.")
+
             return redirect('intervencion_detalle', pk=intervencion.pk)
-        registrar_evento(
-            request=request,
-            accion='ValidacionError',
-            modelo='Intervencion',
-            objeto=intervencion,
-            descripcion='No se pudieron guardar los consumos por errores de formulario.',
-            resultado='rechazado',
-            metadatos={'errores': formset.errors},
-        )
-        messages.error(request, 'No se pudieron guardar los consumos. Revisa los errores indicados.')
 
     else:
-        formset = ItemFormSet(queryset=queryset, prefix='form')
+        formset = ItemFormSet(queryset=queryset)
 
     return render(request, 'intervenciones/editar_consumos.html', {
         'formset': formset,
@@ -2773,8 +2193,7 @@ def buscar_productos_ajax(request):
                 'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
                 'codigo': 'N/A',  # Campo no disponible en el modelo
                 'precio': float(producto.precio_unitario) if producto.precio_unitario else 0,
-                'stock': producto.stock,
-                'stock_ilimitado': stock_es_ilimitado(producto),
+                'stock': producto.stock or 0,
                 'display': f"{producto.nombre} - {producto.categoria.nombre if producto.categoria else 'Sin categoría'}"
             })
         
@@ -2782,127 +2201,3 @@ def buscar_productos_ajax(request):
     
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-
-# === GESTIÓN SIMPLE DE USUARIOS (permiso manage_users) ===
-@login_required
-@solo_gestor_usuarios
-def usuarios_simple(request):
-    """Lista y administra usuarios según permisos Django."""
-    usuarios = User.objects.all().order_by('username')
-
-    if request.method == 'POST':
-        action = request.POST.get('action')
-
-        if action == 'crear':
-            username = request.POST.get('username', '').strip()
-            password = request.POST.get('password', '')
-            if not username:
-                messages.error(request, "El nombre de usuario es obligatorio.")
-            elif User.objects.filter(username=username).exists():
-                messages.error(request, f"El usuario '{username}' ya existe.")
-            elif len(password) < 4:
-                messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
-            else:
-                user = User.objects.create_user(username=username, password=password)
-                registrar_evento(request=request, accion='Crear', modelo='User', objeto=user, descripcion=f"Se creó el usuario '{username}'.")
-                messages.success(request, f"Usuario '{username}' creado. Puedes compartir usuario y contraseña.")
-
-        elif action == 'editar':
-            user_id = request.POST.get('user_id')
-            first_name = request.POST.get('first_name', '').strip()
-            last_name = request.POST.get('last_name', '').strip()
-            email = request.POST.get('email', '').strip()
-            is_active = request.POST.get('is_active') == 'on'
-            try:
-                user = User.objects.get(id=user_id)
-                user.first_name = first_name
-                user.last_name = last_name
-                user.email = email
-                user.is_active = is_active
-                user.save()
-                selected_roles = request.POST.getlist('roles')
-                role_groups = [
-                    Group.objects.get_or_create(name=name)[0]
-                    for name in selected_roles
-                ]
-                for group in role_groups:
-                    default_codes = {
-                        code.split('.', 1)[1]
-                        for code in ROLE_DEFAULT_PERMISSIONS.get(group.name, set())
-                    }
-                    group.permissions.set(Permission.objects.filter(
-                        content_type__app_label='extintores',
-                        codename__in=default_codes,
-                    ))
-                user.groups.set(role_groups)
-                permission_codes = request.POST.getlist('permissions')
-                user.user_permissions.set(Permission.objects.filter(
-                    content_type__app_label='extintores',
-                    codename__in=[code.split('.', 1)[-1] for code in permission_codes],
-                ))
-                if request.POST.get('is_technician') == 'on':
-                    TechnicianProfile.objects.get_or_create(user=user)
-                else:
-                    TechnicianProfile.objects.filter(user=user).delete()
-                registrar_evento(request=request, accion='Actualizar', modelo='User', objeto=user, descripcion=f"Se actualizaron los datos, roles y permisos de '{user.username}'.")
-                messages.success(request, f"Datos de '{user.username}' actualizados.")
-            except User.DoesNotExist:
-                messages.error(request, "Usuario no encontrado.")
-
-        elif action == 'cambiar_password':
-            user_id = request.POST.get('user_id')
-            new_password = request.POST.get('new_password', '')
-            confirm = request.POST.get('confirm_password', '')
-            if new_password != confirm:
-                messages.error(request, "Las contraseñas no coinciden.")
-            elif len(new_password) < 4:
-                messages.error(request, "La contraseña debe tener al menos 4 caracteres.")
-            else:
-                try:
-                    user = User.objects.get(id=user_id)
-                    user.set_password(new_password)
-                    user.save()
-                    registrar_evento(request=request, accion='Actualizar', modelo='User', objeto=user, descripcion=f"Se actualizó la contraseña de '{user.username}'.")
-                    messages.success(request, f"Contraseña de '{user.username}' actualizada.")
-                except User.DoesNotExist:
-                    messages.error(request, "Usuario no encontrado.")
-
-        elif action == 'eliminar':
-            user_id = request.POST.get('user_id')
-            try:
-                user = User.objects.get(id=user_id)
-                if user == request.user:
-                    messages.error(request, "No puedes eliminar tu propio usuario.")
-                else:
-                    username = user.username
-                    user.delete()
-                    registrar_evento(request=request, accion='Eliminar', modelo='User', objeto_id=user_id, descripcion=f"Se eliminó el usuario '{username}'.")
-                    messages.success(request, f"Usuario '{username}' eliminado.")
-            except User.DoesNotExist:
-                messages.error(request, "Usuario no encontrado.")
-
-        return redirect('usuarios_simple')
-
-    roles = [
-        ROLE_ADMINISTRADOR, ROLE_SUPERVISOR, ROLE_TECNICO,
-        ROLE_INVENTARIO, ROLE_SOLO_LECTURA,
-    ]
-    managed_permissions = [
-        (PERM_GESTIONAR_USUARIOS, 'Gestionar usuarios'),
-        (PERM_GESTIONAR_PERMISOS, 'Gestionar permisos'),
-        (PERM_FIRMAR_DOCUMENTOS, 'Firmar documentos'),
-        (PERM_VER_FINANZAS, 'Ver datos financieros'),
-    ]
-    for user in usuarios:
-        user.role_names = set(user.groups.values_list('name', flat=True))
-        user.permission_codes = {
-            f'{permission.content_type.app_label}.{permission.codename}'
-            for permission in user.user_permissions.filter(
-                content_type__app_label='extintores'
-            ).select_related('content_type')
-        }
-    return render(request, 'usuarios_simple.html', {
-        'usuarios': usuarios,
-        'roles': roles,
-        'managed_permissions': managed_permissions,
-    })

@@ -101,7 +101,7 @@ class ExtintoresTemplateIntegrityTests(SimpleTestCase):
             encoding='utf-8'
         )
         self.assertNotIn('modal-stock-bajo', common)
-        self.assertIn('modal-stock-bajo', specific)
+        self.assertNotIn('modal-stock-bajo', specific)
         self.assertIn('producto-clear', common)
         self.assertIn('producto-clear', template)
 

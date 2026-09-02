@@ -2,7 +2,7 @@
 
 ## Regla de negocio
 
-El stock disponible nunca puede ser negativo. Antes de consumir, el sistema debe validar la cantidad disponible y mostrar al usuario producto, cantidad solicitada y saldo actual. Si no alcanza, no debe guardar ninguna parte de la operacion.
+Las categorias finitas pueden quedar con stock negativo. Recarga y Mantencion no modifican stock, aunque tengan `None` o `0`; su precio se multiplica directamente por la cantidad. La cantidad ingresada siempre es positiva.
 
 ## Diseño requerido
 
@@ -17,7 +17,7 @@ El stock disponible nunca puede ser negativo. Antes de consumir, el sistema debe
 ## Pruebas
 
 - Consumo exacto del saldo.
-- Consumo superior al saldo, sin cambios persistidos.
+- Consumo superior al saldo, conservando el saldo negativo.
 - Dos consumos concurrentes.
 - Edicion de cantidad y cambio de producto.
 - Eliminacion y devolucion.
@@ -27,11 +27,11 @@ El stock disponible nunca puede ser negativo. Antes de consumir, el sistema debe
 ## Implementacion inicial
 
 - Se creo `extintores/services/stock.py` con operaciones atomicas y bloqueo de producto.
-- Los consumos rechazan cantidades superiores al saldo disponible mediante `StockInsuficiente`.
+- Los consumos permiten cantidades superiores al saldo disponible y conservan el saldo negativo para ajuste posterior.
 - Los ingresos, ediciones y eliminaciones de compras usan el servicio y se revierten dentro de transacciones.
 - `ItemIntervencion.save/delete` y `DetalleIngreso.save` ya no modifican stock implicitamente.
 - Se cubrieron saldo insuficiente, consumo, eliminacion y ausencia de efectos secundarios del modelo.
-- La gestion de `ItemOdt` queda fuera del descuento de stock por decision funcional documentada en `EXT-010`.
-# Nota de alcance ODT
+- ODT e intervenciones usan el mismo criterio por categoria mediante `services/stock.py`.
+# Nota de alcance ODT e intervenciones
 
-Las operaciones de productos dentro de una ODT son una excepcion funcional: no descuentan ni validan stock. El control transaccional de esta especificacion continua vigente para consumos de intervenciones, compras, eliminaciones y otros movimientos de inventario. Consultar el detalle y el historial en `EXT-010-ingreso-productos-a-odt.md` antes de modificar esta regla.
+Las operaciones de productos dentro de una ODT y los consumos de intervenciones comparten la regla por categoria: Recarga y Mantencion no descuentan stock; las categorias finitas descuentan y permiten saldos negativos. Compras, eliminaciones y ajustes conservan la atomicidad y el bloqueo de producto.
