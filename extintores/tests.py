@@ -151,6 +151,21 @@ class IntervencionOdtTests(TestCase):
         self.assertIn('itemset_con_subtotales', template)
         self.assertIn('imagenes_intervencion', template)
 
+    def test_odt_product_choices_are_ordered_by_category_and_name(self):
+        from .forms import ItemOdtForm
+
+        categoria_b = CategoriaProducto.objects.create(nombre='Zeta')
+        categoria_a = CategoriaProducto.objects.create(nombre='Alfa')
+        Producto.objects.create(nombre='Segundo', categoria=categoria_a)
+        Producto.objects.create(nombre='Primero', categoria=categoria_a)
+        Producto.objects.create(nombre='Producto', categoria=categoria_b)
+
+        choices = list(ItemOdtForm().fields['producto'].queryset)
+        self.assertEqual(
+            [(producto.categoria.nombre, producto.nombre) for producto in choices],
+            [('Alfa', 'Primero'), ('Alfa', 'Segundo'), ('Zeta', 'Producto')],
+        )
+
 
 class StockServiceTests(TestCase):
     def setUp(self):

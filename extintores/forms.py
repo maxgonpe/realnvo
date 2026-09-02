@@ -136,6 +136,12 @@ class ProductoForm(forms.ModelForm):
         fields = ['nombre', 'categoria', 'precio_unitario','stock']
 
 class ItemOdtForm(forms.ModelForm):
+    producto = forms.ModelChoiceField(
+        queryset=Producto.objects.select_related('categoria').order_by(
+            'categoria__nombre', 'nombre'
+        )
+    )
+
     class Meta:
         model = ItemOdt
         fields = ['producto', 'cantidad']

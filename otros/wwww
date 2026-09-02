@@ -1,0 +1,55 @@
+TooManyFieldsSent at /odt/editar/109/
+The number of GET/POST parameters exceeded settings.DATA_UPLOAD_MAX_NUMBER_FIELDS.
+Request Method:	POST
+Request URL:	http://84.247.130.6/odt/editar/109/
+Django Version:	5.2.1
+Exception Type:	TooManyFieldsSent
+Exception Value:	
+The number of GET/POST parameters exceeded settings.DATA_UPLOAD_MAX_NUMBER_FIELDS.
+Exception Location:	/home/max/realnvo_git/env/lib/python3.11/site-packages/django/http/multipartparser.py, line 205, in _parse
+Raised during:	extintores.views.editar_odt
+Python Executable:	/home/max/realnvo_git/env/bin/python
+Python Version:	3.11.2
+Python Path:	
+['/home/max/realnvo_git',
+ '/home/max/realnvo_git/env/bin',
+ '/usr/lib/python311.zip',
+ '/usr/lib/python3.11',
+ '/usr/lib/python3.11/lib-dynload',
+ '/home/max/realnvo_git/env/lib/python3.11/site-packages']
+Server time:	Tue, 01 Sep 2026 20:50:16 -0400
+Traceback Switch to copy-and-paste view
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/core/handlers/base.py, line 185, in _get_response
+            response = middleware_method(
+                             …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/middleware/csrf.py, line 465, in process_view
+            self._check_token(request)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/middleware/csrf.py, line 368, in _check_token
+                request_csrf_token = request.POST.get("csrfmiddlewaretoken", "")
+                                          ^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/core/handlers/wsgi.py, line 93, in _get_post
+            self._load_post_and_files()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/http/request.py, line 409, in _load_post_and_files
+                self._post, self._files = self.parse_file_upload(self.META, data)
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/http/request.py, line 357, in parse_file_upload
+        return parser.parse()
+                    ^^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/http/multipartparser.py, line 125, in parse
+            return self._parse()
+                        ^^^^^^^^^^^^^ …
+Local vars
+/home/max/realnvo_git/env/lib/python3.11/site-packages/django/http/multipartparser.py, line 205, in _parse
+                        raise TooManyFieldsSent(
