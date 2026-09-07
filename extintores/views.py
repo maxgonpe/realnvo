@@ -81,6 +81,29 @@ from .permissions import (
     ROLE_DEFAULT_PERMISSIONS,
 )
 
+
+def _sincronizar_imagenes_legacy(intervencion, imagenes_instance):
+    """Make legacy replacements the current service image set."""
+    nombres_actuales = {
+        getattr(imagenes_instance, f'imagen{orden}').name
+        for orden in range(1, 10)
+        if getattr(imagenes_instance, f'imagen{orden}')
+    }
+
+    for imagen in list(intervencion.imagenes_nuevas.all()):
+        if imagen.archivo.name not in nombres_actuales:
+            imagen.archivo.delete(save=False)
+        imagen.delete()
+
+    for orden in range(1, 10):
+        archivo = getattr(imagenes_instance, f'imagen{orden}')
+        if archivo:
+            ImagenServicio.objects.create(
+                intervencion=intervencion,
+                archivo=archivo.name,
+                orden=orden,
+            )
+
 from django.template.loader import render_to_string
 from weasyprint import HTML
 import tempfile
@@ -860,6 +883,12 @@ def crear_intervencion(request):
                 imagen_instance = imagenes_form.save(commit=False)
                 imagen_instance.intervencion = intervencion
                 imagen_instance.save()
+                if any(
+                    f'imagen{orden}' in request.FILES
+                    or request.POST.get(f'imagen{orden}-clear')
+                    for orden in range(1, 10)
+                ):
+                    _sincronizar_imagenes_legacy(intervencion, imagen_instance)
                 for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=1):
                     ImagenServicio.objects.create(
                         intervencion=intervencion,
@@ -1019,6 +1048,12 @@ def editar_intervencion(request, pk):
             imagen_instance = imagenes_form.save(commit=False)
             imagen_instance.intervencion = intervencion
             imagen_instance.save()
+            if any(
+                f'imagen{orden}' in request.FILES
+                or request.POST.get(f'imagen{orden}-clear')
+                for orden in range(1, 10)
+            ):
+                _sincronizar_imagenes_legacy(intervencion, imagen_instance)
             siguiente_orden = intervencion.imagenes_nuevas.order_by('-orden').values_list('orden', flat=True).first() or 0
             for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=siguiente_orden + 1):
                 ImagenServicio.objects.create(
