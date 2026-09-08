@@ -990,7 +990,6 @@ def crear_intervencion(request):
 
 def editar_intervencion(request, pk):
     intervencion = get_object_or_404(Intervencion, pk=pk)
-    imagenes_instance = ImagenIntervencion.objects.filter(intervencion=intervencion).first()
     
     DetalleIntervencionFormSet = inlineformset_factory(
         Intervencion,
@@ -1004,9 +1003,10 @@ def editar_intervencion(request, pk):
     if request.method == 'POST':
         form = IntervencionForm(request.POST, instance=intervencion)
         formset = DetalleIntervencionFormSet(request.POST, instance=intervencion, prefix='detalles')
-        imagenes_form = ImagenIntervencionForm(request.POST, request.FILES, instance=imagenes_instance)
+        # Editing now uses ImagenServicio. Do not bind/save the legacy form here.
+        imagenes_form = ImagenIntervencionForm()
 
-        if form.is_valid() and formset.is_valid() and imagenes_form.is_valid():
+        if form.is_valid() and formset.is_valid():
             intervencion = form.save()
 
             # Guardar el formset (pero sin commit para modificar)
@@ -1044,16 +1044,7 @@ def editar_intervencion(request, pk):
             # ✅ Guardar todos los detalles restantes para que estén en la DB
             formset.save_m2m()
 
-            # Guardar imagen
-            imagen_instance = imagenes_form.save(commit=False)
-            imagen_instance.intervencion = intervencion
-            imagen_instance.save()
-            if any(
-                f'imagen{orden}' in request.FILES
-                or request.POST.get(f'imagen{orden}-clear')
-                for orden in range(1, 10)
-            ):
-                _sincronizar_imagenes_legacy(intervencion, imagen_instance)
+            # New uploads are appended to the canonical image collection.
             siguiente_orden = intervencion.imagenes_nuevas.order_by('-orden').values_list('orden', flat=True).first() or 0
             for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=siguiente_orden + 1):
                 ImagenServicio.objects.create(
@@ -1118,16 +1109,16 @@ def editar_intervencion(request, pk):
             logger.warning("Formulario no válido")
             logger.warning("Errores en IntervencionForm: %s", form.errors)
             logger.warning("Errores en Formset: %s", formset.errors)
-            logger.warning("Errores en ImagenIntervencionForm: %s", imagenes_form.errors)
     else:
         form = IntervencionForm(instance=intervencion)
         formset = DetalleIntervencionFormSet(instance=intervencion, prefix='detalles')
-        imagenes_form = ImagenIntervencionForm(instance=imagenes_instance)
+        imagenes_form = ImagenIntervencionForm()
 
     context = {
         'form': form,
         'formset': formset,
         'imagenes_form': imagenes_form,
+        'imagenes_nuevas': intervencion.imagenes_nuevas.all(),
         'intervencion': intervencion,
     }
     return render(request, 'intervenciones/editar_intervencion.html', context)
