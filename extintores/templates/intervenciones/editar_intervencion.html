@@ -89,17 +89,11 @@
                 <div class="card h-100 shadow-sm">
                     <img src="{{ imagen.archivo.url }}" class="card-img-top" style="object-fit: cover; height: 200px;" alt="Fotografía del servicio">
                     <div class="card-body p-2">
-                        <form method="post" action="{% url 'editar_imagen_servicio' imagen.pk %}">
-                            {% csrf_token %}
-                            <label class="form-label small fw-bold">Fotografía {{ imagen.orden }}</label>
-                            <input type="text" name="descripcion" value="{{ imagen.descripcion }}" class="form-control form-control-sm mb-1" placeholder="Descripción">
-                            <input type="number" name="orden" value="{{ imagen.orden }}" min="1" class="form-control form-control-sm mb-1" aria-label="Orden">
-                            <button class="btn btn-sm btn-primary" type="submit">Guardar cambios</button>
-                        </form>
-                        <form method="post" action="{% url 'eliminar_imagen_servicio' imagen.pk %}" class="mt-1" onsubmit="return confirm('¿Eliminar esta imagen?');">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
-                        </form>
+                        <label class="form-label small fw-bold">Fotografía {{ imagen.orden }}</label>
+                        <input type="text" name="descripcion" value="{{ imagen.descripcion }}" form="imagen-update-{{ imagen.pk }}" class="form-control form-control-sm mb-1" placeholder="Descripción">
+                        <input type="number" name="orden" value="{{ imagen.orden }}" min="1" form="imagen-update-{{ imagen.pk }}" class="form-control form-control-sm mb-1" aria-label="Orden">
+                        <button class="btn btn-sm btn-primary" type="submit" form="imagen-update-{{ imagen.pk }}">Guardar cambios</button>
+                        <button class="btn btn-sm btn-outline-danger" type="submit" form="imagen-delete-{{ imagen.pk }}" onclick="return confirm('¿Eliminar esta imagen?');">Eliminar</button>
                     </div>
                 </div>
             </div>
@@ -114,6 +108,15 @@
         <a href="#" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmExitModal">Regresar</a>
     </div>
 </form>
+
+{% for imagen in imagenes_nuevas %}
+<form id="imagen-update-{{ imagen.pk }}" method="post" action="{% url 'editar_imagen_servicio' imagen.pk %}">
+    {% csrf_token %}
+</form>
+<form id="imagen-delete-{{ imagen.pk }}" method="post" action="{% url 'eliminar_imagen_servicio' imagen.pk %}">
+    {% csrf_token %}
+</form>
+{% endfor %}
 
 <!-- Modal de confirmación -->
 <div class="modal fade" id="confirmExitModal" tabindex="-1" aria-labelledby="confirmExitModalLabel" aria-hidden="true">
