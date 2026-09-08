@@ -1045,6 +1045,30 @@ def editar_intervencion(request, pk):
             formset.save_m2m()
 
             # New uploads are appended to the canonical image collection.
+            imagenes_actuales = list(intervencion.imagenes_nuevas.all())
+            eliminar_ids = {
+                int(valor) for valor in request.POST.getlist('eliminar_imagenes')
+                if valor.isdigit()
+            }
+            for imagen in imagenes_actuales:
+                if imagen.pk in eliminar_ids:
+                    imagen.archivo.delete(save=False)
+                    imagen.delete()
+                    continue
+
+                descripcion = request.POST.get(
+                    f'imagen_{imagen.pk}_descripcion', imagen.descripcion
+                )
+                try:
+                    orden = max(1, int(request.POST.get(
+                        f'imagen_{imagen.pk}_orden', imagen.orden
+                    )))
+                except (TypeError, ValueError):
+                    orden = imagen.orden
+                imagen.descripcion = descripcion[:200]
+                imagen.orden = orden
+                imagen.save(update_fields=['descripcion', 'orden'])
+
             siguiente_orden = intervencion.imagenes_nuevas.order_by('-orden').values_list('orden', flat=True).first() or 0
             for orden, archivo in enumerate(request.FILES.getlist('imagenes_nuevas'), start=siguiente_orden + 1):
                 ImagenServicio.objects.create(
