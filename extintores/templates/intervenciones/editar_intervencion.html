@@ -77,7 +77,10 @@
         {% endfor %}
     </div>
 
-    <button type="button" class="btn btn-sm btn-primary mt-3" id="add-form" data-container-id="form-container" data-total-id="id_detalles-TOTAL_FORMS" data-template-id="empty-form">+ Agregar Extintor</button>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="button" class="btn btn-sm btn-primary" id="add-form" data-container-id="form-container" data-total-id="id_detalles-TOTAL_FORMS" data-template-id="empty-form">+ Agregar Extintor</button>
+        <button type="button" class="btn btn-sm btn-info" id="btnMultiExtintores">+ Agregar Múltiples</button>
+    </div>
 
     <hr>
     <h4 class="mt-4">Fotografías del servicio</h4>
@@ -110,6 +113,119 @@
         <a href="#" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmExitModal">Regresar</a>
     </div>
 </form>
+
+
+<!-- Formulario vacío Django para nuevos detalles: nunca enviar este contenedor directamente -->
+<div id="empty-form" style="display: none;">
+            <div class="card mt-3 p-3 position-relative overflow-hidden" style="background-color: #DCDCDC;" data-form-index="__prefix__">
+                <div class="watermark-card">#0</div>
+                {% for hidden in formset.empty_form.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+                <h5 class="mb-3">
+                    <span class="counter-badge form-counter">#0</span>
+                    Extintor (Nuevo)
+                </h5>
+                <fieldset>
+                    <legend>Datos del Extintor</legend>
+                    {{ formset.empty_form.agente|as_crispy_field }}
+                    {{ formset.empty_form.nro_precinto|as_crispy_field }}
+                    {{ formset.empty_form.ubicacion|as_crispy_field }}
+                    {{ formset.empty_form.sello_incen|as_crispy_field }}
+                    {{ formset.empty_form.sello_incen_ste|as_crispy_field }}
+                    {{ formset.empty_form.certificado|as_crispy_field }}
+                </fieldset>
+                <fieldset>
+                    <legend>Estado General</legend>
+                    {{ formset.empty_form.estado|as_crispy_field }}
+                    {{ formset.empty_form.exterior|as_crispy_field }}
+                    {{ formset.empty_form.ph_ultima|as_crispy_field }}
+                    {{ formset.empty_form.ph_estado|as_crispy_field }}
+                    {{ formset.empty_form.ph_vencimiento|as_crispy_field }}
+                    {{ formset.empty_form.valvula|as_crispy_field }}
+                    {{ formset.empty_form.manometro|as_crispy_field }}
+                    {{ formset.empty_form.manguera|as_crispy_field }}
+                    {{ formset.empty_form.cintillo|as_crispy_field }}
+                    {{ formset.empty_form.agente_extintor|as_crispy_field }}
+                    {{ formset.empty_form.tubo_sifon|as_crispy_field }}
+                    {{ formset.empty_form.sellos_seguro|as_crispy_field }}
+                    {{ formset.empty_form.seguridad|as_crispy_field }}
+                    {{ formset.empty_form.rotulacion|as_crispy_field }}
+                    {{ formset.empty_form.ultima_fecha|as_crispy_field }}
+                </fieldset>
+                <fieldset>
+                    <legend>Verificación Técnica</legend>
+                    {{ formset.empty_form.recarga|as_crispy_field }}
+                    {{ formset.empty_form.mantencion|as_crispy_field }}
+                    {{ formset.empty_form.presion|as_crispy_field }}
+                    {{ formset.empty_form.peso|as_crispy_field }}
+                    {{ formset.empty_form.correcta|as_crispy_field }}
+                    {{ formset.empty_form.acceso|as_crispy_field }}
+                    {{ formset.empty_form.instrucciones|as_crispy_field }}
+                </fieldset>
+                <fieldset style="border: 2px solid red; padding: 1em; margin-top: 1em;">
+                    <legend style="font-weight: bold; color: red;">Determinado por el Técnico</legend>
+                    {{ formset.empty_form.habilitado_un_ano|as_crispy_field }} 
+                    {{ formset.empty_form.baja_por_oxido|as_crispy_field }}
+                    {{ formset.empty_form.baja_por_ph|as_crispy_field }}
+                    {{ formset.empty_form.baja_por_fuera_norma|as_crispy_field }}
+                    {{ formset.empty_form.extintor_abollado|as_crispy_field }}
+                    {{ formset.empty_form.baja_otro|as_crispy_field }}
+                    {{ formset.empty_form.extintor_nuevo|as_crispy_field }}
+                </fieldset>
+                
+            </div>
+</div>
+
+<!-- Modal de incorporación múltiple; solo trabaja con nuevos formularios -->
+<div class="modal fade" id="multiExtModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar múltiples extintores</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="cantExtintores">Cantidad de extintores</label>
+            <input type="number" class="form-control" id="cantExtintores" min="1" max="325" step="1" value="1">
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="agentePredeterminado">Agente predeterminado</label>
+            <select class="form-select" id="agentePredeterminado">
+              {% for value, label in formset.empty_form.agente.field.choices %}
+                {% if value %}<option value="{{ value }}">{{ label }}</option>{% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="ubicacionPredeterminada">Ubicación (todos)</label>
+            <input type="text" class="form-control" id="ubicacionPredeterminada" maxlength="150" placeholder="Ej. Piso 1 - Hall central">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="ultimaFechaPredeterminada">Último servicio (todos)</label>
+            <input type="date" class="form-control" id="ultimaFechaPredeterminada">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="precintoInicial">N.º precinto inicial</label>
+            <input type="number" class="form-control" id="precintoInicial" min="0" step="1" placeholder="Ej. 23456">
+            <div class="form-text">Se incrementa en 1 por cada extintor generado.</div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="form-label">Vista previa</label>
+          <div id="multiExtPreview" class="border rounded bg-light p-2 text-muted" style="max-height:180px;overflow-y:auto;">Complete cantidad y precinto inicial para ver la numeración.</div>
+        </div>
+        <div class="alert alert-info small mt-3 mb-0">Los extintores nuevos se incorporan al formulario. Para guardarlos en la base de datos, presione <strong>Guardar</strong> al terminar la edición.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGenerarExtintores">Generar extintores</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal de confirmación -->
 <div class="modal fade" id="confirmExitModal" tabindex="-1" aria-labelledby="confirmExitModalLabel" aria-hidden="true">
@@ -187,5 +303,5 @@
 }
 </style>
 
-<script src="{% static 'extintores/js/intervencion-edit-formset.js' %}?v=1" defer></script>
+<script src="{% static 'extintores/js/intervencion-edit-formset.js' %}?v=2" defer></script>
 {% endblock %}

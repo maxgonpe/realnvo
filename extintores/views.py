@@ -815,7 +815,13 @@ class IntervencionListView(LoginRequiredMixin, ListView):
     template_name = 'intervenciones/lista.html'
     context_object_name = 'intervenciones'
     def get_queryset(self):
-        queryset = Intervencion.objects.all().order_by('-id')
+        #queryset = Intervencion.objects.all().order_by('-id')
+        queryset = (
+            Intervencion.objects
+            .select_related('cliente', 'tecnico')
+            .annotate(total_extintores=Count('detalles'))
+            .order_by('-id')
+        )
         busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
         if busqueda is not None:
             queryset = queryset.filter(busqueda)
@@ -827,7 +833,13 @@ class IntervencionAjaxListView(LoginRequiredMixin, ListView):
     context_object_name = 'intervenciones'
 
     def get_queryset(self):
-        queryset = Intervencion.objects.all().order_by('-id')
+        #queryset = Intervencion.objects.all().order_by('-id')
+        queryset = (
+            Intervencion.objects
+            .select_related('cliente', 'tecnico')
+            .annotate(total_extintores=Count('detalles'))
+            .order_by('-id')
+        )
         busqueda = _intervencion_busqueda_q(self.request.GET.get("q", ""))
         if busqueda is not None:
             queryset = queryset.filter(busqueda)
